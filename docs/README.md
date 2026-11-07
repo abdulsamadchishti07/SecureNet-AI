@@ -1,0 +1,25 @@
+# SecureNet AI documentation
+
+- **Start here:** [Validity review and revised priorities](<ML Engine/VALIDITY_REVIEW.md>)
+- [Unified pytest suite and commands](../tests/README.md)
+- [Test reports and historical experiment index](../reports/README.md)
+
+- [ML engine: implementation, results and next steps](<ML Engine/ML_ENGINE.md>)
+- [Friday run evidence](../reports/friday/README.md)
+- [Thursday run evidence](../reports/thursday/README.md)
+- [Wednesday methodology and results](<ML Engine/WEDNESDAY.md>)
+- [Wednesday run evidence](../reports/wednesday/README.md)
+- [Tuesday methodology and results](<ML Engine/TUESDAY.md>)
+- [Tuesday run evidence](../reports/tuesday/README.md)
+- [Monday normal-reference methodology](<ML Engine/MONDAY.md>)
+- [Monday false-alarm results](../reports/monday/README.md)
+- [Project handoff and roadmap](../AGENTS.md)
+
+The ML documentation describes four completed supervised weekday baselines,
+Monday's normal-only reference/false-alarm evaluation, and the revised validation
+priorities. Proposed experiments are not completed changes.
+
+`ML Engine/Friday.md` is the legacy Friday planning document (previously named
+`Friday.docx`). Its SMOTE/balancing instructions describe the original approach, not
+the corrected pipeline. Use `ML_ENGINE.md` and the saved reports for current ML
+behavior and measured results.
