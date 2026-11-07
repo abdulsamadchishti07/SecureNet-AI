@@ -1,4 +1,4 @@
-"""Clean Friday flows and reserve grouped, unresampled holdouts.
+"""Clean weekday flows and reserve grouped, unresampled holdouts.
 
 This stage never fits a scaler or balances classes. Training owns those steps.
 """
@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedGroupKFold
 
+from ml_engine.datasets import get_dataset, dataset_argument
+
 
 SELECTED_COLUMNS = [
     "Src Port", "Dst Port", "Protocol", "Flow Duration",
@@ -23,7 +25,7 @@ SELECTED_COLUMNS = [
     "Average Packet Size",
 ]
 LABEL_COLUMN = "Label"
-CLASSES = ("BENIGN", "BOTNET", "DDOS", "PORTSCAN")
+CLASSES = get_dataset("friday").classes
 METADATA_COLUMNS = ["Src IP dec", "Dst IP dec"]
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 RAW_CSV = os.path.join(PROJECT_ROOT, "dataset", "raw", "friday.csv")
@@ -46,14 +48,16 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def clean_data(raw):
+def clean_data(raw, dataset="friday", config=None):
     """Remove invalid rows, identical inputs and conflicting labels."""
+    config = config or get_dataset(dataset)
+    dataset = config.name
     df = raw.copy()
     df.columns = df.columns.str.strip()
     required = SELECTED_COLUMNS + [LABEL_COLUMN] + METADATA_COLUMNS
     missing = sorted(set(required) - set(df.columns))
     if missing:
-        raise ValueError(f"Missing Friday columns: {missing}")
+        raise ValueError(f"Missing {dataset.title()} columns: {missing}")
     df = df[required].copy()
     df["_row_id"] = np.arange(len(df))
     audit = {"raw_rows": len(df)}
@@ -61,13 +65,17 @@ def clean_data(raw):
     headers = labels.eq("Label").fillna(False)
     audit["duplicate_header_rows"] = int(headers.sum())
     df = df.loc[~headers].copy()
-    df[LABEL_COLUMN] = labels.loc[~headers].replace({
-        "Botnet": "BOTNET", "Botnet - Attempted": "BOTNET",
-        "Portscan": "PORTSCAN", "DDoS": "DDOS",
-    })
-    unknown = set(df[LABEL_COLUMN].dropna()) - set(CLASSES)
+    df["_original_label"] = labels.loc[~headers]
+    audit["raw_label_counts"] = df["_original_label"].value_counts().sort_index().to_dict()
+    df[LABEL_COLUMN] = df["_original_label"].replace(config.label_mapping)
+    unknown = set(df[LABEL_COLUMN].dropna()) - set(config.classes) - set(config.excluded_labels)
     if unknown:
-        raise ValueError(f"Unexpected Friday labels (not silently discarded): {unknown}")
+        raise ValueError(f"Unexpected {dataset.title()} labels (not silently discarded): {unknown}")
+    excluded = df["_original_label"].isin(config.excluded_labels)
+    audit["excluded_label_counts"] = df.loc[excluded, "_original_label"].value_counts().sort_index().to_dict()
+    audit["excluded_rows"] = int(excluded.sum())
+    df = df.loc[~excluded].copy()
+    df["_attempted"] = df["_original_label"].str.contains("Attempted", regex=False).fillna(False)
     for column in SELECTED_COLUMNS + METADATA_COLUMNS:
         df[column] = pd.to_numeric(df[column], errors="coerce")
     invalid = (
@@ -84,8 +92,8 @@ def clean_data(raw):
     ambiguous = df.duplicated(SELECTED_COLUMNS, keep=False)
     audit["conflicting_label_rows_removed"] = int(ambiguous.sum())
     df = df.loc[~ambiguous].copy()
-    if df.empty or set(df[LABEL_COLUMN]) != set(CLASSES):
-        raise ValueError("Cleaning must leave examples of all four Friday classes")
+    if df.empty or set(df[LABEL_COLUMN]) != set(config.classes):
+        raise ValueError(f"Cleaning must leave examples of all {dataset.title()} classes")
     # Canonical endpoints keep reverse and repeated connections together.
     # IPs are split metadata only, never classifier features.
     source = df["Src IP dec"].astype("int64").astype(str) + ":" + df["Src Port"].astype("int64").astype(str)
@@ -98,10 +106,11 @@ def clean_data(raw):
     audit["clean_rows"] = len(df)
     audit["class_counts"] = df[LABEL_COLUMN].value_counts().sort_index().to_dict()
     audit["connection_groups"] = int(df["_group_id"].nunique())
+    audit["class_group_counts"] = df.groupby(LABEL_COLUMN)["_group_id"].nunique().sort_index().to_dict()
     return df, audit
 
 
-def split_data(df):
+def split_data(df, classes=CLASSES):
     """Approximately 60/20/20, stratified with disjoint connection groups."""
     outer = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
     remaining, test = next(outer.split(df, df[LABEL_COLUMN], df["_group_id"]))
@@ -117,7 +126,7 @@ def split_data(df):
     }
     seen_groups = set()
     for name, part in splits.items():
-        if set(part[LABEL_COLUMN]) != set(CLASSES):
+        if set(part[LABEL_COLUMN]) != set(classes):
             raise ValueError(f"{name} does not contain all classes; revisit grouping")
         groups = set(part["_group_id"])
         if groups & seen_groups:
@@ -126,18 +135,31 @@ def split_data(df):
     return splits
 
 
-def preprocess_data(raw_csv=RAW_CSV, processed_dir=None, reports_dir=REPORTS_DIR):
+def preprocess_data(raw_csv=None, processed_dir=None, reports_dir=None, dataset="friday"):
     """Persist raw-valued partitions without overwriting inference transforms."""
-    processed_dir = Path(processed_dir or Path(PROCESSED_CSV).parent)
+    config = get_dataset(dataset)
+    raw_csv = raw_csv or config.raw_csv
+    processed_dir = Path(processed_dir or config.processed_dir)
+    reports_dir = Path(reports_dir or config.reports_dir)
+    if (
+        dataset != "friday"
+        and processed_dir.resolve() == config.processed_dir.resolve()
+        and config.models_dir.exists()
+        and any(config.models_dir.iterdir())
+    ):
+        raise FileExistsError(f"Archive the existing {dataset} run and reports before reprocessing")
     processed_dir.mkdir(parents=True, exist_ok=True)
     raw = pd.read_csv(raw_csv, usecols=lambda c: c.strip() in (
         SELECTED_COLUMNS + METADATA_COLUMNS + [LABEL_COLUMN]
     ), low_memory=False)
-    df, audit = clean_data(raw)
+    df, audit = clean_data(raw, dataset=dataset)
     print(f"Cleaned {len(df):,} flows; splitting connection groups ...", flush=True)
-    splits = split_data(df)
+    splits = split_data(df, classes=config.classes)
     audit.update({
+        "dataset": dataset,
         "schema_version": SCHEMA_VERSION,
+        "label_mapping": config.label_mapping,
+        "excluded_label_policy": list(config.excluded_labels),
         "source_sha256": sha256_file(raw_csv),
         "feature_names": SELECTED_COLUMNS,
         "random_state": RANDOM_STATE,
@@ -146,16 +168,19 @@ def preprocess_data(raw_csv=RAW_CSV, processed_dir=None, reports_dir=REPORTS_DIR
             "Not an independent-host or chronological evaluation.",
             "Timestamp values lack full date/hour information; no temporal split used.",
             "Related attack campaigns can remain across connection groups.",
+            "Attack-family labels include attempted traffic; they do not establish successful compromise.",
         ],
         "splits": {name: {
             "rows": len(part),
             "class_counts": part[LABEL_COLUMN].value_counts().sort_index().to_dict(),
             "groups": int(part["_group_id"].nunique()),
+            "class_group_counts": part.groupby(LABEL_COLUMN)["_group_id"].nunique().sort_index().to_dict(),
+            "original_label_counts": part["_original_label"].value_counts().sort_index().to_dict(),
         } for name, part in splits.items()},
     })
-    payload = {"schema_version": SCHEMA_VERSION, "audit": audit, "splits": splits}
-    df[SELECTED_COLUMNS + [LABEL_COLUMN]].to_csv(processed_dir / "cleaned_friday.csv", index=False)
-    joblib.dump(payload, processed_dir / "friday_splits.pkl")
+    payload = {"schema_version": SCHEMA_VERSION, "dataset": dataset, "audit": audit, "splits": splits}
+    df[SELECTED_COLUMNS + [LABEL_COLUMN]].to_csv(processed_dir / f"cleaned_{dataset}.csv", index=False)
+    joblib.dump(payload, processed_dir / f"{dataset}_splits.pkl")
     Path(reports_dir).mkdir(parents=True, exist_ok=True)
     (Path(reports_dir) / "data_audit.json").write_text(json.dumps(audit, indent=2) + "\n")
     print(json.dumps(audit, indent=2), flush=True)
@@ -164,4 +189,4 @@ def preprocess_data(raw_csv=RAW_CSV, processed_dir=None, reports_dir=REPORTS_DIR
 
 
 if __name__ == "__main__":
-    preprocess_data()
+    preprocess_data(dataset=dataset_argument(__doc__))
