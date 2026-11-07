@@ -6,6 +6,7 @@
 
 import argparse
 import json
+import sys
 import time
 
 from sniffer.capture import start_capture
@@ -48,11 +49,16 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     if args.predict:
-        from ml_engine.predictor import predict
+        from ml_engine.predictor import _load_model, predict
+        _load_model()  # validate bundle upfront so per-flow ValueError only catches input errors
 
     def on_flow(features):
         if args.predict:
-            features = {**features, **predict(features)}
+            try:
+                features = {**features, **predict(features)}
+            except ValueError as exc:
+                print(f"Dropped invalid flow: {exc}", file=sys.stderr)
+                return
         print(json.dumps(features), flush=True)
 
     run(start_capture(args.iface, args.pcap, args.filter), on_flow, args.termination_grace)
