@@ -1,0 +1,2 @@
+# Placeholder to keep the directory in git.
+# Trained models, scalers, and encoders will be saved here (e.g., ids_model.pkl, scaler.pkl, label_encoder.pkl).

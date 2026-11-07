@@ -1,0 +1,41 @@
+# Environment & Secrets
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Datasets (large files > 100MB)
+dataset/raw/*.csv
+dataset/processed/*.csv
+*.csv
+
+# Model weights, pickles, and large serialization dumps
+ml_engine/models/*.pkl
+ml_engine/models/*.joblib
+ml_engine/models/*.h5
+ml_engine/models/*.onnx
+*.pkl
+
+# Keep folder structures
+!**/models/.gitkeep
+!**/dataset/**/.gitkeep
+
+# Logs and runtime files
+*.log
+*.pcap
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
