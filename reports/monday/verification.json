@@ -1,0 +1,23 @@
+{
+  "source_rows_match": true,
+  "source_checksum_matches": true,
+  "only_benign_labels": true,
+  "duplicate_feature_rows": 0,
+  "clean_reference_rows": 369597,
+  "common_cohort_rows": 189279,
+  "recomputed_all_previous_partition_overlap": true,
+  "no_prior_input_or_connection_hash_overlap_in_common_cohort": true,
+  "cohort_checksum_matches": true,
+  "false_positive_counts_and_denominators_verified": true,
+  "saved_api_predictions_checked_per_model": {
+    "friday": 30,
+    "thursday": 30,
+    "wednesday": 30,
+    "tuesday": 30
+  },
+  "previous_files_verified_unchanged": 74,
+  "monday_classifier_created": false,
+  "model_or_scaler_fitted_on_monday": false,
+  "reference_code_checksums_match": true,
+  "regression_tests_passed": 23
+}
