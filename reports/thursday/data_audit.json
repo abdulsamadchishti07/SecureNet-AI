@@ -1,0 +1,160 @@
+{
+  "raw_rows": 362075,
+  "duplicate_header_rows": 0,
+  "raw_label_counts": {
+    "BENIGN": 288171,
+    "Infiltration": 36,
+    "Infiltration - Attempted": 45,
+    "Infiltration - Portscan": 71767,
+    "Web Attack - Brute Force": 73,
+    "Web Attack - Brute Force - Attempted": 1292,
+    "Web Attack - SQL Injection": 13,
+    "Web Attack - SQL Injection - Attempted": 5,
+    "Web Attack - XSS": 18,
+    "Web Attack - XSS - Attempted": 655
+  },
+  "excluded_label_counts": {
+    "Infiltration": 36,
+    "Infiltration - Attempted": 45,
+    "Web Attack - SQL Injection": 13,
+    "Web Attack - SQL Injection - Attempted": 5
+  },
+  "excluded_rows": 99,
+  "invalid_rows": 0,
+  "same_label_duplicates_removed": 5191,
+  "conflicting_label_rows_removed": 4,
+  "clean_rows": 356781,
+  "class_counts": {
+    "BENIGN": 286134,
+    "PORTSCAN": 68609,
+    "WEB_BRUTE_FORCE": 1365,
+    "WEB_XSS": 673
+  },
+  "connection_groups": 258451,
+  "class_group_counts": {
+    "BENIGN": 191882,
+    "PORTSCAN": 64742,
+    "WEB_BRUTE_FORCE": 1363,
+    "WEB_XSS": 673
+  },
+  "dataset": "thursday",
+  "schema_version": 2,
+  "label_mapping": {
+    "Infiltration - Portscan": "PORTSCAN",
+    "Web Attack - Brute Force": "WEB_BRUTE_FORCE",
+    "Web Attack - Brute Force - Attempted": "WEB_BRUTE_FORCE",
+    "Web Attack - XSS": "WEB_XSS",
+    "Web Attack - XSS - Attempted": "WEB_XSS"
+  },
+  "excluded_label_policy": [
+    "Infiltration",
+    "Infiltration - Attempted",
+    "Web Attack - SQL Injection",
+    "Web Attack - SQL Injection - Attempted"
+  ],
+  "source_sha256": "e3cac669f495df33da7ae1e8fcc06ed511d3161b97a7ba9263f2d476cf467a0e",
+  "feature_names": [
+    "Src Port",
+    "Dst Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Min",
+    "Packet Length Max",
+    "Packet Length Mean",
+    "FIN Flag Count",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "PSH Flag Count",
+    "ACK Flag Count",
+    "Average Packet Size"
+  ],
+  "random_state": 42,
+  "split_method": "stratified connection groups, approximately 60/20/20",
+  "limitations": [
+    "Not an independent-host or chronological evaluation.",
+    "Timestamp values lack full date/hour information; no temporal split used.",
+    "Related attack campaigns can remain across connection groups.",
+    "Attack-family labels include attempted traffic; they do not establish successful compromise."
+  ],
+  "splits": {
+    "train": {
+      "rows": 214068,
+      "class_counts": {
+        "BENIGN": 171680,
+        "PORTSCAN": 41165,
+        "WEB_BRUTE_FORCE": 819,
+        "WEB_XSS": 404
+      },
+      "groups": 155073,
+      "class_group_counts": {
+        "BENIGN": 115132,
+        "PORTSCAN": 38843,
+        "WEB_BRUTE_FORCE": 819,
+        "WEB_XSS": 404
+      },
+      "original_label_counts": {
+        "BENIGN": 171680,
+        "Infiltration - Portscan": 41165,
+        "Web Attack - Brute Force": 46,
+        "Web Attack - Brute Force - Attempted": 773,
+        "Web Attack - XSS": 11,
+        "Web Attack - XSS - Attempted": 393
+      }
+    },
+    "validation": {
+      "rows": 71357,
+      "class_counts": {
+        "BENIGN": 57227,
+        "PORTSCAN": 13722,
+        "WEB_BRUTE_FORCE": 273,
+        "WEB_XSS": 135
+      },
+      "groups": 51690,
+      "class_group_counts": {
+        "BENIGN": 38375,
+        "PORTSCAN": 12949,
+        "WEB_BRUTE_FORCE": 272,
+        "WEB_XSS": 135
+      },
+      "original_label_counts": {
+        "BENIGN": 57227,
+        "Infiltration - Portscan": 13722,
+        "Web Attack - Brute Force": 13,
+        "Web Attack - Brute Force - Attempted": 260,
+        "Web Attack - XSS": 3,
+        "Web Attack - XSS - Attempted": 132
+      }
+    },
+    "test": {
+      "rows": 71356,
+      "class_counts": {
+        "BENIGN": 57227,
+        "PORTSCAN": 13722,
+        "WEB_BRUTE_FORCE": 273,
+        "WEB_XSS": 134
+      },
+      "groups": 51688,
+      "class_group_counts": {
+        "BENIGN": 38375,
+        "PORTSCAN": 12950,
+        "WEB_BRUTE_FORCE": 272,
+        "WEB_XSS": 134
+      },
+      "original_label_counts": {
+        "BENIGN": 57227,
+        "Infiltration - Portscan": 13722,
+        "Web Attack - Brute Force": 14,
+        "Web Attack - Brute Force - Attempted": 259,
+        "Web Attack - XSS": 4,
+        "Web Attack - XSS - Attempted": 130
+      }
+    }
+  }
+}
