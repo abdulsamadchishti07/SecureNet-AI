@@ -41,8 +41,8 @@ def test_missing_features_are_rejected_before_loading(dataset_case, forbid_model
         predictor.predict({}, dataset=dataset_case.name)
 
 
-@pytest.mark.parametrize("bad_value", [np.nan, np.inf, -1, "invalid", [1, 2]],
-                         ids=["nan", "infinity", "negative", "text", "nonscalar"])
+@pytest.mark.parametrize("bad_value", [np.nan, np.inf, -1, "invalid", [1, 2], "1", True],
+                         ids=["nan", "infinity", "negative", "text", "nonscalar", "numeric-string", "boolean"])
 def test_invalid_values_are_rejected_before_loading(dataset_case, valid_features, bad_value, forbid_model_loading):
     valid_features["Flow Duration"] = bad_value
     with pytest.raises(ValueError):
