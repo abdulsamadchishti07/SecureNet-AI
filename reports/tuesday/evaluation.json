@@ -1,0 +1,117 @@
+{
+  "dataset": "tuesday",
+  "selected_model": "random_forest",
+  "selection": "validation macro F1 (test set not used for selection)",
+  "test_rows": 63984,
+  "test_class_counts": {
+    "BENIGN": 62589,
+    "FTP_BRUTE_FORCE": 797,
+    "SSH_BRUTE_FORCE": 598
+  },
+  "limitations": [
+    "Not an independent-host or chronological evaluation.",
+    "Timestamp values lack full date/hour information; no temporal split used.",
+    "Related attack campaigns can remain across connection groups.",
+    "Attack-family labels include attempted traffic; they do not establish successful compromise."
+  ],
+  "accuracy": 0.9999843710927732,
+  "macro_f1": 0.9997183971186455,
+  "benign_false_positive_rate": 0.0,
+  "classification_report": {
+    "BENIGN": {
+      "precision": 0.9999840230068701,
+      "recall": 1.0,
+      "f1-score": 0.9999920114396185,
+      "support": 62589.0
+    },
+    "FTP_BRUTE_FORCE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 797.0
+    },
+    "SSH_BRUTE_FORCE": {
+      "precision": 1.0,
+      "recall": 0.9983277591973244,
+      "f1-score": 0.999163179916318,
+      "support": 598.0
+    },
+    "accuracy": 0.9999843710927732,
+    "macro avg": {
+      "precision": 0.9999946743356234,
+      "recall": 0.9994425863991081,
+      "f1-score": 0.9997183971186455,
+      "support": 63984.0
+    },
+    "weighted avg": {
+      "precision": 0.9999843713424761,
+      "recall": 0.9999843710927732,
+      "f1-score": 0.9999843646159078,
+      "support": 63984.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      62589,
+      0,
+      0
+    ],
+    [
+      0,
+      797,
+      0
+    ],
+    [
+      1,
+      0,
+      597
+    ]
+  ],
+  "original_label_results": {
+    "BENIGN": {
+      "support": 62589,
+      "family_accuracy": 1.0,
+      "predicted_label_counts": {
+        "BENIGN": 62589,
+        "FTP_BRUTE_FORCE": 0,
+        "SSH_BRUTE_FORCE": 0
+      }
+    },
+    "FTP-Patator": {
+      "support": 794,
+      "family_accuracy": 1.0,
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "FTP_BRUTE_FORCE": 794,
+        "SSH_BRUTE_FORCE": 0
+      }
+    },
+    "FTP-Patator - Attempted": {
+      "support": 3,
+      "family_accuracy": 1.0,
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "FTP_BRUTE_FORCE": 3,
+        "SSH_BRUTE_FORCE": 0
+      }
+    },
+    "SSH-Patator": {
+      "support": 592,
+      "family_accuracy": 0.9983108108108109,
+      "predicted_label_counts": {
+        "BENIGN": 1,
+        "FTP_BRUTE_FORCE": 0,
+        "SSH_BRUTE_FORCE": 591
+      }
+    },
+    "SSH-Patator - Attempted": {
+      "support": 6,
+      "family_accuracy": 1.0,
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "FTP_BRUTE_FORCE": 0,
+        "SSH_BRUTE_FORCE": 6
+      }
+    }
+  }
+}
