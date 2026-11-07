@@ -1,7 +1,7 @@
 """Group IPv4 packets into bidirectional flows and compute the 20 Friday model features.
 
-Mirrors the flow rules of the DistriNet-fixed CICFlowMeter (github.com/GintsEngelen/CICFlowMeter)
-that generated the local Friday CSV, checked against that CSV:
+Implements a CICFlowMeter-style interpretation of the local CSV fields. The exact
+generating exporter and source-capture parity remain unverified. Current rules:
 - timestamps and Flow Duration in microseconds; flows split 120 s after their first packet;
 - packet lengths are transport payload bytes (Ethernet padding excluded), ICMP/other = 0;
 - direction = first packet's sender, except a leading SYN-ACK; timeout splits keep direction;
@@ -21,21 +21,21 @@ Packet = namedtuple("Packet", "ts src sport dst dport proto length flags icmp")
 
 
 def parse(pkt):
-    """Scapy packet -> Packet, or None for non-IPv4 traffic."""
+    """Scapy packet -> Packet, or None for non-IPv4 or fragmented traffic."""
     ip = pkt.getlayer(IP)
-    if ip is None:
+    if ip is None or ip.frag or ip.flags.MF:
         return None
-    l4, header = ip.payload, ip.ihl * 4
+    l4, header = ip.payload, (ip.ihl or 5) * 4
     sport = dport = flags = 0
     length, icmp = 0, None
     if isinstance(l4, ICMP):
         proto, icmp = 1, (l4.type, l4.code)
     elif isinstance(l4, TCP):
         proto, sport, dport, flags = 6, l4.sport, l4.dport, int(l4.flags)
-        length = max(ip.len - header - l4.dataofs * 4, 0)
+        length = max((ip.len or len(ip)) - header - (l4.dataofs or 5) * 4, 0)
     elif isinstance(l4, UDP):
         proto, sport, dport = 17, l4.sport, l4.dport
-        length = max(ip.len - header - 8, 0)
+        length = max((ip.len or len(ip)) - header - 8, 0)
     else:
         proto = 0  # CICFlowMeter's value for unsupported protocols
     return Packet(round(pkt.time * 1_000_000), ip.src, sport, ip.dst, dport, proto, length, flags, icmp)
@@ -44,7 +44,7 @@ def parse(pkt):
 class Flow:
     def __init__(self, src, sport, dst, dport, p):
         self.src, self.sport, self.dst, self.dport, self.proto = src, sport, dst, dport, p.proto
-        self.start = p.ts
+        self.start = self.last = p.ts
         self.icmp = p.icmp
         self.fwd = self.bwd = self.fwd_fin = self.bwd_fin = self.bytes = 0
         self.min_len = self.max_len = p.length
@@ -54,7 +54,7 @@ class Flow:
         self.add(p)
 
     def add(self, p):
-        forward = p.src == self.src  # CICFlowMeter compares IPs only
+        forward = (p.src, p.sport) == (self.src, self.sport)
         self.fwd += forward
         self.bwd += not forward
         self.bytes += p.length
@@ -64,7 +64,7 @@ class Flow:
         if p.flags & FIN:
             self.fwd_fin += forward
             self.bwd_fin += not forward
-        self.last = p.ts
+        self.last = max(self.last, p.ts)
 
     def features(self):
         """Model input plus IP metadata, or None for flows the dataset never contains."""
