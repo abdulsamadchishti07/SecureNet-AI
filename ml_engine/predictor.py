@@ -7,30 +7,43 @@ import joblib
 import numpy as np
 
 from ml_engine.preprocess import SELECTED_COLUMNS, MODELS_DIR, SCHEMA_VERSION
+from ml_engine.datasets import get_dataset
 
 BUNDLE_PATH = os.path.join(MODELS_DIR, "inference_bundle.pkl")
 _bundle = None
+_weekday_bundles = {}
 
 
-def _load_model():
+def _load_model(dataset="friday"):
     """Publish cached state only after all bundle components are validated."""
     global _bundle
-    if _bundle is None:
-        if not os.path.exists(BUNDLE_PATH):
+    config = get_dataset(dataset)
+    cached = _bundle if dataset == "friday" else _weekday_bundles.get(dataset)
+    if cached is None:
+        bundle_path = BUNDLE_PATH if dataset == "friday" else config.models_dir / "inference_bundle.pkl"
+        if not os.path.exists(bundle_path):
             raise FileNotFoundError(
-                "Corrected Friday model missing. Run preprocessing and training first."
+                f"{dataset.title()} model missing. Run preprocessing and training first."
             )
-        bundle = joblib.load(BUNDLE_PATH)
+        bundle = joblib.load(bundle_path)
         metadata = bundle["metadata"]
+        if metadata.get("dataset", "friday") != dataset:
+            raise ValueError("Bundle dataset does not match requested inference dataset")
         if metadata["schema_version"] != SCHEMA_VERSION or metadata["feature_names"] != SELECTED_COLUMNS:
-            raise ValueError("Incompatible Friday inference schema")
+            raise ValueError("Incompatible inference schema")
         for name in ("model", "scaler"):
             if bundle[name].n_features_in_ != len(SELECTED_COLUMNS):
                 raise ValueError(f"Incompatible {name} feature count")
         if list(bundle["label_encoder"].classes_) != metadata["classes"]:
             raise ValueError("Label encoder does not match bundle metadata")
-        _bundle = bundle
-    return _bundle
+        if set(metadata["classes"]) != set(config.classes):
+            raise ValueError("Bundle classes do not match requested dataset")
+        if dataset == "friday":
+            _bundle = bundle
+        else:
+            _weekday_bundles[dataset] = bundle
+        cached = bundle
+    return cached
 
 
 def _feature_matrix(features_list):
@@ -53,13 +66,14 @@ def _feature_matrix(features_list):
     return matrix
 
 
-def predict_batch(features_list):
+def predict_batch(features_list, dataset="friday"):
     """Return predictions in input order; an empty batch returns an empty list."""
+    get_dataset(dataset)
     features_list = list(features_list)
     if not features_list:
         return []
     matrix = _feature_matrix(features_list)
-    bundle = _load_model()
+    bundle = _load_model(dataset)
     model, scaler, encoder = bundle["model"], bundle["scaler"], bundle["label_encoder"]
     scaled = scaler.transform(matrix)
     predictions = model.predict(scaled)
@@ -77,6 +91,6 @@ def predict_batch(features_list):
     return results
 
 
-def predict(features):
+def predict(features, dataset="friday"):
     """Classify one flow containing all 20 raw-valued selected features."""
-    return predict_batch([features])[0]
+    return predict_batch([features], dataset=dataset)[0]
