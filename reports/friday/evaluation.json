@@ -1,0 +1,84 @@
+{
+  "selected_model": "xgboost",
+  "selection": "validation macro F1 (test set not used for selection)",
+  "test_rows": 109094,
+  "test_class_counts": {
+    "BENIGN": 57296,
+    "BOTNET": 959,
+    "DDOS": 19029,
+    "PORTSCAN": 31810
+  },
+  "limitations": [
+    "Not an independent-host or chronological evaluation.",
+    "Timestamp values lack full date/hour information; no temporal split used.",
+    "Related attack campaigns can remain across connection groups."
+  ],
+  "accuracy": 0.9998900031165784,
+  "macro_f1": 0.999926666204674,
+  "benign_false_positive_rate": 0.00012217257749232057,
+  "classification_report": {
+    "BENIGN": {
+      "precision": 0.9999127308269626,
+      "recall": 0.9998778274225076,
+      "f1-score": 0.9998952788201414,
+      "support": 57296.0
+    },
+    "BOTNET": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 959.0
+    },
+    "DDOS": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 19029.0
+    },
+    "PORTSCAN": {
+      "precision": 0.999779957248837,
+      "recall": 0.9998428167243005,
+      "f1-score": 0.999811385998554,
+      "support": 31810.0
+    },
+    "accuracy": 0.9998900031165784,
+    "macro avg": {
+      "precision": 0.9999231720189499,
+      "recall": 0.999930161036702,
+      "f1-score": 0.999926666204674,
+      "support": 109094.0
+    },
+    "weighted avg": {
+      "precision": 0.9998900055506917,
+      "recall": 0.9998900031165784,
+      "f1-score": 0.9998900038855743,
+      "support": 109094.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      57289,
+      0,
+      0,
+      7
+    ],
+    [
+      0,
+      959,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      19029,
+      0
+    ],
+    [
+      5,
+      0,
+      0,
+      31805
+    ]
+  ]
+}

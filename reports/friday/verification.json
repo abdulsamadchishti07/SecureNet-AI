@@ -1,0 +1,31 @@
+{
+  "pairwise_overlap": {
+    "train/validation": {
+      "shared_row_ids": 0,
+      "shared_connection_groups": 0,
+      "shared_feature_hashes": 0
+    },
+    "train/test": {
+      "shared_row_ids": 0,
+      "shared_connection_groups": 0,
+      "shared_feature_hashes": 0
+    },
+    "validation/test": {
+      "shared_row_ids": 0,
+      "shared_connection_groups": 0,
+      "shared_feature_hashes": 0
+    }
+  },
+  "unique_original_rows": 545471,
+  "duplicate_feature_rows": 0,
+  "source_checksum_matches": true,
+  "legacy_artifacts_unchanged": true,
+  "scaler_fit_rows": 327283,
+  "scaler_matches_training_mean_and_variance": true,
+  "active_predictor_model": "xgboost",
+  "inference_flows_checked": 40,
+  "batch_single_and_bundle_predictions_match": true,
+  "missing_features_rejected": true,
+  "empty_batch_supported": true,
+  "regression_tests_passed": 5
+}

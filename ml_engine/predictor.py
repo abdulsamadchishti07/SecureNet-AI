@@ -1,152 +1,82 @@
-"""
-Real-time prediction using the trained Random Forest model.
-
-Loads the primary model (Random Forest) and scaler once,
-then exposes a predict() function for the sniffer pipeline.
-"""
+"""Classify flows with the validation-selected model and its matching transforms."""
 
 import os
-import numpy as np
+from collections.abc import Mapping
+
 import joblib
+import numpy as np
 
-from ml_engine.preprocess import (
-    SELECTED_COLUMNS,
-    MODELS_DIR,
-    SCALER_PATH,
-    LABEL_ENCODER_PATH,
-)
-from ml_engine.train import RF_MODEL_PATH
+from ml_engine.preprocess import SELECTED_COLUMNS, MODELS_DIR, SCHEMA_VERSION
 
-
-# ---------------------------------------------------------------------------
-# Lazy-loaded globals — initialized on first predict() call
-# ---------------------------------------------------------------------------
-_model = None
-_scaler = None
-_label_encoder = None
+BUNDLE_PATH = os.path.join(MODELS_DIR, "inference_bundle.pkl")
+_bundle = None
 
 
 def _load_model():
-    """Load the trained model, scaler, and label encoder into memory."""
-    global _model, _scaler, _label_encoder
+    """Publish cached state only after all bundle components are validated."""
+    global _bundle
+    if _bundle is None:
+        if not os.path.exists(BUNDLE_PATH):
+            raise FileNotFoundError(
+                "Corrected Friday model missing. Run preprocessing and training first."
+            )
+        bundle = joblib.load(BUNDLE_PATH)
+        metadata = bundle["metadata"]
+        if metadata["schema_version"] != SCHEMA_VERSION or metadata["feature_names"] != SELECTED_COLUMNS:
+            raise ValueError("Incompatible Friday inference schema")
+        for name in ("model", "scaler"):
+            if bundle[name].n_features_in_ != len(SELECTED_COLUMNS):
+                raise ValueError(f"Incompatible {name} feature count")
+        if list(bundle["label_encoder"].classes_) != metadata["classes"]:
+            raise ValueError("Label encoder does not match bundle metadata")
+        _bundle = bundle
+    return _bundle
 
-    if _model is not None:
-        return  # Already loaded
 
-    if not os.path.exists(RF_MODEL_PATH):
-        raise FileNotFoundError(
-            f"Trained model not found at {RF_MODEL_PATH}. "
-            "Run train.py first!"
-        )
-
-    _model = joblib.load(RF_MODEL_PATH)
-    _scaler = joblib.load(SCALER_PATH)
-    _label_encoder = joblib.load(LABEL_ENCODER_PATH)
-
-
-def predict(features):
-    """
-    Classify a single network flow.
-
-    Parameters
-    ----------
-    features : dict
-        Dictionary with the 20 selected feature names as keys.
-        Example:
-            {
-                "Src Port": 443,
-                "Dst Port": 52341,
-                "Protocol": 6,
-                "Flow Duration": 120000,
-                ...
-            }
-
-    Returns
-    -------
-    dict
-        {
-            "label": str,         # e.g. "DDOS", "BENIGN", "PORTSCAN", "BOTNET"
-            "confidence": float,  # probability of predicted class (0.0 - 1.0)
-            "probabilities": dict # per-class probabilities
-        }
-    """
-    _load_model()
-    assert _scaler is not None
-    assert _model is not None
-    assert _label_encoder is not None
-
-    # Build feature vector in the correct column order
-    feature_vector = np.array(
-        [features.get(col, 0) for col in SELECTED_COLUMNS]
-    ).reshape(1, -1)
-
-    # Scale features using the same scaler from preprocessing
-    feature_scaled = _scaler.transform(feature_vector)
-
-    # Predict
-    prediction_encoded = _model.predict(feature_scaled)[0]
-    probabilities = _model.predict_proba(feature_scaled)[0]
-
-    # Decode label
-    predicted_label = _label_encoder.inverse_transform([prediction_encoded])[0]
-    confidence = float(np.max(probabilities))
-
-    # Build per-class probability dict
-    prob_dict = {
-        _label_encoder.inverse_transform([i])[0]: float(p)
-        for i, p in enumerate(probabilities)
-    }
-
-    return {
-        "label": predicted_label,
-        "confidence": confidence,
-        "probabilities": prob_dict,
-    }
+def _feature_matrix(features_list):
+    rows = []
+    for index, features in enumerate(features_list):
+        if not isinstance(features, Mapping):
+            raise ValueError(f"Flow {index} must be a feature mapping")
+        missing = [column for column in SELECTED_COLUMNS if column not in features]
+        if missing:
+            raise ValueError(f"Flow {index} missing required features: {missing}")
+        rows.append([features[column] for column in SELECTED_COLUMNS])
+    try:
+        matrix = np.asarray(rows, dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Flow features must be numeric") from exc
+    if matrix.shape != (len(rows), len(SELECTED_COLUMNS)) or not np.isfinite(matrix).all():
+        raise ValueError("Flow features must be finite numeric scalars")
+    if (matrix < 0).any():
+        raise ValueError("Flow features must be nonnegative")
+    return matrix
 
 
 def predict_batch(features_list):
-    """
-    Classify multiple network flows at once.
-
-    Parameters
-    ----------
-    features_list : list[dict]
-        List of feature dictionaries (same format as predict()).
-
-    Returns
-    -------
-    list[dict]
-        List of prediction results.
-    """
-    _load_model()
-    assert _scaler is not None
-    assert _model is not None
-    assert _label_encoder is not None
-
-    # Build feature matrix
-    X = np.array([
-        [f.get(col, 0) for col in SELECTED_COLUMNS]
-        for f in features_list
-    ])
-
-    # Scale
-    X_scaled = _scaler.transform(X)
-
-    # Predict
-    predictions = _model.predict(X_scaled)
-    probabilities = _model.predict_proba(X_scaled)
-
+    """Return predictions in input order; an empty batch returns an empty list."""
+    features_list = list(features_list)
+    if not features_list:
+        return []
+    matrix = _feature_matrix(features_list)
+    bundle = _load_model()
+    model, scaler, encoder = bundle["model"], bundle["scaler"], bundle["label_encoder"]
+    scaled = scaler.transform(matrix)
+    predictions = model.predict(scaled)
+    probabilities = model.predict_proba(scaled)
+    class_names = encoder.inverse_transform(model.classes_.astype(int))
     results = []
-    for pred, probs in zip(predictions, probabilities):
-        label = _label_encoder.inverse_transform([pred])[0]
-        prob_dict = {
-            _label_encoder.inverse_transform([i])[0]: float(p)
-            for i, p in enumerate(probs)
-        }
+    for prediction, row in zip(predictions, probabilities):
+        label = str(encoder.inverse_transform([int(prediction)])[0])
+        probability_map = {str(name): float(p) for name, p in zip(class_names, row)}
         results.append({
             "label": label,
-            "confidence": float(np.max(probs)),
-            "probabilities": prob_dict,
+            "confidence": probability_map[label],
+            "probabilities": probability_map,
         })
-
     return results
+
+
+def predict(features):
+    """Classify one flow containing all 20 raw-valued selected features."""
+    return predict_batch([features])[0]

@@ -1,0 +1,337 @@
+{
+  "schema_version": 2,
+  "selected_model": "xgboost",
+  "selection_metric": "validation macro F1 (test set not used for selection)",
+  "balancing": "training-only balanced class weights; no resampling or synthetic rows",
+  "feature_names": [
+    "Src Port",
+    "Dst Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Min",
+    "Packet Length Max",
+    "Packet Length Mean",
+    "FIN Flag Count",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "PSH Flag Count",
+    "ACK Flag Count",
+    "Average Packet Size"
+  ],
+  "classes": [
+    "BENIGN",
+    "BOTNET",
+    "DDOS",
+    "PORTSCAN"
+  ],
+  "scaler_fit_rows": 327283,
+  "data_audit": {
+    "raw_rows": 547557,
+    "duplicate_header_rows": 0,
+    "invalid_rows": 0,
+    "same_label_duplicates_removed": 2086,
+    "conflicting_label_rows_removed": 0,
+    "clean_rows": 545471,
+    "class_counts": {
+      "BENIGN": 286484,
+      "BOTNET": 4793,
+      "DDOS": 95144,
+      "PORTSCAN": 159050
+    },
+    "connection_groups": 396263,
+    "schema_version": 2,
+    "source_sha256": "e16fa2655766ed685fe3e43455d7e4024a81f8a1965c1eabf56e53dc9f07fb6b",
+    "feature_names": [
+      "Src Port",
+      "Dst Port",
+      "Protocol",
+      "Flow Duration",
+      "Total Fwd Packet",
+      "Total Bwd packets",
+      "Flow Bytes/s",
+      "Flow Packets/s",
+      "Flow IAT Mean",
+      "Fwd Packets/s",
+      "Bwd Packets/s",
+      "Packet Length Min",
+      "Packet Length Max",
+      "Packet Length Mean",
+      "FIN Flag Count",
+      "SYN Flag Count",
+      "RST Flag Count",
+      "PSH Flag Count",
+      "ACK Flag Count",
+      "Average Packet Size"
+    ],
+    "random_state": 42,
+    "split_method": "stratified connection groups, approximately 60/20/20",
+    "limitations": [
+      "Not an independent-host or chronological evaluation.",
+      "Timestamp values lack full date/hour information; no temporal split used.",
+      "Related attack campaigns can remain across connection groups."
+    ],
+    "splits": {
+      "train": {
+        "rows": 327283,
+        "class_counts": {
+          "BENIGN": 171891,
+          "BOTNET": 2876,
+          "DDOS": 57086,
+          "PORTSCAN": 95430
+        },
+        "groups": 237756
+      },
+      "validation": {
+        "rows": 109094,
+        "class_counts": {
+          "BENIGN": 57297,
+          "BOTNET": 958,
+          "DDOS": 19029,
+          "PORTSCAN": 31810
+        },
+        "groups": 79253
+      },
+      "test": {
+        "rows": 109094,
+        "class_counts": {
+          "BENIGN": 57296,
+          "BOTNET": 959,
+          "DDOS": 19029,
+          "PORTSCAN": 31810
+        },
+        "groups": 79254
+      }
+    }
+  },
+  "split_artifact_sha256": "c6d8022d9e7db2af26bd75e9712d259f611f3198da1cdfcfa98ac91de1bae28d",
+  "python": "3.14.9",
+  "dependencies": {
+    "numpy": "2.5.0",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.9.0",
+    "xgboost": "3.3.0",
+    "joblib": "1.5.3"
+  },
+  "code_sha256": {
+    "preprocess.py": "5f3b7e17eed4a01db46c981ae54ed77b4ebf6b2a1e2dc6fa19a7c7746af137cf",
+    "train.py": "1930a324d78d0e82fe33bb8b944ba195a2521c418ec202c5f900cea7f1d5ee98",
+    "predictor.py": "01fee8e01e50e5e82e0606af6ff2f106ffa1b5fc133a3d0ac265a67066491faa",
+    "evaluate.py": "8dc8d61feff1d71c90eff9240223d5d18b22020195e27d271bb3a9f6a742b061"
+  },
+  "model_parameters": {
+    "random_forest": {
+      "bootstrap": true,
+      "ccp_alpha": 0.0,
+      "class_weight": "balanced",
+      "criterion": "gini",
+      "max_depth": 25,
+      "max_features": "sqrt",
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 2,
+      "min_samples_split": 5,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 200,
+      "n_jobs": 4,
+      "oob_score": false,
+      "random_state": 42,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "xgboost": {
+      "objective": "multi:softprob",
+      "base_score": null,
+      "booster": null,
+      "callbacks": null,
+      "colsample_bylevel": null,
+      "colsample_bynode": null,
+      "colsample_bytree": 0.8,
+      "device": null,
+      "early_stopping_rounds": null,
+      "enable_categorical": true,
+      "eval_metric": "mlogloss",
+      "feature_types": null,
+      "feature_weights": null,
+      "gamma": null,
+      "grow_policy": null,
+      "importance_type": null,
+      "interaction_constraints": null,
+      "learning_rate": 0.1,
+      "max_bin": null,
+      "max_cat_threshold": null,
+      "max_cat_to_onehot": null,
+      "max_delta_step": null,
+      "max_depth": 10,
+      "max_leaves": null,
+      "min_child_weight": null,
+      "missing": "nan",
+      "monotone_constraints": null,
+      "multi_strategy": null,
+      "n_estimators": 200,
+      "n_jobs": 4,
+      "num_parallel_tree": null,
+      "random_state": 42,
+      "reg_alpha": null,
+      "reg_lambda": null,
+      "sampling_method": null,
+      "scale_pos_weight": null,
+      "subsample": 0.8,
+      "tree_method": null,
+      "validate_parameters": null,
+      "verbosity": null
+    }
+  },
+  "validation": {
+    "random_forest": {
+      "accuracy": 0.9997341741983977,
+      "macro_f1": 0.9992951899260862,
+      "benign_false_positive_rate": 0.000314152573433164,
+      "classification_report": {
+        "BENIGN": {
+          "precision": 0.9998952605394082,
+          "recall": 0.9996858474265669,
+          "f1-score": 0.9997905430172278,
+          "support": 57297.0
+        },
+        "BOTNET": {
+          "precision": 0.996875,
+          "recall": 0.9989561586638831,
+          "f1-score": 0.9979144942648592,
+          "support": 958.0
+        },
+        "DDOS": {
+          "precision": 0.9998423541776142,
+          "recall": 0.9998948972620737,
+          "f1-score": 0.9998686250295594,
+          "support": 19029.0
+        },
+        "PORTSCAN": {
+          "precision": 0.9994657280241365,
+          "recall": 0.9997485067588808,
+          "f1-score": 0.9996070973926983,
+          "support": 31810.0
+        },
+        "accuracy": 0.9997341741983977,
+        "macro avg": {
+          "precision": 0.9990195856852897,
+          "recall": 0.9995713525278511,
+          "f1-score": 0.9992951899260862,
+          "support": 109094.0
+        },
+        "weighted avg": {
+          "precision": 0.9997342654886618,
+          "recall": 0.9997341741983977,
+          "f1-score": 0.9997341986040759,
+          "support": 109094.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          57279,
+          0,
+          1,
+          17
+        ],
+        [
+          1,
+          957,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          19027,
+          0
+        ],
+        [
+          3,
+          3,
+          2,
+          31802
+        ]
+      ],
+      "training_seconds": 26.91949339200073
+    },
+    "xgboost": {
+      "accuracy": 0.9998258382679157,
+      "macro_f1": 0.9996249237091756,
+      "benign_false_positive_rate": 0.0001919821282091558,
+      "classification_report": {
+        "BENIGN": {
+          "precision": 0.9998952733365915,
+          "recall": 0.9998080178717909,
+          "f1-score": 0.9998516437005297,
+          "support": 57297.0
+        },
+        "BOTNET": {
+          "precision": 0.9979166666666667,
+          "recall": 1.0,
+          "f1-score": 0.9989572471324296,
+          "support": 958.0
+        },
+        "DDOS": {
+          "precision": 0.999947451392538,
+          "recall": 1.0,
+          "f1-score": 0.9999737250059119,
+          "support": 19029.0
+        },
+        "PORTSCAN": {
+          "precision": 0.9996856532126241,
+          "recall": 0.9997485067588808,
+          "f1-score": 0.9997170789978309,
+          "support": 31810.0
+        },
+        "accuracy": 0.9998258382679157,
+        "macro avg": {
+          "precision": 0.999361261152105,
+          "recall": 0.999889131157668,
+          "f1-score": 0.9996249237091756,
+          "support": 109094.0
+        },
+        "weighted avg": {
+          "precision": 0.9998258779059851,
+          "recall": 0.9998258382679157,
+          "f1-score": 0.9998258471402701,
+          "support": 109094.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          57286,
+          0,
+          1,
+          10
+        ],
+        [
+          0,
+          958,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          19029,
+          0
+        ],
+        [
+          6,
+          2,
+          0,
+          31802
+        ]
+      ],
+      "training_seconds": 9.444767173999935
+    }
+  }
+}

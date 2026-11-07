@@ -1,227 +1,166 @@
-"""
-Preprocess CICIDS2017 Friday dataset for ML training.
+"""Clean Friday flows and reserve grouped, unresampled holdouts.
 
-12-step pipeline:
-  1. Load friday.csv, keep only selected 20 feature columns + Label
-  2. Drop duplicate header rows (Label == "Label")
-  3. Merge Botnet + Botnet - Attempted → BOTNET
-  4. Drop rows with infinite values
-  5. Drop rows with null/missing values
-  6. Undersample BENIGN to 50,000 rows
-  7. Keep all Portscan rows
-  8. Keep all DDoS rows
-  9. Keep all BOTNET rows (~4,803)
-  10. Combine into one DataFrame
-  11. Apply SMOTE to balance BOTNET up to match others
-  12. Scale features with StandardScaler, save scaler + cleaned data
+This stage never fits a scaler or balances classes. Training owns those steps.
 """
 
+import hashlib
+import json
 import os
-import sys
+from pathlib import Path
+
+import joblib
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from imblearn.over_sampling import SMOTE
-import joblib
+from sklearn.model_selection import StratifiedGroupKFold
 
 
-# ---------------------------------------------------------------------------
-# Column selection — 20 features + Label (from the Friday.docx spec)
-# ---------------------------------------------------------------------------
 SELECTED_COLUMNS = [
-    "Src Port",              # Column 2
-    "Dst Port",              # Column 4
-    "Protocol",              # Column 5
-    "Flow Duration",         # Column 7
-    "Total Fwd Packet",      # Column 8
-    "Total Bwd packets",     # Column 9
-    "Flow Bytes/s",          # Column 20
-    "Flow Packets/s",        # Column 21
-    "Flow IAT Mean",         # Column 22
-    "Fwd Packets/s",         # Column 44
-    "Bwd Packets/s",         # Column 45
-    "Packet Length Min",     # Column 46
-    "Packet Length Max",     # Column 47
-    "Packet Length Mean",    # Column 48
-    "FIN Flag Count",        # Column 51
-    "SYN Flag Count",        # Column 52
-    "RST Flag Count",        # Column 53
-    "PSH Flag Count",        # Column 54
-    "ACK Flag Count",        # Column 55
-    "Average Packet Size",   # Column 60
+    "Src Port", "Dst Port", "Protocol", "Flow Duration",
+    "Total Fwd Packet", "Total Bwd packets", "Flow Bytes/s", "Flow Packets/s",
+    "Flow IAT Mean", "Fwd Packets/s", "Bwd Packets/s", "Packet Length Min",
+    "Packet Length Max", "Packet Length Mean", "FIN Flag Count",
+    "SYN Flag Count", "RST Flag Count", "PSH Flag Count", "ACK Flag Count",
+    "Average Packet Size",
 ]
-
 LABEL_COLUMN = "Label"
-
-# Paths (relative to project root)
+CLASSES = ("BENIGN", "BOTNET", "DDOS", "PORTSCAN")
+METADATA_COLUMNS = ["Src IP dec", "Dst IP dec"]
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 RAW_CSV = os.path.join(PROJECT_ROOT, "dataset", "raw", "friday.csv")
 PROCESSED_CSV = os.path.join(PROJECT_ROOT, "dataset", "processed", "cleaned_friday.csv")
-MODELS_DIR = os.path.join(PROJECT_ROOT, "ml_engine", "models")
+SPLITS_PATH = os.path.join(PROJECT_ROOT, "dataset", "processed", "friday_splits.pkl")
+# Keep the previous, leaky baseline in models/ untouched.
+MODELS_DIR = os.path.join(PROJECT_ROOT, "ml_engine", "models", "friday_v2")
 SCALER_PATH = os.path.join(MODELS_DIR, "scaler.pkl")
 LABEL_ENCODER_PATH = os.path.join(MODELS_DIR, "label_encoder.pkl")
+REPORTS_DIR = os.path.join(PROJECT_ROOT, "reports", "friday")
+SCHEMA_VERSION = 2
+RANDOM_STATE = 42
 
-BENIGN_SAMPLE_SIZE = 50_000
+
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
-def preprocess_data():
-    """Run the full 12-step preprocessing pipeline."""
-
-    # -----------------------------------------------------------------------
-    # Step 1 — Load friday.csv, keep only selected columns
-    # -----------------------------------------------------------------------
-    print("[Step 1] Loading friday.csv ...")
-    df = pd.read_csv(RAW_CSV, low_memory=False)
-
-    # Strip whitespace from column names (CICIDS headers have leading spaces)
+def clean_data(raw):
+    """Remove invalid rows, identical inputs and conflicting labels."""
+    df = raw.copy()
     df.columns = df.columns.str.strip()
-
-    # Verify all selected columns exist
-    missing_cols = [c for c in SELECTED_COLUMNS if c not in df.columns]
-    if missing_cols:
-        sys.exit(f"ERROR: Missing columns in CSV: {missing_cols}")
-
-    df = df[SELECTED_COLUMNS + [LABEL_COLUMN]]
-    print(f"  Loaded {len(df):,} rows, {len(df.columns)} columns")
-
-    # -----------------------------------------------------------------------
-    # Step 2 — Drop duplicate header rows
-    # -----------------------------------------------------------------------
-    print("[Step 2] Dropping duplicate header rows ...")
-    mask = df[LABEL_COLUMN].str.strip() == "Label"
-    dropped = mask.sum()
-    df = df[~mask].copy()
-    print(f"  Dropped {dropped} header-duplicate rows")
-
-    # -----------------------------------------------------------------------
-    # Step 3 — Merge Botnet labels
-    # -----------------------------------------------------------------------
-    print("[Step 3] Merging Botnet labels ...")
-    df[LABEL_COLUMN] = df[LABEL_COLUMN].str.strip()
-    df[LABEL_COLUMN] = df[LABEL_COLUMN].replace({
-        "Botnet": "BOTNET",
-        "Botnet - Attempted": "BOTNET",
+    required = SELECTED_COLUMNS + [LABEL_COLUMN] + METADATA_COLUMNS
+    missing = sorted(set(required) - set(df.columns))
+    if missing:
+        raise ValueError(f"Missing Friday columns: {missing}")
+    df = df[required].copy()
+    df["_row_id"] = np.arange(len(df))
+    audit = {"raw_rows": len(df)}
+    labels = df[LABEL_COLUMN].astype("string").str.strip()
+    headers = labels.eq("Label").fillna(False)
+    audit["duplicate_header_rows"] = int(headers.sum())
+    df = df.loc[~headers].copy()
+    df[LABEL_COLUMN] = labels.loc[~headers].replace({
+        "Botnet": "BOTNET", "Botnet - Attempted": "BOTNET",
+        "Portscan": "PORTSCAN", "DDoS": "DDOS",
     })
-    # Normalize remaining labels to uppercase
-    df[LABEL_COLUMN] = df[LABEL_COLUMN].replace({
-        "BENIGN": "BENIGN",
-        "Portscan": "PORTSCAN",
-        "DDoS": "DDOS",
-    })
-    print(f"  Labels after merge: {df[LABEL_COLUMN].value_counts().to_dict()}")
-
-    # -----------------------------------------------------------------------
-    # Step 4 — Drop infinite values
-    # -----------------------------------------------------------------------
-    print("[Step 4] Dropping infinite values ...")
-    # Convert all feature columns to numeric first
-    for col in SELECTED_COLUMNS:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-
-    inf_mask = np.isinf(df[SELECTED_COLUMNS]).any(axis=1)
-    inf_count = inf_mask.sum()
-    df = df[~inf_mask].copy()
-    print(f"  Dropped {inf_count:,} rows with infinite values")
-
-    # -----------------------------------------------------------------------
-    # Step 5 — Drop null / missing values
-    # -----------------------------------------------------------------------
-    print("[Step 5] Dropping null values ...")
-    null_count = df.isnull().any(axis=1).sum()
-    df = df.dropna().copy()
-    print(f"  Dropped {null_count:,} rows with null values")
-
-    # -----------------------------------------------------------------------
-    # Steps 6-9 — Undersample BENIGN, keep all others, combine
-    # -----------------------------------------------------------------------
-    print("[Step 6-9] Balancing classes ...")
-
-    df_benign = df[df[LABEL_COLUMN] == "BENIGN"]
-    df_portscan = df[df[LABEL_COLUMN] == "PORTSCAN"]
-    df_ddos = df[df[LABEL_COLUMN] == "DDOS"]
-    df_botnet = df[df[LABEL_COLUMN] == "BOTNET"]
-
-    print(f"  Before balancing:")
-    print(f"    BENIGN:   {len(df_benign):>10,}")
-    print(f"    PORTSCAN: {len(df_portscan):>10,}")
-    print(f"    DDOS:     {len(df_ddos):>10,}")
-    print(f"    BOTNET:   {len(df_botnet):>10,}")
-
-    # Step 6 — Undersample BENIGN to 50,000
-    if len(df_benign) > BENIGN_SAMPLE_SIZE:
-        df_benign = df_benign.sample(n=BENIGN_SAMPLE_SIZE, random_state=42)
-
-    # Steps 7-9 — Keep all Portscan, DDoS, Botnet rows
-    df_combined = pd.concat(
-        [df_benign, df_portscan, df_ddos, df_botnet],
-        ignore_index=True,
+    unknown = set(df[LABEL_COLUMN].dropna()) - set(CLASSES)
+    if unknown:
+        raise ValueError(f"Unexpected Friday labels (not silently discarded): {unknown}")
+    for column in SELECTED_COLUMNS + METADATA_COLUMNS:
+        df[column] = pd.to_numeric(df[column], errors="coerce")
+    invalid = (
+        ~np.isfinite(df[SELECTED_COLUMNS + METADATA_COLUMNS]).all(axis=1)
+        | df[LABEL_COLUMN].isna()
+        | (df[SELECTED_COLUMNS + METADATA_COLUMNS] < 0).any(axis=1)
     )
-    print(f"  After undersampling BENIGN: {len(df_combined):,} total rows")
-    print(f"  Class distribution:")
-    for label, count in df_combined[LABEL_COLUMN].value_counts().items():
-        print(f"    {label}: {count:>10,}")
+    audit["invalid_rows"] = int(invalid.sum())
+    df = df.loc[~invalid].copy()
+    before = len(df)
+    df = df.drop_duplicates(SELECTED_COLUMNS + [LABEL_COLUMN])
+    audit["same_label_duplicates_removed"] = before - len(df)
+    # Identical inputs with different labels are ambiguous: exclude all of them.
+    ambiguous = df.duplicated(SELECTED_COLUMNS, keep=False)
+    audit["conflicting_label_rows_removed"] = int(ambiguous.sum())
+    df = df.loc[~ambiguous].copy()
+    if df.empty or set(df[LABEL_COLUMN]) != set(CLASSES):
+        raise ValueError("Cleaning must leave examples of all four Friday classes")
+    # Canonical endpoints keep reverse and repeated connections together.
+    # IPs are split metadata only, never classifier features.
+    source = df["Src IP dec"].astype("int64").astype(str) + ":" + df["Src Port"].astype("int64").astype(str)
+    target = df["Dst IP dec"].astype("int64").astype(str) + ":" + df["Dst Port"].astype("int64").astype(str)
+    forward = source <= target
+    keys = source.where(forward, target) + "|" + target.where(forward, source)
+    keys += "|" + df["Protocol"].astype("int64").astype(str)
+    df["_group_id"] = pd.factorize(keys, sort=True)[0]
+    df = df.drop(columns=METADATA_COLUMNS).reset_index(drop=True)
+    audit["clean_rows"] = len(df)
+    audit["class_counts"] = df[LABEL_COLUMN].value_counts().sort_index().to_dict()
+    audit["connection_groups"] = int(df["_group_id"].nunique())
+    return df, audit
 
-    # -----------------------------------------------------------------------
-    # Step 10 — Apply SMOTE to balance BOTNET
-    # -----------------------------------------------------------------------
-    print("[Step 10] Applying SMOTE ...")
 
-    X = df_combined[SELECTED_COLUMNS].values
-    y_labels = df_combined[LABEL_COLUMN].values
+def split_data(df):
+    """Approximately 60/20/20, stratified with disjoint connection groups."""
+    outer = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+    remaining, test = next(outer.split(df, df[LABEL_COLUMN], df["_group_id"]))
+    development = df.iloc[remaining]
+    inner = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=RANDOM_STATE)
+    train, validation = next(inner.split(
+        development, development[LABEL_COLUMN], development["_group_id"]
+    ))
+    splits = {
+        "train": development.iloc[train].copy(),
+        "validation": development.iloc[validation].copy(),
+        "test": df.iloc[test].copy(),
+    }
+    seen_groups = set()
+    for name, part in splits.items():
+        if set(part[LABEL_COLUMN]) != set(CLASSES):
+            raise ValueError(f"{name} does not contain all classes; revisit grouping")
+        groups = set(part["_group_id"])
+        if groups & seen_groups:
+            raise ValueError("Connection leakage between partitions")
+        seen_groups.update(groups)
+    return splits
 
-    # Encode labels to integers for SMOTE
-    le = LabelEncoder()
-    y_encoded = le.fit_transform(y_labels)
 
-    # SMOTE target: bring minority class up to match the smallest of the
-    # majority classes (BENIGN = 50,000)
-    smote = SMOTE(random_state=42)
-    X_resampled, y_resampled = smote.fit_resample(X, y_encoded)  # type: ignore
-
-    # Decode labels back
-    y_labels_resampled = le.inverse_transform(y_resampled)
-
-    print(f"  After SMOTE: {len(X_resampled):,} total rows")
-    from collections import Counter
-    dist = Counter(y_labels_resampled)
-    for label, count in sorted(dist.items()):
-        print(f"    {label}: {count:>10,}")
-
-    # -----------------------------------------------------------------------
-    # Step 11 — Scale features with StandardScaler
-    # -----------------------------------------------------------------------
-    print("[Step 11] Scaling features ...")
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_resampled)
-
-    # -----------------------------------------------------------------------
-    # Step 12 — Save everything
-    # -----------------------------------------------------------------------
-    print("[Step 12] Saving ...")
-
-    # Build final DataFrame
-    df_final = pd.DataFrame(X_scaled, columns=SELECTED_COLUMNS)
-    df_final[LABEL_COLUMN] = y_labels_resampled
-
-    # Ensure directories exist
-    os.makedirs(os.path.dirname(PROCESSED_CSV), exist_ok=True)
-    os.makedirs(MODELS_DIR, exist_ok=True)
-
-    # Save cleaned CSV
-    df_final.to_csv(PROCESSED_CSV, index=False)
-    print(f"  Saved cleaned data to {PROCESSED_CSV}")
-    print(f"    Rows:    {len(df_final):,}")
-    print(f"    Columns: {len(df_final.columns)}")
-    print(f"    Nulls:   {df_final.isnull().sum().sum()}")
-
-    # Save scaler and label encoder for later use by predictor
-    joblib.dump(scaler, SCALER_PATH)
-    joblib.dump(le, LABEL_ENCODER_PATH)
-    print(f"  Saved scaler to {SCALER_PATH}")
-    print(f"  Saved label encoder to {LABEL_ENCODER_PATH}")
-
-    print("\nPreprocessing complete!")
-    return df_final
+def preprocess_data(raw_csv=RAW_CSV, processed_dir=None, reports_dir=REPORTS_DIR):
+    """Persist raw-valued partitions without overwriting inference transforms."""
+    processed_dir = Path(processed_dir or Path(PROCESSED_CSV).parent)
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    raw = pd.read_csv(raw_csv, usecols=lambda c: c.strip() in (
+        SELECTED_COLUMNS + METADATA_COLUMNS + [LABEL_COLUMN]
+    ), low_memory=False)
+    df, audit = clean_data(raw)
+    print(f"Cleaned {len(df):,} flows; splitting connection groups ...", flush=True)
+    splits = split_data(df)
+    audit.update({
+        "schema_version": SCHEMA_VERSION,
+        "source_sha256": sha256_file(raw_csv),
+        "feature_names": SELECTED_COLUMNS,
+        "random_state": RANDOM_STATE,
+        "split_method": "stratified connection groups, approximately 60/20/20",
+        "limitations": [
+            "Not an independent-host or chronological evaluation.",
+            "Timestamp values lack full date/hour information; no temporal split used.",
+            "Related attack campaigns can remain across connection groups.",
+        ],
+        "splits": {name: {
+            "rows": len(part),
+            "class_counts": part[LABEL_COLUMN].value_counts().sort_index().to_dict(),
+            "groups": int(part["_group_id"].nunique()),
+        } for name, part in splits.items()},
+    })
+    payload = {"schema_version": SCHEMA_VERSION, "audit": audit, "splits": splits}
+    df[SELECTED_COLUMNS + [LABEL_COLUMN]].to_csv(processed_dir / "cleaned_friday.csv", index=False)
+    joblib.dump(payload, processed_dir / "friday_splits.pkl")
+    Path(reports_dir).mkdir(parents=True, exist_ok=True)
+    (Path(reports_dir) / "data_audit.json").write_text(json.dumps(audit, indent=2) + "\n")
+    print(json.dumps(audit, indent=2), flush=True)
+    print("Saved raw-valued splits. No scaling, undersampling, or SMOTE performed.", flush=True)
+    return payload
 
 
 if __name__ == "__main__":

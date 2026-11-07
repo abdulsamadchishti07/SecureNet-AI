@@ -1,0 +1,78 @@
+{
+  "raw_rows": 547557,
+  "duplicate_header_rows": 0,
+  "invalid_rows": 0,
+  "same_label_duplicates_removed": 2086,
+  "conflicting_label_rows_removed": 0,
+  "clean_rows": 545471,
+  "class_counts": {
+    "BENIGN": 286484,
+    "BOTNET": 4793,
+    "DDOS": 95144,
+    "PORTSCAN": 159050
+  },
+  "connection_groups": 396263,
+  "schema_version": 2,
+  "source_sha256": "e16fa2655766ed685fe3e43455d7e4024a81f8a1965c1eabf56e53dc9f07fb6b",
+  "feature_names": [
+    "Src Port",
+    "Dst Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Min",
+    "Packet Length Max",
+    "Packet Length Mean",
+    "FIN Flag Count",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "PSH Flag Count",
+    "ACK Flag Count",
+    "Average Packet Size"
+  ],
+  "random_state": 42,
+  "split_method": "stratified connection groups, approximately 60/20/20",
+  "limitations": [
+    "Not an independent-host or chronological evaluation.",
+    "Timestamp values lack full date/hour information; no temporal split used.",
+    "Related attack campaigns can remain across connection groups."
+  ],
+  "splits": {
+    "train": {
+      "rows": 327283,
+      "class_counts": {
+        "BENIGN": 171891,
+        "BOTNET": 2876,
+        "DDOS": 57086,
+        "PORTSCAN": 95430
+      },
+      "groups": 237756
+    },
+    "validation": {
+      "rows": 109094,
+      "class_counts": {
+        "BENIGN": 57297,
+        "BOTNET": 958,
+        "DDOS": 19029,
+        "PORTSCAN": 31810
+      },
+      "groups": 79253
+    },
+    "test": {
+      "rows": 109094,
+      "class_counts": {
+        "BENIGN": 57296,
+        "BOTNET": 959,
+        "DDOS": 19029,
+        "PORTSCAN": 31810
+      },
+      "groups": 79254
+    }
+  }
+}

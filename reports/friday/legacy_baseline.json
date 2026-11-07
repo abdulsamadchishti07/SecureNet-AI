@@ -1,0 +1,54 @@
+{
+  "note": "Preserved pre-fix artifacts at their original paths; scores below are from the leaky evaluation and are not generalization estimates.",
+  "python": "3.14.9",
+  "dependencies": {
+    "pandas": "3.0.3",
+    "numpy": "2.5.0",
+    "scikit-learn": "1.9.0",
+    "imbalanced-learn": "0.14.2",
+    "xgboost": "3.3.0",
+    "joblib": "1.5.3",
+    "matplotlib": "3.11.0",
+    "seaborn": "0.13.2"
+  },
+  "artifacts": {
+    "random_forest.pkl": {
+      "sha256": "359b2dac45e7177f7230b29ab5afe5c9fe3d8691432b17b0113eee59f1182fa5",
+      "bytes": 9479273
+    },
+    "xgboost.pkl": {
+      "sha256": "3c923fc22baa879da06adf087253f54c9af6f8d3cf4c19af811c9b29985b8fc4",
+      "bytes": 1487030
+    },
+    "scaler.pkl": {
+      "sha256": "dc08d0187f1e8cbe36992ed6cfd3a6331ea65669bb8a476a4533b7bd03c81796",
+      "bytes": 1063
+    },
+    "label_encoder.pkl": {
+      "sha256": "99a740736eff2e47dc084390d30d9efa4f7c7eab6c3583271a5ad03f7440ce5c",
+      "bytes": 509
+    },
+    "test_data.pkl": {
+      "sha256": "402445dbdac118091f465a82835ad8c405843850fd2012835ce8acfc0829625a",
+      "bytes": 21378842
+    },
+    "confusion_matrix_rf.png": {
+      "sha256": "8c34b0e7ee3e8ec60704ab6f9385c2e7e081231e9fb9433568c2757921118a85",
+      "bytes": 54119
+    },
+    "confusion_matrix_xgb.png": {
+      "sha256": "16157e28837a6f173edf5f91d1c32f37f0d36d07cca61abf3670c644de91d69d",
+      "bytes": 53719
+    }
+  },
+  "previous_saved_test_results": {
+    "random_forest": {
+      "accuracy": 0.9999449914736784,
+      "macro_f1": 0.9999449911648594
+    },
+    "xgboost": {
+      "accuracy": 0.9999764249172908,
+      "macro_f1": 0.9999764247319753
+    }
+  }
+}

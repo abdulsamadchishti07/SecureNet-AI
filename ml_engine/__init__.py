@@ -1,14 +1,18 @@
-# ml_engine package init
+"""ML entry points imported on demand, without eagerly loading all stages."""
 
-from ml_engine.predictor import predict, predict_batch
-from ml_engine.preprocess import preprocess_data
-from ml_engine.train import train_model
-from ml_engine.evaluate import evaluate_model
+from importlib import import_module
 
-__all__ = [
-    "predict",
-    "predict_batch",
-    "preprocess_data",
-    "train_model",
-    "evaluate_model",
-]
+_EXPORTS = {
+    "predict": "predictor", "predict_batch": "predictor",
+    "preprocess_data": "preprocess", "train_model": "train",
+    "evaluate_model": "evaluate",
+}
+__all__ = list(_EXPORTS)
+
+
+def __getattr__(name):
+    if name not in _EXPORTS:
+        raise AttributeError(name)
+    value = getattr(import_module(f".{_EXPORTS[name]}", __name__), name)
+    globals()[name] = value
+    return value

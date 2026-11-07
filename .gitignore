@@ -26,6 +26,9 @@ ml_engine/models/*.h5
 ml_engine/models/*.onnx
 *.pkl
 
+# Corrected Friday runtime artifacts (reports are kept separately)
+ml_engine/models/friday_v2/
+
 # Keep folder structures
 !**/models/.gitkeep
 !**/dataset/**/.gitkeep
