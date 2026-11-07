@@ -1,0 +1,176 @@
+{
+  "dataset": "monday",
+  "role": "false-alarm evaluation only; no fitting or selection",
+  "source_sha256": "c493314d7f2cd5614193d3fd8de6d0731edfe1383ccf24df0323c8c6899ba7ab",
+  "reference_sha256": "fa34b289c463c5d04ad743853f2cbc84a4ad9ddd5e01a232efb69ecee1b59ea4",
+  "full_reference_rows": 369597,
+  "common_cohort": {
+    "models_considered": [
+      "friday",
+      "thursday",
+      "wednesday",
+      "tuesday"
+    ],
+    "eligible_rows": 189279,
+    "excluded_feature_overlap_rows": 1582,
+    "excluded_connection_overlap_rows": 179945,
+    "excluded_either_overlap_rows": 180318,
+    "cohort_row_ids_sha256": "b17f8043c6ecc07f23996cf51ba357f8fdfc7f43ed70359d66cf42e11d32779e",
+    "policy": "exclude exact numeric inputs or canonical connections in any prior train/validation/test partition"
+  },
+  "prior_exposure": {
+    "friday": {
+      "feature_overlap_rows": 688,
+      "connection_overlap_rows": 127117,
+      "either_overlap_rows": 127401,
+      "partitions_considered": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "bundle_sha256": "8c86dc6960ab6887e493c28fbbdd7ff7c26a2b2ead2131a83930b5d96749ec65",
+      "splits_sha256": "c6d8022d9e7db2af26bd75e9712d259f611f3198da1cdfcfa98ac91de1bae28d"
+    },
+    "thursday": {
+      "feature_overlap_rows": 690,
+      "connection_overlap_rows": 123538,
+      "either_overlap_rows": 123763,
+      "partitions_considered": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "bundle_sha256": "873db11e4bd7e01eaccf9d6e377189d4e83117e6555bf7177391fd0e8e0c7781",
+      "splits_sha256": "05d23ea018241a87e54e066cb499ab15bf132e312768ea6e579189b697e7ac91"
+    },
+    "wednesday": {
+      "feature_overlap_rows": 673,
+      "connection_overlap_rows": 127700,
+      "either_overlap_rows": 127909,
+      "partitions_considered": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "bundle_sha256": "2fee712a59f939ff78711885bb1ce8de4ded8496d4eaa76f4bfc5a45dbc1ef29",
+      "splits_sha256": "6915254693e64bdf5d6c29afb7c3771b5c0ef5142bf7d83ea1c75f7e592806b4"
+    },
+    "tuesday": {
+      "feature_overlap_rows": 755,
+      "connection_overlap_rows": 129203,
+      "either_overlap_rows": 129499,
+      "partitions_considered": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "bundle_sha256": "c87fd7b0fab35069de249283dd64a80de5b11476c6169cc6ed08e3879ba9a852",
+      "splits_sha256": "5836e2bff739bdb255778edb816cb74d15bb4e8d2daacbe80fe38fda3bd35196"
+    }
+  },
+  "limitations": [
+    "BENIGN only: cannot measure attack recall, attack precision or multiclass F1.",
+    "False positives assume the dataset's BENIGN annotations are correct.",
+    "Not an independent-host or live-traffic evaluation; dataset provenance remains open.",
+    "Connection keys omit dates and may conservatively match different days' reused endpoints.",
+    "Full-reference results can overlap previous runs; common-cohort results use explicit exclusions.",
+    "Excluding overlap changes the evaluation population; neither cohort proves live performance.",
+    "No attack labels: do not compare attack recall or select a universal winning classifier from this result."
+  ],
+  "models": {
+    "friday": {
+      "selected_model": "xgboost",
+      "full_reference": {
+        "rows": 369597,
+        "false_positives": 57,
+        "false_positive_rate": 0.00015422203102297908,
+        "predicted_label_counts": {
+          "BENIGN": 369540,
+          "BOTNET": 55,
+          "DDOS": 2
+        }
+      },
+      "common_cohort": {
+        "rows": 189279,
+        "false_positives": 57,
+        "false_positive_rate": 0.0003011427575166817,
+        "predicted_label_counts": {
+          "BENIGN": 189222,
+          "BOTNET": 55,
+          "DDOS": 2
+        }
+      }
+    },
+    "thursday": {
+      "selected_model": "xgboost",
+      "full_reference": {
+        "rows": 369597,
+        "false_positives": 3208,
+        "false_positive_rate": 0.008679724131959946,
+        "predicted_label_counts": {
+          "BENIGN": 366389,
+          "PORTSCAN": 103,
+          "WEB_BRUTE_FORCE": 2096,
+          "WEB_XSS": 1009
+        }
+      },
+      "common_cohort": {
+        "rows": 189279,
+        "false_positives": 3154,
+        "false_positive_rate": 0.016663232582589723,
+        "predicted_label_counts": {
+          "BENIGN": 186125,
+          "PORTSCAN": 103,
+          "WEB_BRUTE_FORCE": 2059,
+          "WEB_XSS": 992
+        }
+      }
+    },
+    "wednesday": {
+      "selected_model": "xgboost",
+      "full_reference": {
+        "rows": 369597,
+        "false_positives": 148,
+        "false_positive_rate": 0.00040043615072633164,
+        "predicted_label_counts": {
+          "BENIGN": 369449,
+          "DOS_GOLDENEYE": 26,
+          "DOS_HULK": 47,
+          "DOS_SLOWHTTPTEST": 21,
+          "DOS_SLOWLORIS": 54
+        }
+      },
+      "common_cohort": {
+        "rows": 189279,
+        "false_positives": 147,
+        "false_positive_rate": 0.0007766313220167055,
+        "predicted_label_counts": {
+          "BENIGN": 189132,
+          "DOS_GOLDENEYE": 26,
+          "DOS_HULK": 46,
+          "DOS_SLOWHTTPTEST": 21,
+          "DOS_SLOWLORIS": 54
+        }
+      }
+    },
+    "tuesday": {
+      "selected_model": "random_forest",
+      "full_reference": {
+        "rows": 369597,
+        "false_positives": 0,
+        "false_positive_rate": 0.0,
+        "predicted_label_counts": {
+          "BENIGN": 369597
+        }
+      },
+      "common_cohort": {
+        "rows": 189279,
+        "false_positives": 0,
+        "false_positive_rate": 0.0,
+        "predicted_label_counts": {
+          "BENIGN": 189279
+        }
+      }
+    }
+  }
+}
