@@ -1,0 +1,133 @@
+{
+  "raw_rows": 322078,
+  "duplicate_header_rows": 0,
+  "raw_label_counts": {
+    "BENIGN": 315106,
+    "FTP-Patator": 3972,
+    "FTP-Patator - Attempted": 12,
+    "SSH-Patator": 2961,
+    "SSH-Patator - Attempted": 27
+  },
+  "excluded_label_counts": {},
+  "excluded_rows": 0,
+  "invalid_rows": 0,
+  "same_label_duplicates_removed": 2158,
+  "conflicting_label_rows_removed": 0,
+  "clean_rows": 319920,
+  "class_counts": {
+    "BENIGN": 312948,
+    "FTP_BRUTE_FORCE": 3984,
+    "SSH_BRUTE_FORCE": 2988
+  },
+  "connection_groups": 211633,
+  "class_group_counts": {
+    "BENIGN": 204681,
+    "FTP_BRUTE_FORCE": 3973,
+    "SSH_BRUTE_FORCE": 2979
+  },
+  "dataset": "tuesday",
+  "schema_version": 2,
+  "label_mapping": {
+    "FTP-Patator": "FTP_BRUTE_FORCE",
+    "FTP-Patator - Attempted": "FTP_BRUTE_FORCE",
+    "SSH-Patator": "SSH_BRUTE_FORCE",
+    "SSH-Patator - Attempted": "SSH_BRUTE_FORCE"
+  },
+  "excluded_label_policy": [],
+  "source_sha256": "664b615572fdbd88ae24d01f33a538983277359151e9fd5172d40da092362f71",
+  "feature_names": [
+    "Src Port",
+    "Dst Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Min",
+    "Packet Length Max",
+    "Packet Length Mean",
+    "FIN Flag Count",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "PSH Flag Count",
+    "ACK Flag Count",
+    "Average Packet Size"
+  ],
+  "random_state": 42,
+  "split_method": "stratified connection groups, approximately 60/20/20",
+  "limitations": [
+    "Not an independent-host or chronological evaluation.",
+    "Timestamp values lack full date/hour information; no temporal split used.",
+    "Related attack campaigns can remain across connection groups.",
+    "Attack-family labels include attempted traffic; they do not establish successful compromise."
+  ],
+  "splits": {
+    "train": {
+      "rows": 191952,
+      "class_counts": {
+        "BENIGN": 187770,
+        "FTP_BRUTE_FORCE": 2390,
+        "SSH_BRUTE_FORCE": 1792
+      },
+      "groups": 126980,
+      "class_group_counts": {
+        "BENIGN": 122810,
+        "FTP_BRUTE_FORCE": 2383,
+        "SSH_BRUTE_FORCE": 1787
+      },
+      "original_label_counts": {
+        "BENIGN": 187770,
+        "FTP-Patator": 2383,
+        "FTP-Patator - Attempted": 7,
+        "SSH-Patator": 1780,
+        "SSH-Patator - Attempted": 12
+      }
+    },
+    "validation": {
+      "rows": 63984,
+      "class_counts": {
+        "BENIGN": 62589,
+        "FTP_BRUTE_FORCE": 797,
+        "SSH_BRUTE_FORCE": 598
+      },
+      "groups": 42327,
+      "class_group_counts": {
+        "BENIGN": 40936,
+        "FTP_BRUTE_FORCE": 795,
+        "SSH_BRUTE_FORCE": 596
+      },
+      "original_label_counts": {
+        "BENIGN": 62589,
+        "FTP-Patator": 795,
+        "FTP-Patator - Attempted": 2,
+        "SSH-Patator": 589,
+        "SSH-Patator - Attempted": 9
+      }
+    },
+    "test": {
+      "rows": 63984,
+      "class_counts": {
+        "BENIGN": 62589,
+        "FTP_BRUTE_FORCE": 797,
+        "SSH_BRUTE_FORCE": 598
+      },
+      "groups": 42326,
+      "class_group_counts": {
+        "BENIGN": 40935,
+        "FTP_BRUTE_FORCE": 795,
+        "SSH_BRUTE_FORCE": 596
+      },
+      "original_label_counts": {
+        "BENIGN": 62589,
+        "FTP-Patator": 794,
+        "FTP-Patator - Attempted": 3,
+        "SSH-Patator": 592,
+        "SSH-Patator - Attempted": 6
+      }
+    }
+  }
+}
