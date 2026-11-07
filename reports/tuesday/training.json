@@ -1,0 +1,363 @@
+{
+  "dataset": "tuesday",
+  "schema_version": 2,
+  "selected_model": "random_forest",
+  "selection_metric": "validation macro F1 (test set not used for selection)",
+  "balancing": "training-only balanced class weights; no resampling or synthetic rows",
+  "feature_names": [
+    "Src Port",
+    "Dst Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Min",
+    "Packet Length Max",
+    "Packet Length Mean",
+    "FIN Flag Count",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "PSH Flag Count",
+    "ACK Flag Count",
+    "Average Packet Size"
+  ],
+  "classes": [
+    "BENIGN",
+    "FTP_BRUTE_FORCE",
+    "SSH_BRUTE_FORCE"
+  ],
+  "scaler_fit_rows": 191952,
+  "data_audit": {
+    "raw_rows": 322078,
+    "duplicate_header_rows": 0,
+    "raw_label_counts": {
+      "BENIGN": 315106,
+      "FTP-Patator": 3972,
+      "FTP-Patator - Attempted": 12,
+      "SSH-Patator": 2961,
+      "SSH-Patator - Attempted": 27
+    },
+    "excluded_label_counts": {},
+    "excluded_rows": 0,
+    "invalid_rows": 0,
+    "same_label_duplicates_removed": 2158,
+    "conflicting_label_rows_removed": 0,
+    "clean_rows": 319920,
+    "class_counts": {
+      "BENIGN": 312948,
+      "FTP_BRUTE_FORCE": 3984,
+      "SSH_BRUTE_FORCE": 2988
+    },
+    "connection_groups": 211633,
+    "class_group_counts": {
+      "BENIGN": 204681,
+      "FTP_BRUTE_FORCE": 3973,
+      "SSH_BRUTE_FORCE": 2979
+    },
+    "dataset": "tuesday",
+    "schema_version": 2,
+    "label_mapping": {
+      "FTP-Patator": "FTP_BRUTE_FORCE",
+      "FTP-Patator - Attempted": "FTP_BRUTE_FORCE",
+      "SSH-Patator": "SSH_BRUTE_FORCE",
+      "SSH-Patator - Attempted": "SSH_BRUTE_FORCE"
+    },
+    "excluded_label_policy": [],
+    "source_sha256": "664b615572fdbd88ae24d01f33a538983277359151e9fd5172d40da092362f71",
+    "feature_names": [
+      "Src Port",
+      "Dst Port",
+      "Protocol",
+      "Flow Duration",
+      "Total Fwd Packet",
+      "Total Bwd packets",
+      "Flow Bytes/s",
+      "Flow Packets/s",
+      "Flow IAT Mean",
+      "Fwd Packets/s",
+      "Bwd Packets/s",
+      "Packet Length Min",
+      "Packet Length Max",
+      "Packet Length Mean",
+      "FIN Flag Count",
+      "SYN Flag Count",
+      "RST Flag Count",
+      "PSH Flag Count",
+      "ACK Flag Count",
+      "Average Packet Size"
+    ],
+    "random_state": 42,
+    "split_method": "stratified connection groups, approximately 60/20/20",
+    "limitations": [
+      "Not an independent-host or chronological evaluation.",
+      "Timestamp values lack full date/hour information; no temporal split used.",
+      "Related attack campaigns can remain across connection groups.",
+      "Attack-family labels include attempted traffic; they do not establish successful compromise."
+    ],
+    "splits": {
+      "train": {
+        "rows": 191952,
+        "class_counts": {
+          "BENIGN": 187770,
+          "FTP_BRUTE_FORCE": 2390,
+          "SSH_BRUTE_FORCE": 1792
+        },
+        "groups": 126980,
+        "class_group_counts": {
+          "BENIGN": 122810,
+          "FTP_BRUTE_FORCE": 2383,
+          "SSH_BRUTE_FORCE": 1787
+        },
+        "original_label_counts": {
+          "BENIGN": 187770,
+          "FTP-Patator": 2383,
+          "FTP-Patator - Attempted": 7,
+          "SSH-Patator": 1780,
+          "SSH-Patator - Attempted": 12
+        }
+      },
+      "validation": {
+        "rows": 63984,
+        "class_counts": {
+          "BENIGN": 62589,
+          "FTP_BRUTE_FORCE": 797,
+          "SSH_BRUTE_FORCE": 598
+        },
+        "groups": 42327,
+        "class_group_counts": {
+          "BENIGN": 40936,
+          "FTP_BRUTE_FORCE": 795,
+          "SSH_BRUTE_FORCE": 596
+        },
+        "original_label_counts": {
+          "BENIGN": 62589,
+          "FTP-Patator": 795,
+          "FTP-Patator - Attempted": 2,
+          "SSH-Patator": 589,
+          "SSH-Patator - Attempted": 9
+        }
+      },
+      "test": {
+        "rows": 63984,
+        "class_counts": {
+          "BENIGN": 62589,
+          "FTP_BRUTE_FORCE": 797,
+          "SSH_BRUTE_FORCE": 598
+        },
+        "groups": 42326,
+        "class_group_counts": {
+          "BENIGN": 40935,
+          "FTP_BRUTE_FORCE": 795,
+          "SSH_BRUTE_FORCE": 596
+        },
+        "original_label_counts": {
+          "BENIGN": 62589,
+          "FTP-Patator": 794,
+          "FTP-Patator - Attempted": 3,
+          "SSH-Patator": 592,
+          "SSH-Patator - Attempted": 6
+        }
+      }
+    }
+  },
+  "split_artifact_sha256": "5836e2bff739bdb255778edb816cb74d15bb4e8d2daacbe80fe38fda3bd35196",
+  "python": "3.14.9",
+  "dependencies": {
+    "numpy": "2.5.0",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.9.0",
+    "xgboost": "3.3.0",
+    "joblib": "1.5.3"
+  },
+  "code_sha256": {
+    "datasets.py": "87632ed22c1dee2a76efe9953a2df72b8e878357ecca89fd53616137f3adab31",
+    "preprocess.py": "3ef4cd5b29f9c1fbad0f5f77ba9ebb231343bf49b818e2b75235f1c66325b270",
+    "train.py": "8f2878c1a12a74265ef5b755ab2ee57e50762f63593783c27d25bb65fac1cad0",
+    "predictor.py": "b0b57df14e016f8d25976588db5e0fff03a2f6ecbe48b1c4a78b559e87575e8d",
+    "evaluate.py": "1e9eaea9a4aa784c4aad92d8089bfdcede8ce098a6cee3ca5558ca6a9eafb8d7"
+  },
+  "model_parameters": {
+    "random_forest": {
+      "bootstrap": true,
+      "ccp_alpha": 0.0,
+      "class_weight": "balanced",
+      "criterion": "gini",
+      "max_depth": 25,
+      "max_features": "sqrt",
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 2,
+      "min_samples_split": 5,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 200,
+      "n_jobs": 4,
+      "oob_score": false,
+      "random_state": 42,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "xgboost": {
+      "objective": "multi:softprob",
+      "base_score": null,
+      "booster": null,
+      "callbacks": null,
+      "colsample_bylevel": null,
+      "colsample_bynode": null,
+      "colsample_bytree": 0.8,
+      "device": null,
+      "early_stopping_rounds": null,
+      "enable_categorical": true,
+      "eval_metric": "mlogloss",
+      "feature_types": null,
+      "feature_weights": null,
+      "gamma": null,
+      "grow_policy": null,
+      "importance_type": null,
+      "interaction_constraints": null,
+      "learning_rate": 0.1,
+      "max_bin": null,
+      "max_cat_threshold": null,
+      "max_cat_to_onehot": null,
+      "max_delta_step": null,
+      "max_depth": 10,
+      "max_leaves": null,
+      "min_child_weight": null,
+      "missing": "nan",
+      "monotone_constraints": null,
+      "multi_strategy": null,
+      "n_estimators": 200,
+      "n_jobs": 4,
+      "num_parallel_tree": null,
+      "random_state": 42,
+      "reg_alpha": null,
+      "reg_lambda": null,
+      "sampling_method": null,
+      "scale_pos_weight": null,
+      "subsample": 0.8,
+      "tree_method": null,
+      "validate_parameters": null,
+      "verbosity": null
+    }
+  },
+  "validation": {
+    "random_forest": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "benign_false_positive_rate": 0.0,
+      "classification_report": {
+        "BENIGN": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 62589.0
+        },
+        "FTP_BRUTE_FORCE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 797.0
+        },
+        "SSH_BRUTE_FORCE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 598.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 63984.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 63984.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          62589,
+          0,
+          0
+        ],
+        [
+          0,
+          797,
+          0
+        ],
+        [
+          0,
+          0,
+          598
+        ]
+      ],
+      "training_seconds": 8.037324808999983
+    },
+    "xgboost": {
+      "accuracy": 0.9999687421855464,
+      "macro_f1": 0.9994381911381741,
+      "benign_false_positive_rate": 3.19544967965617e-05,
+      "classification_report": {
+        "BENIGN": {
+          "precision": 1.0,
+          "recall": 0.9999680455032034,
+          "f1-score": 0.9999840224963251,
+          "support": 62589.0
+        },
+        "FTP_BRUTE_FORCE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 797.0
+        },
+        "SSH_BRUTE_FORCE": {
+          "precision": 0.9966666666666667,
+          "recall": 1.0,
+          "f1-score": 0.998330550918197,
+          "support": 598.0
+        },
+        "accuracy": 0.9999687421855464,
+        "macro avg": {
+          "precision": 0.9988888888888888,
+          "recall": 0.9999893485010678,
+          "f1-score": 0.9994381911381741,
+          "support": 63984.0
+        },
+        "weighted avg": {
+          "precision": 0.9999688463782612,
+          "recall": 0.9999687421855464,
+          "f1-score": 0.9999687680275002,
+          "support": 63984.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          62587,
+          0,
+          2
+        ],
+        [
+          0,
+          797,
+          0
+        ],
+        [
+          0,
+          0,
+          598
+        ]
+      ],
+      "training_seconds": 6.321700353000779
+    }
+  }
+}
