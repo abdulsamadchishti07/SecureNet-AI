@@ -13,6 +13,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+reports/tests/
 
 # Datasets (large files > 100MB)
 dataset/raw/*.csv
@@ -28,6 +29,9 @@ ml_engine/models/*.onnx
 
 # Corrected Friday runtime artifacts (reports are kept separately)
 ml_engine/models/friday_v2/
+ml_engine/models/thursday_v1/
+ml_engine/models/wednesday_v1/
+ml_engine/models/tuesday_v1/
 
 # Keep folder structures
 !**/models/.gitkeep
