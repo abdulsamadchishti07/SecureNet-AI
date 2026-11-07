@@ -1,0 +1,64 @@
+{
+  "raw_rows": 371621,
+  "duplicate_header_rows": 0,
+  "raw_label_counts": {
+    "BENIGN": 371621
+  },
+  "excluded_label_counts": {},
+  "excluded_rows": 0,
+  "invalid_rows": 0,
+  "same_label_duplicates_removed": 2024,
+  "conflicting_label_rows_removed": 0,
+  "clean_rows": 369597,
+  "class_counts": {
+    "BENIGN": 369597
+  },
+  "connection_groups": 249108,
+  "class_group_counts": {
+    "BENIGN": 249108
+  },
+  "dataset": "monday",
+  "role": "normal-only reference; no model training",
+  "schema_version": 2,
+  "feature_names": [
+    "Src Port",
+    "Dst Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Min",
+    "Packet Length Max",
+    "Packet Length Mean",
+    "FIN Flag Count",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "PSH Flag Count",
+    "ACK Flag Count",
+    "Average Packet Size"
+  ],
+  "source_sha256": "c493314d7f2cd5614193d3fd8de6d0731edfe1383ccf24df0323c8c6899ba7ab",
+  "python": "3.14.9",
+  "dependencies": {
+    "numpy": "2.5.0",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.9.0",
+    "joblib": "1.5.3"
+  },
+  "code_sha256": {
+    "monday.py": "e42d25eb2633493a00eab63aeea7182564af5c97252a7691e5ea55f3d8f3f5f3",
+    "preprocess.py": "b8ea96102b974efbd382cf45017dcf95ec3863263dd9b1b5b20a154007cbad15",
+    "datasets.py": "87632ed22c1dee2a76efe9953a2df72b8e878357ecca89fd53616137f3adab31"
+  },
+  "limitations": [
+    "BENIGN only: cannot measure attack recall, attack precision or multiclass F1.",
+    "False positives assume the dataset's BENIGN annotations are correct.",
+    "Not an independent-host or live-traffic evaluation; dataset provenance remains open.",
+    "Connection keys omit dates and may conservatively match different days' reused endpoints."
+  ]
+}
