@@ -1,0 +1,421 @@
+{
+  "dataset": "thursday",
+  "schema_version": 2,
+  "selected_model": "xgboost",
+  "selection_metric": "validation macro F1 (test set not used for selection)",
+  "balancing": "training-only balanced class weights; no resampling or synthetic rows",
+  "feature_names": [
+    "Src Port",
+    "Dst Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Min",
+    "Packet Length Max",
+    "Packet Length Mean",
+    "FIN Flag Count",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "PSH Flag Count",
+    "ACK Flag Count",
+    "Average Packet Size"
+  ],
+  "classes": [
+    "BENIGN",
+    "PORTSCAN",
+    "WEB_BRUTE_FORCE",
+    "WEB_XSS"
+  ],
+  "scaler_fit_rows": 214068,
+  "data_audit": {
+    "raw_rows": 362075,
+    "duplicate_header_rows": 0,
+    "raw_label_counts": {
+      "BENIGN": 288171,
+      "Infiltration": 36,
+      "Infiltration - Attempted": 45,
+      "Infiltration - Portscan": 71767,
+      "Web Attack - Brute Force": 73,
+      "Web Attack - Brute Force - Attempted": 1292,
+      "Web Attack - SQL Injection": 13,
+      "Web Attack - SQL Injection - Attempted": 5,
+      "Web Attack - XSS": 18,
+      "Web Attack - XSS - Attempted": 655
+    },
+    "excluded_label_counts": {
+      "Infiltration": 36,
+      "Infiltration - Attempted": 45,
+      "Web Attack - SQL Injection": 13,
+      "Web Attack - SQL Injection - Attempted": 5
+    },
+    "excluded_rows": 99,
+    "invalid_rows": 0,
+    "same_label_duplicates_removed": 5191,
+    "conflicting_label_rows_removed": 4,
+    "clean_rows": 356781,
+    "class_counts": {
+      "BENIGN": 286134,
+      "PORTSCAN": 68609,
+      "WEB_BRUTE_FORCE": 1365,
+      "WEB_XSS": 673
+    },
+    "connection_groups": 258451,
+    "class_group_counts": {
+      "BENIGN": 191882,
+      "PORTSCAN": 64742,
+      "WEB_BRUTE_FORCE": 1363,
+      "WEB_XSS": 673
+    },
+    "dataset": "thursday",
+    "schema_version": 2,
+    "label_mapping": {
+      "Infiltration - Portscan": "PORTSCAN",
+      "Web Attack - Brute Force": "WEB_BRUTE_FORCE",
+      "Web Attack - Brute Force - Attempted": "WEB_BRUTE_FORCE",
+      "Web Attack - XSS": "WEB_XSS",
+      "Web Attack - XSS - Attempted": "WEB_XSS"
+    },
+    "excluded_label_policy": [
+      "Infiltration",
+      "Infiltration - Attempted",
+      "Web Attack - SQL Injection",
+      "Web Attack - SQL Injection - Attempted"
+    ],
+    "source_sha256": "e3cac669f495df33da7ae1e8fcc06ed511d3161b97a7ba9263f2d476cf467a0e",
+    "feature_names": [
+      "Src Port",
+      "Dst Port",
+      "Protocol",
+      "Flow Duration",
+      "Total Fwd Packet",
+      "Total Bwd packets",
+      "Flow Bytes/s",
+      "Flow Packets/s",
+      "Flow IAT Mean",
+      "Fwd Packets/s",
+      "Bwd Packets/s",
+      "Packet Length Min",
+      "Packet Length Max",
+      "Packet Length Mean",
+      "FIN Flag Count",
+      "SYN Flag Count",
+      "RST Flag Count",
+      "PSH Flag Count",
+      "ACK Flag Count",
+      "Average Packet Size"
+    ],
+    "random_state": 42,
+    "split_method": "stratified connection groups, approximately 60/20/20",
+    "limitations": [
+      "Not an independent-host or chronological evaluation.",
+      "Timestamp values lack full date/hour information; no temporal split used.",
+      "Related attack campaigns can remain across connection groups.",
+      "Attack-family labels include attempted traffic; they do not establish successful compromise."
+    ],
+    "splits": {
+      "train": {
+        "rows": 214068,
+        "class_counts": {
+          "BENIGN": 171680,
+          "PORTSCAN": 41165,
+          "WEB_BRUTE_FORCE": 819,
+          "WEB_XSS": 404
+        },
+        "groups": 155073,
+        "class_group_counts": {
+          "BENIGN": 115132,
+          "PORTSCAN": 38843,
+          "WEB_BRUTE_FORCE": 819,
+          "WEB_XSS": 404
+        },
+        "original_label_counts": {
+          "BENIGN": 171680,
+          "Infiltration - Portscan": 41165,
+          "Web Attack - Brute Force": 46,
+          "Web Attack - Brute Force - Attempted": 773,
+          "Web Attack - XSS": 11,
+          "Web Attack - XSS - Attempted": 393
+        }
+      },
+      "validation": {
+        "rows": 71357,
+        "class_counts": {
+          "BENIGN": 57227,
+          "PORTSCAN": 13722,
+          "WEB_BRUTE_FORCE": 273,
+          "WEB_XSS": 135
+        },
+        "groups": 51690,
+        "class_group_counts": {
+          "BENIGN": 38375,
+          "PORTSCAN": 12949,
+          "WEB_BRUTE_FORCE": 272,
+          "WEB_XSS": 135
+        },
+        "original_label_counts": {
+          "BENIGN": 57227,
+          "Infiltration - Portscan": 13722,
+          "Web Attack - Brute Force": 13,
+          "Web Attack - Brute Force - Attempted": 260,
+          "Web Attack - XSS": 3,
+          "Web Attack - XSS - Attempted": 132
+        }
+      },
+      "test": {
+        "rows": 71356,
+        "class_counts": {
+          "BENIGN": 57227,
+          "PORTSCAN": 13722,
+          "WEB_BRUTE_FORCE": 273,
+          "WEB_XSS": 134
+        },
+        "groups": 51688,
+        "class_group_counts": {
+          "BENIGN": 38375,
+          "PORTSCAN": 12950,
+          "WEB_BRUTE_FORCE": 272,
+          "WEB_XSS": 134
+        },
+        "original_label_counts": {
+          "BENIGN": 57227,
+          "Infiltration - Portscan": 13722,
+          "Web Attack - Brute Force": 14,
+          "Web Attack - Brute Force - Attempted": 259,
+          "Web Attack - XSS": 4,
+          "Web Attack - XSS - Attempted": 130
+        }
+      }
+    }
+  },
+  "split_artifact_sha256": "05d23ea018241a87e54e066cb499ab15bf132e312768ea6e579189b697e7ac91",
+  "python": "3.14.9",
+  "dependencies": {
+    "numpy": "2.5.0",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.9.0",
+    "xgboost": "3.3.0",
+    "joblib": "1.5.3"
+  },
+  "code_sha256": {
+    "datasets.py": "525d29b885f668fdc0f4880f23878d3a56e53f6e4e0a660cf3f229202828f266",
+    "preprocess.py": "3ef4cd5b29f9c1fbad0f5f77ba9ebb231343bf49b818e2b75235f1c66325b270",
+    "train.py": "8f2878c1a12a74265ef5b755ab2ee57e50762f63593783c27d25bb65fac1cad0",
+    "predictor.py": "b0b57df14e016f8d25976588db5e0fff03a2f6ecbe48b1c4a78b559e87575e8d",
+    "evaluate.py": "1e9eaea9a4aa784c4aad92d8089bfdcede8ce098a6cee3ca5558ca6a9eafb8d7"
+  },
+  "model_parameters": {
+    "random_forest": {
+      "bootstrap": true,
+      "ccp_alpha": 0.0,
+      "class_weight": "balanced",
+      "criterion": "gini",
+      "max_depth": 25,
+      "max_features": "sqrt",
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 2,
+      "min_samples_split": 5,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 200,
+      "n_jobs": 4,
+      "oob_score": false,
+      "random_state": 42,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "xgboost": {
+      "objective": "multi:softprob",
+      "base_score": null,
+      "booster": null,
+      "callbacks": null,
+      "colsample_bylevel": null,
+      "colsample_bynode": null,
+      "colsample_bytree": 0.8,
+      "device": null,
+      "early_stopping_rounds": null,
+      "enable_categorical": true,
+      "eval_metric": "mlogloss",
+      "feature_types": null,
+      "feature_weights": null,
+      "gamma": null,
+      "grow_policy": null,
+      "importance_type": null,
+      "interaction_constraints": null,
+      "learning_rate": 0.1,
+      "max_bin": null,
+      "max_cat_threshold": null,
+      "max_cat_to_onehot": null,
+      "max_delta_step": null,
+      "max_depth": 10,
+      "max_leaves": null,
+      "min_child_weight": null,
+      "missing": "nan",
+      "monotone_constraints": null,
+      "multi_strategy": null,
+      "n_estimators": 200,
+      "n_jobs": 4,
+      "num_parallel_tree": null,
+      "random_state": 42,
+      "reg_alpha": null,
+      "reg_lambda": null,
+      "sampling_method": null,
+      "scale_pos_weight": null,
+      "subsample": 0.8,
+      "tree_method": null,
+      "validate_parameters": null,
+      "verbosity": null
+    }
+  },
+  "validation": {
+    "random_forest": {
+      "accuracy": 0.9840940622503749,
+      "macro_f1": 0.6766085674659057,
+      "benign_false_positive_rate": 0.018487776748737483,
+      "classification_report": {
+        "BENIGN": {
+          "precision": 0.9997330200768902,
+          "recall": 0.9815122232512625,
+          "f1-score": 0.9905388366207863,
+          "support": 57227.0
+        },
+        "PORTSCAN": {
+          "precision": 0.9977449625372808,
+          "recall": 0.9995627459554001,
+          "f1-score": 0.9986530270486731,
+          "support": 13722.0
+        },
+        "WEB_BRUTE_FORCE": {
+          "precision": 0.26714801444043323,
+          "recall": 0.8131868131868132,
+          "f1-score": 0.40217391304347827,
+          "support": 273.0
+        },
+        "WEB_XSS": {
+          "precision": 0.19327731092436976,
+          "recall": 0.8518518518518519,
+          "f1-score": 0.3150684931506849,
+          "support": 135.0
+        },
+        "accuracy": 0.9840940622503749,
+        "macro avg": {
+          "precision": 0.6144758269947436,
+          "recall": 0.911528408561332,
+          "f1-score": 0.6766085674659057,
+          "support": 71357.0
+        },
+        "weighted avg": {
+          "precision": 0.9950222369325195,
+          "recall": 0.9840940622503749,
+          "f1-score": 0.9885702953500826,
+          "support": 71357.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          56169,
+          31,
+          591,
+          436
+        ],
+        [
+          6,
+          13716,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          222,
+          44
+        ],
+        [
+          2,
+          0,
+          18,
+          115
+        ]
+      ],
+      "training_seconds": 13.59861480500058
+    },
+    "xgboost": {
+      "accuracy": 0.9897417212046471,
+      "macro_f1": 0.7116348117297955,
+      "benign_false_positive_rate": 0.010711726982018978,
+      "classification_report": {
+        "BENIGN": {
+          "precision": 0.999011822833951,
+          "recall": 0.9892882730179811,
+          "f1-score": 0.9941262719825807,
+          "support": 57227.0
+        },
+        "PORTSCAN": {
+          "precision": 0.9980359351131156,
+          "recall": 0.9998542486518001,
+          "f1-score": 0.9989442644435546,
+          "support": 13722.0
+        },
+        "WEB_BRUTE_FORCE": {
+          "precision": 0.31781701444622795,
+          "recall": 0.7252747252747253,
+          "f1-score": 0.4419642857142857,
+          "support": 273.0
+        },
+        "WEB_XSS": {
+          "precision": 0.29337539432176657,
+          "recall": 0.6888888888888889,
+          "f1-score": 0.41150442477876104,
+          "support": 135.0
+        },
+        "accuracy": 0.9897417212046471,
+        "macro avg": {
+          "precision": 0.6520600416787653,
+          "recall": 0.8508265339583487,
+          "f1-score": 0.7116348117297955,
+          "support": 71357.0
+        },
+        "weighted avg": {
+          "precision": 0.9948830305382504,
+          "recall": 0.9897417212046471,
+          "f1-score": 0.9918380356627484,
+          "support": 71357.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          56614,
+          27,
+          399,
+          187
+        ],
+        [
+          2,
+          13720,
+          0,
+          0
+        ],
+        [
+          38,
+          0,
+          198,
+          37
+        ],
+        [
+          16,
+          0,
+          26,
+          93
+        ]
+      ],
+      "training_seconds": 10.044123796999884
+    }
+  }
+}
