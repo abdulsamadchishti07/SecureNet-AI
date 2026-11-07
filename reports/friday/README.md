@@ -1,5 +1,10 @@
 # Friday corrected baseline — 2026-11-07
 
+**Interpretation correction (2026-11-07):** these are exploratory within-capture,
+connection-held-out scores, not evidence of independent-campaign or live detection.
+See the [validity review](../../docs/ML%20Engine/VALIDITY_REVIEW.md).
+Original metric files and model artifacts are unchanged by this note.
+
 Completed preprocessing, training and held-out evaluation using the local Friday
 dataset. The earlier artifacts remain unchanged in `ml_engine/models/`; the
 corrected artifacts are in `ml_engine/models/friday_v2/`.
