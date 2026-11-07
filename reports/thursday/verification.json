@@ -1,0 +1,37 @@
+{
+  "dataset": "thursday",
+  "pairwise_overlap": {
+    "train/validation": {
+      "shared_row_ids": 0,
+      "shared_connection_groups": 0,
+      "shared_feature_hashes": 0
+    },
+    "train/test": {
+      "shared_row_ids": 0,
+      "shared_connection_groups": 0,
+      "shared_feature_hashes": 0
+    },
+    "validation/test": {
+      "shared_row_ids": 0,
+      "shared_connection_groups": 0,
+      "shared_feature_hashes": 0
+    }
+  },
+  "unique_original_rows": 356781,
+  "duplicate_feature_rows": 0,
+  "source_checksum_matches": true,
+  "every_split_feature_row_matches_original_source": true,
+  "synthetic_rows": 0,
+  "scaler_fit_rows": 214068,
+  "scaler_matches_training_mean_and_variance": true,
+  "selected_model": "xgboost",
+  "thursday_inference_flows_checked": 40,
+  "friday_inference_flows_checked": 20,
+  "batch_single_and_bundle_predictions_match": true,
+  "dataset_caches_are_isolated": true,
+  "friday_files_verified_unchanged": 23,
+  "missing_features_rejected": true,
+  "empty_batch_supported": true,
+  "training_code_checksums_match": true,
+  "regression_tests_passed": 9
+}
