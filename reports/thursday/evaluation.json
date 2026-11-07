@@ -1,0 +1,148 @@
+{
+  "dataset": "thursday",
+  "selected_model": "xgboost",
+  "selection": "validation macro F1 (test set not used for selection)",
+  "test_rows": 71356,
+  "test_class_counts": {
+    "BENIGN": 57227,
+    "PORTSCAN": 13722,
+    "WEB_BRUTE_FORCE": 273,
+    "WEB_XSS": 134
+  },
+  "limitations": [
+    "Not an independent-host or chronological evaluation.",
+    "Timestamp values lack full date/hour information; no temporal split used.",
+    "Related attack campaigns can remain across connection groups.",
+    "Attack-family labels include attempted traffic; they do not establish successful compromise."
+  ],
+  "accuracy": 0.9900639049274063,
+  "macro_f1": 0.7090194208560743,
+  "benign_false_positive_rate": 0.010204973176996873,
+  "classification_report": {
+    "BENIGN": {
+      "precision": 0.9989418549283107,
+      "recall": 0.9897950268230031,
+      "f1-score": 0.9943474063021154,
+      "support": 57227.0
+    },
+    "PORTSCAN": {
+      "precision": 0.998980409292841,
+      "recall": 0.9996356216295,
+      "f1-score": 0.9993079080610497,
+      "support": 13722.0
+    },
+    "WEB_BRUTE_FORCE": {
+      "precision": 0.32894736842105265,
+      "recall": 0.7326007326007326,
+      "f1-score": 0.4540295119182747,
+      "support": 273.0
+    },
+    "WEB_XSS": {
+      "precision": 0.2770700636942675,
+      "recall": 0.6492537313432836,
+      "f1-score": 0.38839285714285715,
+      "support": 134.0
+    },
+    "accuracy": 0.9900639049274063,
+    "macro avg": {
+      "precision": 0.6509849240841179,
+      "recall": 0.8428212780991299,
+      "f1-score": 0.7090194208560743,
+      "support": 71356.0
+    },
+    "weighted avg": {
+      "precision": 0.9950303370201915,
+      "recall": 0.9900639049274063,
+      "f1-score": 0.9920962054273742,
+      "support": 71356.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      56643,
+      14,
+      376,
+      194
+    ],
+    [
+      5,
+      13717,
+      0,
+      0
+    ],
+    [
+      40,
+      0,
+      200,
+      33
+    ],
+    [
+      15,
+      0,
+      32,
+      87
+    ]
+  ],
+  "original_label_results": {
+    "BENIGN": {
+      "support": 57227,
+      "family_accuracy": 0.9897950268230031,
+      "predicted_label_counts": {
+        "BENIGN": 56643,
+        "PORTSCAN": 14,
+        "WEB_BRUTE_FORCE": 376,
+        "WEB_XSS": 194
+      }
+    },
+    "Infiltration - Portscan": {
+      "support": 13722,
+      "family_accuracy": 0.9996356216295,
+      "predicted_label_counts": {
+        "BENIGN": 5,
+        "PORTSCAN": 13717,
+        "WEB_BRUTE_FORCE": 0,
+        "WEB_XSS": 0
+      }
+    },
+    "Web Attack - Brute Force": {
+      "support": 14,
+      "family_accuracy": 1.0,
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "PORTSCAN": 0,
+        "WEB_BRUTE_FORCE": 14,
+        "WEB_XSS": 0
+      }
+    },
+    "Web Attack - Brute Force - Attempted": {
+      "support": 259,
+      "family_accuracy": 0.7181467181467182,
+      "predicted_label_counts": {
+        "BENIGN": 40,
+        "PORTSCAN": 0,
+        "WEB_BRUTE_FORCE": 186,
+        "WEB_XSS": 33
+      }
+    },
+    "Web Attack - XSS": {
+      "support": 4,
+      "family_accuracy": 1.0,
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "PORTSCAN": 0,
+        "WEB_BRUTE_FORCE": 0,
+        "WEB_XSS": 4
+      }
+    },
+    "Web Attack - XSS - Attempted": {
+      "support": 130,
+      "family_accuracy": 0.6384615384615384,
+      "predicted_label_counts": {
+        "BENIGN": 15,
+        "PORTSCAN": 0,
+        "WEB_BRUTE_FORCE": 32,
+        "WEB_XSS": 83
+      }
+    }
+  }
+}
