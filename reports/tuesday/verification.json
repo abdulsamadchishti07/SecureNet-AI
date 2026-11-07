@@ -1,0 +1,41 @@
+{
+  "dataset": "tuesday",
+  "pairwise_overlap": {
+    "train/validation": {
+      "shared_row_ids": 0,
+      "shared_connection_groups": 0,
+      "shared_feature_hashes": 0
+    },
+    "train/test": {
+      "shared_row_ids": 0,
+      "shared_connection_groups": 0,
+      "shared_feature_hashes": 0
+    },
+    "validation/test": {
+      "shared_row_ids": 0,
+      "shared_connection_groups": 0,
+      "shared_feature_hashes": 0
+    }
+  },
+  "unique_original_rows": 319920,
+  "duplicate_feature_rows": 0,
+  "source_checksum_matches": true,
+  "every_split_feature_row_matches_original_source": true,
+  "synthetic_rows": 0,
+  "scaler_fit_rows": 191952,
+  "scaler_matches_training_mean_and_variance": true,
+  "selected_model": "random_forest",
+  "tuesday_inference_flows_checked": 30,
+  "previous_dataset_inference_flows_checked": {
+    "friday": 20,
+    "thursday": 20,
+    "wednesday": 25
+  },
+  "batch_single_and_bundle_predictions_match": true,
+  "dataset_caches_are_isolated": true,
+  "previous_files_verified_unchanged": 59,
+  "missing_features_rejected": true,
+  "empty_batch_supported": true,
+  "training_code_checksums_match": true,
+  "regression_tests_passed": 20
+}
