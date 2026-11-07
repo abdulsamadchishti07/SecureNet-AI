@@ -6,9 +6,10 @@ from collections.abc import Mapping
 import joblib
 import numpy as np
 
-from ml_engine.preprocess import SELECTED_COLUMNS, MODELS_DIR, SCHEMA_VERSION
 from ml_engine.datasets import get_dataset
+from ml_engine.preprocess import SELECTED_COLUMNS, SCHEMA_VERSION
 
+MODELS_DIR = get_dataset("friday").models_dir
 BUNDLE_PATH = os.path.join(MODELS_DIR, "inference_bundle.pkl")
 _bundle = None
 _weekday_bundles = {}
@@ -54,6 +55,8 @@ def _feature_matrix(features_list):
         missing = [column for column in SELECTED_COLUMNS if column not in features]
         if missing:
             raise ValueError(f"Flow {index} missing required features: {missing}")
+        if any(isinstance(features[column], (bool, str)) for column in SELECTED_COLUMNS):
+            raise ValueError("Flow features must be numeric")
         rows.append([features[column] for column in SELECTED_COLUMNS])
     try:
         matrix = np.asarray(rows, dtype=float)
@@ -79,9 +82,10 @@ def predict_batch(features_list, dataset="friday"):
     predictions = model.predict(scaled)
     probabilities = model.predict_proba(scaled)
     class_names = encoder.inverse_transform(model.classes_.astype(int))
+    labels = encoder.inverse_transform(predictions.astype(int))
     results = []
-    for prediction, row in zip(predictions, probabilities):
-        label = str(encoder.inverse_transform([int(prediction)])[0])
+    for label, row in zip(labels, probabilities):
+        label = str(label)
         probability_map = {str(name): float(p) for name, p in zip(class_names, row)}
         results.append({
             "label": label,
