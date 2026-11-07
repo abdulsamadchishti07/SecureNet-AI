@@ -2,20 +2,77 @@
 
 Last updated: 2026-11-07 (Asia/Karachi).
 
+## Priority correction — validity review
+
+Read `docs/ML Engine/VALIDITY_REVIEW.md` before interpreting the completed-run
+sections below. The runs are completed experiments, not validated live detectors.
+Five-tuple grouping prevents connection overlap but does not isolate attack
+campaigns: Tuesday FTP/SSH, all four Wednesday DoS families and Thursday's two
+web families each have just one endpoint pair shared across train/validation/test.
+Changing the group key alone cannot provide both pair independence and full class
+coverage. Source-port ablations have not been run; score causation is not proved.
+
+The hypothetical four-model OR on the existing Monday common cohort flags
+3,357 / 189,279 flows (1.7736%). It is not deployed; the sniffer still uses Friday.
+Unconditional Attempted-to-attack merging needs review against the exact release
+and intended detector target. The 2022 reprocessing authors recommend a BENIGN
+mapping when uncertain; local provenance is consistent with that family but is
+not checksum-verified. Do not tune Thursday subtypes before resolving these gates.
+
+Sniffer parity is unvalidated. Earlier claims below that its generating extractor
+was identified and semantics were verified are too strong: formula checks and
+synthetic packets did not reproduce original captures. No PCAPs were found in
+the workspace or `aaa.zip`; no differential replay has been performed. Obtain
+matching captures, repairs and a pinned exporter before claiming parity.
+
+Revised order: provenance/target definitions and independent-campaign feasibility;
+differential PCAP replay; defensible evaluation and port ablations; unified serving
+candidate with supported coverage. Per-flow error isolation, vectorized decoding,
+trusted artifact loading and legacy quarantine can proceed independently. Current
+runtime raises on invalid inputs without a sniffer error boundary; pickle loading
+requires trusted artifacts. These fixes, retraining, relabelling and migration
+were not performed during the review. Evidence: `reports/validity_review/findings.json`.
+
 ## User intent and current authorization
 
 The user is building SecureNet AI, a final-year network intrusion detection and
-response project. The current priority is to repair and retrain the Friday ML
-pipeline before integrating live traffic.
+response project. The current work is offline weekday ML training before
+integrating live traffic. Corrected Friday, Thursday, Wednesday and Tuesday baselines are done.
+Monday normal-reference preparation and saved-model false-alarm evaluation are also done.
 
 The user first requested analysis and a plan, then authorized fixing Friday's data
-leakage and running the corrected pipeline. That run is now complete. Keep
-scope on the Friday ML milestone; live capture, backend and response remain future
-work. Do not overwrite unrelated user changes.
+leakage and running the corrected pipeline. That run is complete. The user then
+explicitly chose Thursday next; its separate training/evaluation run is also
+complete. The user then explicitly selected Wednesday; its separate run is now
+complete too. The user then selected Tuesday; that separate run is now complete.
+During Tuesday documentation completion, the user selected Monday next. Its
+BENIGN-only data was prepared and used for false-alarm evaluation, not training.
+Do not overwrite unrelated user changes or implicitly start other
+weekday runs. See the latest sniffer entry for the independent capture work.
 
 The original analysis was read-only. The implementation now changes the ML
 pipeline, adds focused tests/reports, and keeps legacy artifacts in their original
 locations. See the latest change-log entry and reports for completion status.
+
+## Current test suite — consolidated 2026-11-07
+
+- The user explicitly requested removing weekday-specific test files and using
+  pytest fixtures/parametrization. Tests now follow software responsibilities.
+- Run `.venv/bin/python -m pip install -r requirements-dev.txt`, then
+  `.venv/bin/python -m pytest -q`. Configuration is `pytest.ini`; detailed test
+  responsibilities and coverage limits are in `tests/README.md`.
+- `tests/conftest.py` owns independent expected label-policy cases, one synthetic
+  flow factory, per-test temporary project paths, fresh caches and small real RF/
+  XGBoost fits. Shared assertions run across all four configured classifier scopes.
+- There are 121 passing parametrized cases, including four sniffer tests. Original
+  23-test counts elsewhere in this handoff are historical. Tests do not require
+  local CSV/model artifacts, root capture privileges or external services.
+- Combined test report: `--junitxml=reports/tests/pytest.xml` (ignored by Git).
+  `reports/README.md` indexes completed experiment evidence kept in its original
+  locations to preserve saved paths/checksums. Historical test names in run records
+  describe the pre-consolidation suite.
+- This refactor changes tests/configuration/docs only. Campaign evaluation,
+  capture parity, Attempted labels and runtime defects above remain open.
 
 ## Project context
 
@@ -24,36 +81,251 @@ locations. See the latest change-log entry and reports for completion status.
   → backend decisions → storage, alerts, firewall response → dashboard.
 - Python ML prototype exists. Backend, frontend, and deployment remain planned.
 - Friday classes: BENIGN, BOTNET, DDOS, PORTSCAN.
+- Thursday classes: BENIGN, PORTSCAN, WEB_BRUTE_FORCE, WEB_XSS.
+- Wednesday classes: BENIGN, DOS_GOLDENEYE, DOS_HULK, DOS_SLOWHTTPTEST, DOS_SLOWLORIS.
+- Tuesday classes: BENIGN, FTP_BRUTE_FORCE, SSH_BRUTE_FORCE.
+- Monday: BENIGN-only reference, no supervised classifier or model registry entry.
 - Current feature schema: `ml_engine/preprocess.py::SELECTED_COLUMNS` (20 features).
 - Dataset source/provenance should be documented accurately: `Claude.md` describes
-  CICIDS2017, while `docs/ML Engine/Friday.docx` names UNSW Canberra. Do not assume
+  CICIDS2017, while the legacy `docs/ML Engine/Friday.md` plan names UNSW Canberra.
+  That file was previously called `Friday.docx`. Do not assume
   the exact downloaded variant or feature definitions without checking.
 
 ## Repository map and actual state
 
 | Path | State / purpose |
 | --- | --- |
-| `ml_engine/preprocess.py` | Friday cleaning/deduplication and grouped 60/20/20 raw-valued splits |
+| `ml_engine/datasets.py` | Explicit Friday/Thursday/Wednesday/Tuesday policies and separate paths |
+| `ml_engine/monday.py` | Normal-only reference and overlap-controlled saved-model false alarms |
+| `ml_engine/preprocess.py` | Weekday cleaning/deduplication and grouped 60/20/20 raw-valued splits |
 | `ml_engine/train.py` | Training-only scaling, class weights, RF/XGBoost, validation model selection |
 | `ml_engine/evaluate.py` | Selected model's held-out test metrics and confusion matrix |
 | `ml_engine/predictor.py` | Atomic bundle loading; selected model; validated single/batch inputs |
 | `ml_engine/__init__.py` | Lazily imports public entry points |
-| `sniffer/capture.py` | `start_capture()` is a placeholder |
-| `sniffer/extractor.py` | `extract_features(packet)` is a placeholder |
+| `sniffer/capture.py` | `start_capture()`: pcap/pcapng reader or live Scapy AsyncSniffer |
+| `sniffer/extractor.py` | Flow table emitting 20 features + IPs; CICFlowMeter parity unvalidated |
 | `sniffer/publisher.py` | Redis publishing placeholder |
 | `sniffer/rules.py` | Rule evaluation placeholder |
-| `sniffer/main.py` | Only prints a startup message |
+| `sniffer/main.py` | CLI: `-i IFACE`/`-r PCAP`, JSON lines, optional `--predict` (detection only) |
 | `dataset/raw/` | Local CSVs for all five weekdays, including `_plus` variants |
-| `dataset/processed/` | Raw cleaned CSV and schema-v2 `friday_splits.pkl` |
-| `ml_engine/models/` | Preserved legacy artifacts; corrected run lives in `friday_v2/` |
+| `dataset/processed/` | Separate raw cleaned CSVs and schema-v2 weekday split pickles |
+| `ml_engine/models/` | Preserved legacy artifacts; `friday_v2/`, `thursday_v1/`, `wednesday_v1/`, `tuesday_v1/` |
 | `requirements.txt` | Unpinned ML dependencies plus Scapy |
 | `README.md` | Setup/run commands, split strategy, artifact paths and limitations |
-| `docs/ML Engine/Friday.docx` | Actually plain text; read as text, not a Word ZIP |
-| `tests/test_friday_pipeline.py` | Five regression/integration tests |
+| `docs/ML Engine/Friday.md` | Legacy Friday plan; source variant/provenance still needs documentation |
+| `docs/ML Engine/WEDNESDAY.md` | Wednesday methodology, results, limits and usage |
+| `docs/ML Engine/TUESDAY.md` | Tuesday methodology, results, limits and usage |
+| `docs/ML Engine/MONDAY.md` | Monday normal-reference method, limits, results and usage |
+| `tests/conftest.py` | Shared policy cases, flow factory, isolated paths/caches and small real estimators |
+| `tests/test_preprocessing.py` | Label/cleaning, raw-value and deterministic connection split contracts |
+| `tests/test_training.py` | Training-only transforms, validation selection and saved-run guards |
+| `tests/test_inference.py` | Inputs, feature order, single/batch/direct agreement and bundle identity |
+| `tests/test_evaluation.py` | Report coverage and changed/mismatched artifact rejection |
+| `tests/test_reference.py` | Normal-only no-fitting, overlap filtering and fingerprint contracts |
+| `tests/test_sniffer.py` | Synthetic packet/flow regressions; not source-capture parity proof |
 | `reports/friday/` | Baseline checksums, data audit, training/evaluation results, verification, PNG |
+| `reports/thursday/` | Thursday audit/results/verification and Friday preservation checksums |
+| `reports/wednesday/` | Wednesday audit/results/verification and previous-file preservation checksums |
+| `reports/tuesday/` | Tuesday audit/results/verification and previous-file preservation checksums |
+| `reports/monday/` | Normal-reference audit, false-alarm evaluation and preservation checks |
 
 No backend, database integration, firewall response, notifications, dashboard,
 or Docker setup exists yet.
+
+## Current Monday reference — completed 2026-11-07
+
+- User selected Monday after Tuesday. Actual `monday.csv` is 371,621 BENIGN rows,
+  no attacks. No standalone Monday model/scaler/encoder was fitted or selected.
+  Monday is not in the supervised registry; do not add a one-class fake baseline.
+- Added `ml_engine.monday` and a backward-compatible explicit-config option to
+  shared `clean_data`. No default weekday behavior, previous model settings or
+  sniffer behavior changed. `monday_plus.csv` was not used.
+- Removed 2,024 duplicate feature vectors; no invalid/contradictory/header rows or
+  label exclusions. Clean normal reference: 369,597 flows / 249,108 connection
+  groups. No Monday train/validation/test split; all values remain raw.
+- Saved all four weekday classifiers were evaluated as-is. Full Monday results
+  can overlap earlier runs. A common strict cohort excludes any feature-vector
+  OR canonical connection-key match in any earlier train/validation/test partition
+  of ANY compared model. Day-local group IDs were not compared across files.
+- Feature fingerprints normalize numeric types/signed zero; keys use bidirectional
+  IP/ports/protocol. Keys omit dates, so reuse across days may over-exclude actual
+  independent connections. The filtered population is not random/host-independent.
+- Excluded overlap union 180,318 rows (feature overlap 1,582; connection overlap
+  179,945; categories intersect). Common cohort: 189,279 identical rows per model.
+- Full-reference false positives / 369,597: Friday 57 (0.0154%), Thursday 3,208
+  (0.8680%), Wednesday 148 (0.0400%), Tuesday 0 (0.0000%).
+- Common-cohort false positives / 189,279: Friday 57 (0.0301%), Thursday 3,154
+  (1.6663%), Wednesday 147 (0.0777%), Tuesday 0 (0.0000%). Thursday's common
+  errors: 103 PORTSCAN, 2,059 WEB_BRUTE_FORCE, 992 WEB_XSS. Its web weakness persists.
+- Monday cannot assess attack recall/precision/F1 or choose an overall best model.
+  Different scopes and filtered denominators matter; zero observed false positives
+  is not a live guarantee. All metrics assume source BENIGN annotations are correct.
+- Data artifacts: `cleaned_monday.csv`, `monday_reference.pkl`,
+  `monday_common_cohort.pkl` in `dataset/processed/`. Last file stores eligible raw
+  row IDs and reference checksum. No `monday_splits.pkl` or Monday model bundle.
+- Evidence: `reports/monday/{data_audit,false_alarm_evaluation,verification}.json`,
+  preservation hashes and README. Detailed docs: `docs/ML Engine/MONDAY.md`.
+- Three Monday tests added; 23 total tests pass (19 ML/reference + four sniffer).
+  Tests forbid fitting during evaluation and check common-cohort union, empty
+  metrics, source/split checksums and reference overwrite guards.
+- Actual verification recomputed source-row/fingerprint matches, all previous
+  exposure exclusions, cohort checksum, and metric arithmetic; 30 predictions per
+  saved model match the public API. Checksums verified 74 previous files unchanged.
+- Recompute results: `.venv/bin/python -m ml_engine.monday --evaluate-only`.
+  Read saved JSON/README for no writes. Default model list is all four; selecting
+  fewer via `--models` changes the common cohort. Preparation refuses replacing an
+  existing reference; archive reference/data/reports before preparing again.
+- Monday is NOT automatically incorporated into model training. A future combined
+  model must group/deduplicate original days jointly. After training on Monday,
+  do not present this observed reference as unseen evaluation for the new model.
+  No combined model, model selection, live capture or firewall work was performed.
+
+## Current Tuesday run — completed 2026-11-07
+
+- User selected Tuesday next. Only `dataset/raw/tuesday.csv` was used; no `_plus`
+  file was combined. Added Tuesday's policy/paths to the existing registry and
+  ignored `ml_engine/models/tuesday_v1/`. Shared pipeline/model settings unchanged.
+- CLI uses `--dataset tuesday`; Python uses `predict(features, dataset="tuesday")`
+  or its batch equivalent. Friday remains the default, including sniffer CLI
+  `--predict`. Four independent weekday classifiers exist, not one combined model.
+- Three labels: BENIGN, FTP_BRUTE_FORCE, SSH_BRUTE_FORCE. Merge FTP-Patator and
+  SSH-Patator with their Attempted variants; preserve original-label/attempted
+  metadata. No label exclusions. Unknown labels fail rather than being discarded.
+- Raw 322,078 rows: BENIGN 315,106; FTP base/attempted 3,972/12; SSH 2,961/27.
+  Removed 2,158 duplicate BENIGN feature vectors. No invalid numeric rows,
+  conflicting labels or repeated headers. Retained 319,920 original flows:
+  BENIGN 312,948; FTP 3,984; SSH 2,988.
+- Total connection groups 211,633. Train 191,952 rows / 126,980 groups; validation
+  63,984 / 42,327; test 63,984 / 42,326. Verified zero overlapping row IDs,
+  connections or model inputs; every split feature row matches its raw source.
+- Same 20 features, training-only scaler/encoder and balanced class weights. No
+  synthetic rows, SMOTE or undersampling. Verified scaler mean/variance against
+  original training rows; all identity/label metadata stays outside model inputs.
+- Validation macro F1: RF 1.0; XGBoost 0.9994381911381741. Selected Random Forest
+  on validation before evaluating test. No post-test tuning occurred.
+- Test accuracy 0.9999843710927732; macro F1 0.9997183971186455; benign FPR 0.0
+  (0/62,589); one error/63,984: a base-label SSH-Patator flow predicted BENIGN.
+- Test family supports: BENIGN 62,589; FTP 797; SSH 598. F1: BENIGN 99.9992%,
+  FTP 100%, SSH 99.9163%. Attempted test support is only three FTP and six SSH
+  rows, all correct; don't generalize from such small subgroups or promise zero
+  live false positives based on this partition.
+- Artifacts: `ml_engine/models/tuesday_v1/inference_bundle.pkl` and
+  `dataset/processed/tuesday_splits.pkl`; evidence `reports/tuesday/`;
+  documentation `docs/ML Engine/TUESDAY.md`. Bundle contains selected RF and its
+  matching transforms/metadata; selection is not hardcoded to XGBoost.
+- Added three Tuesday tests. All 20 tests pass (16 ML + four sniffer). Verified
+  30 Tuesday, 20 Friday, 20 Thursday and 25 Wednesday validation predictions in
+  one process with cache isolation and matching direct/single/batch predictions.
+- Checksums verified 59 prior artifacts/reports/processed/sniffer files unchanged.
+  Preserved raw datasets, other weekday runs and unrelated workspace changes.
+- View results: `.venv/bin/python -m ml_engine.evaluate --dataset tuesday`.
+  Preprocessing/training refuse overwriting a trained default Tuesday run;
+  archive models, splits and reports before a future run.
+- Limits: within-day grouped evaluation, potential host/campaign overlap and
+  dataset-specific ports; no chronological/independent/live validation. Provenance
+  and full feature-domain validation remain open. Thursday web weaknesses persist.
+- Monday normal-data integration, combined cross-day modeling and live integration
+  are future work. Do not concatenate prepared day splits blindly or select a day
+  from an assumed attack label. No other milestone is authorized by this run.
+
+## Current Wednesday run — completed 2026-11-07
+
+- User explicitly selected Wednesday next. Only `dataset/raw/wednesday.csv` was
+  used; `_plus` files were not combined. Added the Wednesday dataset configuration
+  and ignored `ml_engine/models/wednesday_v1/`; shared pipeline implementation and
+  all prior label policies/model parameters remain unchanged.
+- CLI: `--dataset wednesday` for preprocessing, training and evaluation. Python:
+  `predict(features, dataset="wednesday")`, or the batch equivalent. Default
+  inference and existing sniffer CLI `--predict` still use Friday.
+- Five classes: BENIGN, DOS_GOLDENEYE, DOS_HULK, DOS_SLOWHTTPTEST, DOS_SLOWLORIS.
+  Merge each DoS family's base/Attempted labels; retain original-label and attempted
+  metadata. Exclude Heartbleed explicitly: 11 rows from one connection group.
+- Raw 496,640 → retained 494,528 flows. Removed 2,101 same-label duplicates; no
+  conflicting labels, invalid numeric rows or repeated headers were found.
+- Retained counts: BENIGN 317,045; DOS_GOLDENEYE 7,647; DOS_HULK 159,049;
+  DOS_SLOWHTTPTEST 5,108; DOS_SLOWLORIS 5,679. All 20 features unchanged; identities
+  and labels are metadata only. No resampling/SMOTE or synthetic rows.
+- Connection groups: 226,691. Training 296,712 flows / 136,014 groups; validation
+  98,909 / 45,338; test 98,907 / 45,339. Verified zero cross-partition row,
+  connection or identical-input overlaps; every feature row matches raw source.
+- Scaler and encoder fit only on original training. Actual scaler mean/variance
+  match training-only statistics; class weights use training only.
+- Validation macro F1: RF 0.9983642760744365, XGBoost 0.9987194645582488.
+  Selected XGBoost on validation macro F1. RF had lower validation benign FPR
+  (0.0063% versus 0.0095%); selection criterion remained macro F1.
+- Selected XGBoost test accuracy 0.9998079003508347, macro F1 0.9986344542992166,
+  benign FPR 0.00015770631929221403 (10/63,409). Errors: 19/98,907 = 10 benign
+  flagged, four attacks labelled benign, five cross-family mistakes.
+- Test F1: BENIGN 99.99%, GoldenEye 99.77%, Hulk 99.99%, Slowhttptest 99.66%,
+  Slowloris 99.91%. GoldenEye - Attempted subgroup has 14/17 correct (three Hulk
+  predictions); don't conceal small-subgroup limits with aggregate scores.
+- Bundle: `ml_engine/models/wednesday_v1/inference_bundle.pkl`; splits:
+  `dataset/processed/wednesday_splits.pkl`; evidence: `reports/wednesday/`;
+  detailed documentation: `docs/ML Engine/WEDNESDAY.md`.
+- Added four Wednesday tests; all 17 project tests pass (13 ML + four sniffer).
+  Verified 50 Wednesday and 20 each previous-day validation predictions with all
+  caches in one process. Source/training code hashes match recorded Wednesday run.
+- Checksums verified 44 previous model/report/processed/sniffer files unchanged.
+  Preserved existing unrelated changes, including legacy Friday plan rename and
+  the spreadsheet lock file. No other training, sniffer or response work occurred.
+- Test evaluated after validation selection with no subsequent tuning. Remaining
+  limits: within-day host/campaign overlap, no temporal/independent/live evaluation,
+  dataset-specific ports and unresolved provenance; Heartbleed outside coverage.
+- Wednesday training/preprocessing refuse overwriting a trained default run.
+  Archive models/splits/reports before reruns. To view existing results:
+  `.venv/bin/python -m ml_engine.evaluate --dataset wednesday`.
+- Tuesday and a combined cross-day classifier remain future work. Thursday web
+  weaknesses are unchanged. Do not infer live readiness or begin another milestone
+  without the user's next instruction.
+
+## Current Thursday run — completed 2026-11-07
+
+- User explicitly selected Thursday, rather than Tuesday or Friday Plus. Only
+  `dataset/raw/thursday.csv` was used; `_plus` files were not combined or trained.
+- Added `--dataset {friday,thursday}` to preprocessing, training and evaluation.
+  No argument still means Friday. Programmatic inference accepts
+  `predict(features, dataset="thursday")` and the equivalent batch argument.
+- Kept all 20 model features. IPs, original labels, attempted status, row IDs and
+  connection group IDs are metadata only, never classifier inputs.
+- Map `Infiltration - Portscan` to PORTSCAN; merge base/Attempted web brute-force
+  labels into WEB_BRUTE_FORCE and base/Attempted XSS labels into WEB_XSS. Preserve
+  original labels and attempted status; report original-label test metrics.
+- Exclude 99 rows explicitly: Infiltration 36, Infiltration - Attempted 45,
+  Web Attack - SQL Injection 13, SQL Injection - Attempted 5. Unknown labels fail.
+- Raw 362,075 rows → 356,781 retained. Removed 5,191 same-label duplicates and
+  four conflicting-label rows; no invalid numeric rows or duplicate headers.
+- Retained class counts: BENIGN 286,134; PORTSCAN 68,609; WEB_BRUTE_FORCE 1,365;
+  WEB_XSS 673. Retained web connection groups: 1,363 and 673 respectively.
+- Training 214,068; validation 71,357; test 71,356 original flows. Same grouped
+  isolation as Friday, no resampling/SMOTE, training-only transforms/class weights.
+- Validation macro F1: RF 0.6766085674659057; XGBoost 0.7116348117297955. Selected
+  XGBoost on validation only; test evaluated after selection, without retuning.
+- Test accuracy 0.9900639049274063; macro F1 0.7090194208560743; benign FPR
+  0.010204973176996873 (584/57,227). Total errors: 709/71,356.
+- Test F1: BENIGN 99.43%, PORTSCAN 99.93%, WEB_BRUTE_FORCE 45.40%, WEB_XSS 38.84%.
+  Web precision is poor (32.89% and 27.71%). Do not call Thursday robust or ready
+  for blocking based on its 99% accuracy. Web false positives/family confusion
+  require further work using training/validation, not repeated test tuning.
+- Web test support is mostly attempted traffic. Base-label web samples are just
+  14 brute-force and four XSS rows; their correct predictions are not sufficient
+  evidence of generalization. See `original_label_results` in evaluation JSON.
+- Bundle: `ml_engine/models/thursday_v1/inference_bundle.pkl`. Splits:
+  `dataset/processed/thursday_splits.pkl`. Reports: `reports/thursday/`.
+- Verified zero shared original rows, connections or model inputs across splits;
+  every split feature row matches the original CSV. Scaler mean/variance match
+  training only. Thursday inference checked on 40 validation flows and Friday on
+  20 in the same process; cache isolation confirmed. All nine tests pass.
+- Checksums for 23 Friday artifacts/reports/processed files were verified unchanged.
+  Do not rerun Friday merely to inspect this expansion. Thursday remains a separate
+  model; a future combined model requires global cross-day deduplication/grouping.
+- Training refuses nonempty output directories. Thursday preprocessing refuses
+  replacing its default split when a Thursday model already exists. Archive the
+  Thursday run AND reports before another run. Evaluation checks the split hash.
+- To see results: `.venv/bin/python -m ml_engine.evaluate --dataset thursday`;
+  view `reports/thursday/confusion_matrix.png` or its README for interpretation.
+- Remaining: Thursday web-class improvement, provenance, environment pinning,
+  independent host/day/campaign and live evaluation. No live capture or response
+  work was performed. Ask which next milestone the user wants before expanding scope.
 
 ## Current corrected Friday run — completed 2026-11-07
 
@@ -120,8 +392,8 @@ than treating them as permanent environment facts.
 - `predict({})` returned a prediction rather than rejecting missing features.
 - `predict_batch([])` raised a 2D-array shape ValueError.
 
-The saved scores are reproducible but are NOT reliable evidence of generalization:
-the current pipeline leaks information across the train/test boundary.
+These legacy scores are reproducible but are NOT reliable evidence of generalization:
+the original pipeline leaked information across the train/test boundary.
 
 ## Findings to address
 
@@ -169,6 +441,9 @@ are recorded but not pinned. See current-run status above before repeating work.
     provide usable setup instructions, focused tests, and dataset provenance.
 
 ## Proposed implementation plan
+
+Historical implementation plan; the priority correction above and validity review
+override its scientific-completion claims and next-work order.
 
 Chunks 1–5 form the Friday model milestone. Baseline preservation, corrected
 splits and the first retraining/evaluation run are completed. Class weighting
@@ -243,8 +518,13 @@ inference hardening/environment pinning are not complete. Chunks 6–9 are futur
 - Add deployment configuration, health checks, secrets configuration and setup docs.
 - Done when the end-to-end demonstration is reproducible.
 
-Expand to Tuesday, Wednesday and Thursday after the Friday milestone using the
-corrected pipeline, with separate decisions for rare classes and attack coverage.
+Tuesday, Wednesday, Thursday and Friday baselines are complete; Thursday's web
+weaknesses remain unresolved. Monday normal-data integration and a combined model
+remain future work. Keep explicit coverage and cross-day leakage decisions for
+that future work when requested.
+
+Monday normal-reference preparation and saved-model false-alarm evaluation are
+complete. Integration into training is a different, still-unimplemented milestone.
 
 ## Working conventions
 
@@ -264,6 +544,14 @@ corrected pipeline, with separate decisions for rare classes and attack coverage
 
 ## Change log
 
+- 2026-11-07: User requested documentation in `docs/`. Added
+  `docs/ML Engine/ML_ENGINE.md` covering the Friday leakage correction, Thursday
+  labels/exclusions, cleaning/splits, training/selection, exact saved results,
+  artifact/API usage, limits and a proposed validation-based improvement plan.
+  Added `docs/README.md` and linked from the project README. Read saved JSON/code
+  to ground the document; no retraining, evaluation rerun or runtime changes were
+  performed. Preserved existing sniffer implementation and all unrelated changes.
+
 - 2026-11-07: Completed read-only project analysis and saved this handoff/plan.
   No implementation chunks completed. Await the user's next implementation instruction.
 - 2026-11-07: User authorized fixing Friday leakage and running it. Reworked
@@ -275,3 +563,71 @@ corrected pipeline, with separate decisions for rare classes and attack coverage
   legacy artifact checksums and unrelated `.gitkeep`/`Claude.md` changes. See
   `reports/friday/README.md` and `verification.json` for results. No live capture,
   packet collection, firewall changes or backend work was performed.
+- 2026-11-07: User selected Thursday next. Added explicit dataset policies and
+  `--dataset thursday` support with separate artifacts; preserved Friday defaults
+  and verified 23 Friday files unchanged. Audited/cleaned Thursday, grouped splits,
+  trained RF/XGBoost using class weights, selected XGBoost on validation and evaluated
+  once on held-out data. Added four Thursday tests (nine total passing), original
+  label/subgroup reports, inference/cache checks, README and handoff updates.
+  Thursday accuracy 99.0064% hides macro F1 70.9019% and weak web precision/F1;
+  this is an honest baseline requiring validation-based improvement. No other
+  weekday, combined model, live capture, backend or firewall work was started.
+- 2026-11-07: User asked to write the sniffer. Implemented capture + flow extraction
+  mirroring the DistriNet-fixed CICFlowMeter (GintsEngelen/CICFlowMeter source) that
+  produced the Friday CSV; semantics verified against the CSV (µs, payload lengths,
+  120 s timeout, no 1-packet/zero-duration flows, rate/mean formulas exact). Added
+  `tests/test_sniffer.py` (4 tests; 13 total pass), installed Scapy 2.8.0 in `.venv`.
+  A pcap SYN/RST probe classified PORTSCAN, a normal session BENIGN. Deviations:
+  torn-down TCP flows emit after a 5 s idle grace (reference waits for SYN/120 s);
+  IPv4 only; no recorded-traffic validation yet. Live capture needs root (verified
+  it fails loudly without). `publisher.py`/`rules.py` left as placeholders (backend
+  future). Next: validate on lab pcaps (Chunk 6 done-criterion), then Chunk 7.
+- 2026-11-07: User selected Wednesday. Added its explicit five-class DoS policy,
+  excluded Heartbleed (11 rows/one group), cleaned/grouped original data and trained
+  RF/XGBoost with the existing pipeline. Selected XGBoost on validation; held-out
+  accuracy 99.9808%, macro F1 99.8634%, 19/98,907 errors. Added four Wednesday
+  tests (17 total passing), audit/training/evaluation/verification reports and
+  Wednesday documentation; updated shared docs/README/handoff. Verified no split
+  overlaps, training-only scaler statistics, five-class inference and preservation
+  of 44 previous files. Previous models, reports and sniffer code are unchanged;
+  no combined model, Tuesday run or live integration was started.
+- 2026-11-07: User selected Tuesday. Added its three-class FTP/SSH policy without
+  exclusions; cleaned/grouped raw data and trained RF/XGBoost using the existing
+  pipeline. Random Forest won validation selection; held-out accuracy 99.9984%,
+  macro F1 99.9718%, one SSH flow missed/63,984, zero benign false positives in
+  this partition. Added three tests (20 total passing), full run/verification
+  reports and Tuesday documentation; updated shared docs/README/handoff. Verified
+  training-only transforms, split isolation, all four caches and 59 preserved
+  previous files. No other-day retraining, sniffer changes, combined model or live
+  integration was performed.
+- 2026-11-07: User selected Monday during Tuesday completion. Verified BENIGN-only
+  labels; cleaned a 369,597-row normal reference without training a classifier.
+  Added saved-model false-alarm evaluation on full/reference and a shared 189,279-
+  row cohort excluding prior input/connection exposure. Common FPR: Friday 0.0301%,
+  Thursday 1.6663%, Wednesday 0.0777%, Tuesday 0%. Added three tests (23 total
+  passing), source/cohort/API/preservation verification, Monday reports/docs and
+  updated shared README/handoff. All 74 previous files are unchanged. No previous
+  model/scaler was fitted, no model winner selected and no live behavior changed.
+- 2026-11-07: Audited the user's validity critique. Confirmed endpoint-pair overlap
+  across partitions and measured the hypothetical Monday OR false-positive union
+  (3,357/189,279). Reviewed primary dataset/persistence documentation; identified
+  unresolved Attempted semantics, provenance, capture parity and runtime failure/
+  artifact trust boundaries. Saved findings and revised priorities in
+  `docs/ML Engine/VALIDITY_REVIEW.md` and `reports/validity_review/findings.json`;
+  corrected prominent documentation claims and marked the old SMOTE plan obsolete.
+  Updated report interpretation notes; existing metric JSON, splits, raw data, model
+  artifacts and runtime code were not changed. No ablation, replay, retraining,
+  runtime fix or artifact quarantine was performed. Next: provenance/target and
+  matching-capture evidence before further performance claims.
+- 2026-11-07: User requested consolidating weekday-fragmented tests into pytest.
+  Replaced five weekday test modules with responsibility-based preprocessing,
+  training, inference, evaluation and normal-reference modules; converted the
+  sniffer tests to pytest. Added shared expected policy cases, one flow factory,
+  isolated temporary paths/caches and small real RF/XGBoost fits. Original 23 tests
+  passed before migration; 121 parametrized cases pass after migration. Added
+  pytest configuration/dev dependency, test guide, central report index and optional
+  combined JUnit output. Updated active docs/commands; historical experiment
+  evidence, production code, raw/processed data and saved models were preserved.
+  Existing dependency deprecation warnings arise from joblib/NumPy persistence.
+  The validity review's scientific and serving issues remain unresolved; do not
+  infer model generalization from a green regression suite.
