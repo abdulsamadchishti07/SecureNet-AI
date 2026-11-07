@@ -1,10 +1,13 @@
 """Synthetic packet regressions; these do not establish capture-to-CSV parity."""
 
+import json
 import pytest
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.l2 import Ether
 
+from ml_engine import predictor
 from ml_engine.preprocess import SELECTED_COLUMNS
+from sniffer import main as sniffer_main
 from sniffer.extractor import FlowTable, parse
 from sniffer.main import run
 
@@ -93,3 +96,26 @@ def test_torn_down_flow_waits_for_grace(tcp_packet):
     assert table.expire(last + 4_000_000) == []
     assert len(table.expire(last + 6_000_000)) == 1
     assert table.flush() == []  # Already emitted once.
+
+
+def test_loopback_and_unbuilt_or_fragmented_packets(packet_factory):
+    unbuilt = IP(src=A, dst=A) / TCP(sport=40000, dport=80, flags="S") / b"abc"
+    unbuilt.time = T0
+    reply = IP(src=A, dst=A) / TCP(sport=80, dport=40000, flags="SA")
+    reply.time = T0 + 10e-6
+    frag = packet_factory(20, A, B, TCP(sport=40000, dport=80, flags="A"))
+    frag[IP].frag = 1
+    (flow,) = collect_flows([unbuilt, reply, frag])
+    assert (flow["Total Fwd Packet"], flow["Total Bwd packets"], flow["Packet Length Max"]) == (1, 1, 3)
+
+
+def test_cli_skips_invalid_flows_and_continues(train_dataset, dataset_cases, monkeypatch, capsys):
+    run = train_dataset(next(c for c in dataset_cases if c.name == "friday"))
+    capsys.readouterr()
+    valid = run.raw.iloc[0][SELECTED_COLUMNS].to_dict()
+    monkeypatch.setattr(sniffer_main, "start_capture", lambda *a: iter(()))
+    monkeypatch.setattr(sniffer_main, "run", lambda p, cb, g: (cb({**valid, "Flow IAT Mean": -1}), cb(valid)))
+    sniffer_main.main(["-r", "synthetic.pcap", "--predict"])
+    out, err = capsys.readouterr()
+    assert json.loads(out)["label"] in run.config.classes
+    assert "Dropped invalid flow" in err
