@@ -1,0 +1,160 @@
+{
+  "date": "2026-11-07",
+  "scope": "read-only validity audit; no model training or deployment changes",
+  "datasets": {
+    "tuesday": {
+      "split_sha256": "5836e2bff739bdb255778edb816cb74d15bb4e8d2daacbe80fe38fda3bd35196",
+      "classes": {
+        "FTP_BRUTE_FORCE": {
+          "rows": 3984,
+          "five_tuple_groups": 3973,
+          "endpoint_pairs": 1,
+          "endpoint_pairs_in_multiple_partitions": 1,
+          "rows_on_pairs_shared_across_partitions": 3984,
+          "endpoint_pairs_in_all_partitions": 1,
+          "endpoint_pair_counts_per_partition": {
+            "train": 1,
+            "validation": 1,
+            "test": 1
+          }
+        },
+        "SSH_BRUTE_FORCE": {
+          "rows": 2988,
+          "five_tuple_groups": 2979,
+          "endpoint_pairs": 1,
+          "endpoint_pairs_in_multiple_partitions": 1,
+          "rows_on_pairs_shared_across_partitions": 2988,
+          "endpoint_pairs_in_all_partitions": 1,
+          "endpoint_pair_counts_per_partition": {
+            "train": 1,
+            "validation": 1,
+            "test": 1
+          }
+        }
+      },
+      "raw_source_sha256": "664b615572fdbd88ae24d01f33a538983277359151e9fd5172d40da092362f71"
+    },
+    "wednesday": {
+      "split_sha256": "6915254693e64bdf5d6c29afb7c3771b5c0ef5142bf7d83ea1c75f7e592806b4",
+      "classes": {
+        "DOS_GOLDENEYE": {
+          "rows": 7647,
+          "five_tuple_groups": 7574,
+          "endpoint_pairs": 1,
+          "endpoint_pairs_in_multiple_partitions": 1,
+          "rows_on_pairs_shared_across_partitions": 7647,
+          "endpoint_pairs_in_all_partitions": 1,
+          "endpoint_pair_counts_per_partition": {
+            "train": 1,
+            "validation": 1,
+            "test": 1
+          }
+        },
+        "DOS_HULK": {
+          "rows": 159049,
+          "five_tuple_groups": 14108,
+          "endpoint_pairs": 1,
+          "endpoint_pairs_in_multiple_partitions": 1,
+          "rows_on_pairs_shared_across_partitions": 159049,
+          "endpoint_pairs_in_all_partitions": 1,
+          "endpoint_pair_counts_per_partition": {
+            "train": 1,
+            "validation": 1,
+            "test": 1
+          }
+        },
+        "DOS_SLOWHTTPTEST": {
+          "rows": 5108,
+          "five_tuple_groups": 4215,
+          "endpoint_pairs": 1,
+          "endpoint_pairs_in_multiple_partitions": 1,
+          "rows_on_pairs_shared_across_partitions": 5108,
+          "endpoint_pairs_in_all_partitions": 1,
+          "endpoint_pair_counts_per_partition": {
+            "train": 1,
+            "validation": 1,
+            "test": 1
+          }
+        },
+        "DOS_SLOWLORIS": {
+          "rows": 5679,
+          "five_tuple_groups": 3869,
+          "endpoint_pairs": 1,
+          "endpoint_pairs_in_multiple_partitions": 1,
+          "rows_on_pairs_shared_across_partitions": 5679,
+          "endpoint_pairs_in_all_partitions": 1,
+          "endpoint_pair_counts_per_partition": {
+            "train": 1,
+            "validation": 1,
+            "test": 1
+          }
+        }
+      },
+      "raw_source_sha256": "87c6ab27cef32df2dcac315ecd992f918484e71856f32b0d2a55eb171a774d60"
+    },
+    "thursday": {
+      "split_sha256": "05d23ea018241a87e54e066cb499ab15bf132e312768ea6e579189b697e7ac91",
+      "classes": {
+        "PORTSCAN": {
+          "rows": 68609,
+          "five_tuple_groups": 64742,
+          "endpoint_pairs": 12,
+          "endpoint_pairs_in_multiple_partitions": 12,
+          "rows_on_pairs_shared_across_partitions": 68609,
+          "endpoint_pairs_in_all_partitions": 12,
+          "endpoint_pair_counts_per_partition": {
+            "train": 12,
+            "validation": 12,
+            "test": 12
+          }
+        },
+        "WEB_BRUTE_FORCE": {
+          "rows": 1365,
+          "five_tuple_groups": 1363,
+          "endpoint_pairs": 1,
+          "endpoint_pairs_in_multiple_partitions": 1,
+          "rows_on_pairs_shared_across_partitions": 1365,
+          "endpoint_pairs_in_all_partitions": 1,
+          "endpoint_pair_counts_per_partition": {
+            "train": 1,
+            "validation": 1,
+            "test": 1
+          }
+        },
+        "WEB_XSS": {
+          "rows": 673,
+          "five_tuple_groups": 673,
+          "endpoint_pairs": 1,
+          "endpoint_pairs_in_multiple_partitions": 1,
+          "rows_on_pairs_shared_across_partitions": 673,
+          "endpoint_pairs_in_all_partitions": 1,
+          "endpoint_pair_counts_per_partition": {
+            "train": 1,
+            "validation": 1,
+            "test": 1
+          }
+        }
+      },
+      "raw_source_sha256": "e3cac669f495df33da7ae1e8fcc06ed511d3161b97a7ba9263f2d476cf467a0e"
+    }
+  },
+  "monday_hypothetical_or_ensemble": {
+    "cohort_rows": 189279,
+    "individual_false_positives": {
+      "friday": 57,
+      "thursday": 3154,
+      "wednesday": 147,
+      "tuesday": 0
+    },
+    "unique_flagged": 3357,
+    "union_rate": 0.017735723455850887,
+    "summed_events": 3358,
+    "deployed": false,
+    "cohort_artifact_sha256": "92c9518576151eccb57dd6ed165a77907d6de86ae1bff36566c35eff2857e8ee"
+  },
+  "local_pcap_inventory": {
+    "workspace_capture_files": 0,
+    "aaa_zip_capture_files": 0,
+    "replay_performed": false
+  }
+}
