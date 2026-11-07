@@ -56,13 +56,9 @@ def test_other_dataset_splits_are_rejected_before_fitting(dataset_case, tmp_path
         train.train_model(dataset=dataset_case.name, splits_path=path)
 
 
-@pytest.mark.parametrize("dataset_name", ("thursday", "wednesday", "tuesday"))
-def test_reprocessing_refuses_to_replace_a_trained_split(dataset_name, dataset_cases, train_dataset):
-    # Friday's missing preprocessing guard is an existing production limitation.
-    case = next(case for case in dataset_cases if case.name == dataset_name)
-    train_dataset(case)
+def test_reprocessing_refuses_to_replace_a_trained_split(trained_run):
     with pytest.raises(FileExistsError):
-        preprocess_data(dataset=dataset_name)
+        preprocess_data(dataset=trained_run.config.name)
 
 
 def test_training_keeps_other_dataset_artifacts_separate(trained_run):
@@ -72,3 +68,4 @@ def test_training_keeps_other_dataset_artifacts_separate(trained_run):
             assert not other.models_dir.exists()
             assert not other.reports_dir.exists()
             assert not other.splits_path.exists()
+
