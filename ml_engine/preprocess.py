@@ -142,8 +142,7 @@ def preprocess_data(raw_csv=None, processed_dir=None, reports_dir=None, dataset=
     processed_dir = Path(processed_dir or config.processed_dir)
     reports_dir = Path(reports_dir or config.reports_dir)
     if (
-        dataset != "friday"
-        and processed_dir.resolve() == config.processed_dir.resolve()
+        processed_dir.resolve() == config.processed_dir.resolve()
         and config.models_dir.exists()
         and any(config.models_dir.iterdir())
     ):
