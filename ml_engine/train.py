@@ -1,4 +1,4 @@
-"""Fit transforms on training data; select Friday model on validation only."""
+"""Fit transforms on training data; select a weekday model on validation only."""
 
 import json
 import os
@@ -14,6 +14,8 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.utils.class_weight import compute_sample_weight
 from xgboost import XGBClassifier
+
+from ml_engine.datasets import get_dataset, dataset_argument
 
 from ml_engine.preprocess import (
     SELECTED_COLUMNS, LABEL_COLUMN, MODELS_DIR, SPLITS_PATH, SCHEMA_VERSION,
@@ -48,17 +50,30 @@ def score_predictions(y_true, y_pred, class_names):
     }
 
 
-def train_model():
-    if not os.path.exists(SPLITS_PATH):
+def train_model(dataset="friday", splits_path=None, models_dir=None, reports_dir=None):
+    config = get_dataset(dataset)
+    splits_path = Path(splits_path or (SPLITS_PATH if dataset == "friday" else config.splits_path))
+    output = Path(models_dir or (MODELS_DIR if dataset == "friday" else config.models_dir))
+    reports_dir = Path(reports_dir or (REPORTS_DIR if dataset == "friday" else config.reports_dir))
+    bundle_path = (
+        Path(BUNDLE_PATH) if dataset == "friday" and models_dir is None
+        else output / "inference_bundle.pkl"
+    )
+    if not splits_path.exists():
         raise FileNotFoundError("Run python -m ml_engine.preprocess first")
-    output = Path(MODELS_DIR)
     if output.exists() and any(output.iterdir()):
         raise FileExistsError(f"Preserve or rename existing run before retraining: {output}")
-    payload = joblib.load(SPLITS_PATH)
+    payload = joblib.load(splits_path)
     if payload.get("schema_version") != SCHEMA_VERSION:
         raise ValueError("Legacy processed data rejected; rerun preprocessing")
+    if payload.get("dataset", "friday") != dataset:
+        raise ValueError("Split dataset does not match requested training dataset")
+    if payload["audit"]["feature_names"] != SELECTED_COLUMNS:
+        raise ValueError("Split feature schema does not match training schema")
     train = payload["splits"]["train"]
     validation = payload["splits"]["validation"]
+    if any(set(part[LABEL_COLUMN]) != set(config.classes) for part in payload["splits"].values()):
+        raise ValueError("Split classes do not match the dataset label policy")
     scaler, encoder = fit_training_transforms(train)
     X_train = scaler.transform(train[SELECTED_COLUMNS].to_numpy(dtype=float))
     X_validation = scaler.transform(validation[SELECTED_COLUMNS].to_numpy(dtype=float))
@@ -90,6 +105,7 @@ def train_model():
               f"benign FPR={scores[name]['benign_false_positive_rate']:.6f}", flush=True)
     winner = max(scores, key=lambda name: scores[name]["macro_f1"])
     metadata = {
+        "dataset": dataset,
         "schema_version": SCHEMA_VERSION,
         "selected_model": winner,
         "selection_metric": "validation macro F1 (test set not used for selection)",
@@ -98,13 +114,13 @@ def train_model():
         "classes": classes,
         "scaler_fit_rows": int(scaler.n_samples_seen_),
         "data_audit": payload["audit"],
-        "split_artifact_sha256": sha256_file(SPLITS_PATH),
+        "split_artifact_sha256": sha256_file(splits_path),
         "python": platform.python_version(),
         "dependencies": {name: version(name) for name in (
             "numpy", "pandas", "scikit-learn", "xgboost", "joblib",
         )},
         "code_sha256": {name: sha256_file(Path(__file__).parent / name)
-                        for name in ("preprocess.py", "train.py", "predictor.py", "evaluate.py")},
+                        for name in ("datasets.py", "preprocess.py", "train.py", "predictor.py", "evaluate.py")},
         "model_parameters": {name: {
             key: repr(value) if isinstance(value, float) and not np.isfinite(value) else value
             for key, value in model.get_params().items()
@@ -123,12 +139,12 @@ def train_model():
         "model": models[winner], "scaler": scaler, "label_encoder": encoder,
         "metadata": metadata,
     }, temporary_bundle)
-    temporary_bundle.replace(BUNDLE_PATH)
-    Path(REPORTS_DIR).mkdir(parents=True, exist_ok=True)
-    (Path(REPORTS_DIR) / "training.json").write_text(json.dumps(metadata, indent=2) + "\n")
+    temporary_bundle.replace(bundle_path)
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    (reports_dir / "training.json").write_text(json.dumps(metadata, indent=2) + "\n")
     print(f"Selected {winner} using validation only. Artifacts: {output}", flush=True)
     return metadata
 
 
 if __name__ == "__main__":
-    train_model()
+    train_model(dataset=dataset_argument(__doc__))
