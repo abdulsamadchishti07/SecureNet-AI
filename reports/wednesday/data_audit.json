@@ -1,0 +1,174 @@
+{
+  "raw_rows": 496640,
+  "duplicate_header_rows": 0,
+  "raw_label_counts": {
+    "BENIGN": 319119,
+    "DoS GoldenEye": 7567,
+    "DoS GoldenEye - Attempted": 80,
+    "DoS Hulk": 158468,
+    "DoS Hulk - Attempted": 581,
+    "DoS Slowhttptest": 1740,
+    "DoS Slowhttptest - Attempted": 3368,
+    "DoS Slowloris": 3859,
+    "DoS Slowloris - Attempted": 1847,
+    "Heartbleed": 11
+  },
+  "excluded_label_counts": {
+    "Heartbleed": 11
+  },
+  "excluded_rows": 11,
+  "invalid_rows": 0,
+  "same_label_duplicates_removed": 2101,
+  "conflicting_label_rows_removed": 0,
+  "clean_rows": 494528,
+  "class_counts": {
+    "BENIGN": 317045,
+    "DOS_GOLDENEYE": 7647,
+    "DOS_HULK": 159049,
+    "DOS_SLOWHTTPTEST": 5108,
+    "DOS_SLOWLORIS": 5679
+  },
+  "connection_groups": 226691,
+  "class_group_counts": {
+    "BENIGN": 212655,
+    "DOS_GOLDENEYE": 7574,
+    "DOS_HULK": 14108,
+    "DOS_SLOWHTTPTEST": 4215,
+    "DOS_SLOWLORIS": 3869
+  },
+  "dataset": "wednesday",
+  "schema_version": 2,
+  "label_mapping": {
+    "DoS GoldenEye": "DOS_GOLDENEYE",
+    "DoS GoldenEye - Attempted": "DOS_GOLDENEYE",
+    "DoS Hulk": "DOS_HULK",
+    "DoS Hulk - Attempted": "DOS_HULK",
+    "DoS Slowhttptest": "DOS_SLOWHTTPTEST",
+    "DoS Slowhttptest - Attempted": "DOS_SLOWHTTPTEST",
+    "DoS Slowloris": "DOS_SLOWLORIS",
+    "DoS Slowloris - Attempted": "DOS_SLOWLORIS"
+  },
+  "excluded_label_policy": [
+    "Heartbleed"
+  ],
+  "source_sha256": "87c6ab27cef32df2dcac315ecd992f918484e71856f32b0d2a55eb171a774d60",
+  "feature_names": [
+    "Src Port",
+    "Dst Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Min",
+    "Packet Length Max",
+    "Packet Length Mean",
+    "FIN Flag Count",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "PSH Flag Count",
+    "ACK Flag Count",
+    "Average Packet Size"
+  ],
+  "random_state": 42,
+  "split_method": "stratified connection groups, approximately 60/20/20",
+  "limitations": [
+    "Not an independent-host or chronological evaluation.",
+    "Timestamp values lack full date/hour information; no temporal split used.",
+    "Related attack campaigns can remain across connection groups.",
+    "Attack-family labels include attempted traffic; they do not establish successful compromise."
+  ],
+  "splits": {
+    "train": {
+      "rows": 296712,
+      "class_counts": {
+        "BENIGN": 190227,
+        "DOS_GOLDENEYE": 4589,
+        "DOS_HULK": 95423,
+        "DOS_SLOWHTTPTEST": 3065,
+        "DOS_SLOWLORIS": 3408
+      },
+      "groups": 136014,
+      "class_group_counts": {
+        "BENIGN": 127594,
+        "DOS_GOLDENEYE": 4546,
+        "DOS_HULK": 8464,
+        "DOS_SLOWHTTPTEST": 2527,
+        "DOS_SLOWLORIS": 2323
+      },
+      "original_label_counts": {
+        "BENIGN": 190227,
+        "DoS GoldenEye": 4541,
+        "DoS GoldenEye - Attempted": 48,
+        "DoS Hulk": 95066,
+        "DoS Hulk - Attempted": 357,
+        "DoS Slowhttptest": 1069,
+        "DoS Slowhttptest - Attempted": 1996,
+        "DoS Slowloris": 2296,
+        "DoS Slowloris - Attempted": 1112
+      }
+    },
+    "validation": {
+      "rows": 98909,
+      "class_counts": {
+        "BENIGN": 63409,
+        "DOS_GOLDENEYE": 1529,
+        "DOS_HULK": 31815,
+        "DOS_SLOWHTTPTEST": 1021,
+        "DOS_SLOWLORIS": 1135
+      },
+      "groups": 45338,
+      "class_group_counts": {
+        "BENIGN": 42531,
+        "DOS_GOLDENEYE": 1513,
+        "DOS_HULK": 2822,
+        "DOS_SLOWHTTPTEST": 844,
+        "DOS_SLOWLORIS": 775
+      },
+      "original_label_counts": {
+        "BENIGN": 63409,
+        "DoS GoldenEye": 1514,
+        "DoS GoldenEye - Attempted": 15,
+        "DoS Hulk": 31702,
+        "DoS Hulk - Attempted": 113,
+        "DoS Slowhttptest": 345,
+        "DoS Slowhttptest - Attempted": 676,
+        "DoS Slowloris": 791,
+        "DoS Slowloris - Attempted": 344
+      }
+    },
+    "test": {
+      "rows": 98907,
+      "class_counts": {
+        "BENIGN": 63409,
+        "DOS_GOLDENEYE": 1529,
+        "DOS_HULK": 31811,
+        "DOS_SLOWHTTPTEST": 1022,
+        "DOS_SLOWLORIS": 1136
+      },
+      "groups": 45339,
+      "class_group_counts": {
+        "BENIGN": 42530,
+        "DOS_GOLDENEYE": 1515,
+        "DOS_HULK": 2822,
+        "DOS_SLOWHTTPTEST": 844,
+        "DOS_SLOWLORIS": 771
+      },
+      "original_label_counts": {
+        "BENIGN": 63409,
+        "DoS GoldenEye": 1512,
+        "DoS GoldenEye - Attempted": 17,
+        "DoS Hulk": 31700,
+        "DoS Hulk - Attempted": 111,
+        "DoS Slowhttptest": 326,
+        "DoS Slowhttptest - Attempted": 696,
+        "DoS Slowloris": 745,
+        "DoS Slowloris - Attempted": 391
+      }
+    }
+  }
+}
