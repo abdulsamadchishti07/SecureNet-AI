@@ -54,6 +54,20 @@ DATASET_CASES = (
         ("FTP_BRUTE_FORCE", ("FTP-Patator", "FTP-Patator - Attempted")),
         ("SSH_BRUTE_FORCE", ("SSH-Patator", "SSH-Patator - Attempted")),
     )),
+    DatasetCase("unified", (
+        ("BENIGN", ("BENIGN", "Botnet - Attempted", "FTP-Patator - Attempted",
+                    "SSH-Patator - Attempted", "DoS GoldenEye - Attempted",
+                    "DoS Hulk - Attempted", "DoS Slowhttptest - Attempted",
+                    "DoS Slowloris - Attempted", "Web Attack - Brute Force - Attempted",
+                    "Web Attack - XSS - Attempted")),
+        ("BOTNET", ("Botnet",)),
+        ("BRUTE_FORCE", ("FTP-Patator", "SSH-Patator")),
+        ("DDOS", ("DDoS",)),
+        ("DOS", ("DoS GoldenEye", "DoS Hulk", "DoS Slowhttptest", "DoS Slowloris")),
+        ("PORTSCAN", ("Portscan", "Infiltration - Portscan")),
+        ("WEB_ATTACK", ("Web Attack - Brute Force", "Web Attack - XSS")),
+    ), ("Infiltration", "Infiltration - Attempted", "Web Attack - SQL Injection",
+        "Web Attack - SQL Injection - Attempted", "Heartbleed")),
 )
 
 
