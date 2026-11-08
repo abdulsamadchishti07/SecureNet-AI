@@ -1,5 +1,10 @@
 # SecureNet AI — ML engine documentation
 
+The [unified detector guide](UNIFIED.md) describes the subsequently implemented
+seven-class candidate and its different Attempted-to-BENIGN policy. Inference now
+defaults to `unified`; historical weekday runs below remain available explicitly.
+Their original run measurements and policies have been preserved.
+
 **Validity correction:** the reported split is connection-disjoint, not campaign-
 or endpoint-independent. The per-day scores do not establish live generalization.
 The [validity review](VALIDITY_REVIEW.md) overrides the earlier improvement roadmap
@@ -31,15 +36,14 @@ Tuesday's three-class FTP/SSH baseline is complete. Random Forest won validation
 selection; its held-out accuracy is 99.9984% and macro F1 is 99.9718%. See
 [Tuesday documentation](TUESDAY.md) for details and independent-validation limits.
 
-The immediate recommendation is to investigate Thursday validation errors before
-replacing its dataset. No replacement dataset, new feature set, label-policy
-experiment or additional tuning was performed as part of writing this document.
+The original recommendation to tune Thursday is superseded by the validity review
+and the subsequent unified experiment. No extra Thursday tuning was performed.
 
 A packet sniffer is now present in the workspace and documented in the project
 README/handoff. This document covers the saved ML runs, not an independent audit
-of that later sniffer work. The sniffer CLI's current `--predict` uses Friday;
-the Python prediction API can explicitly select Thursday, Wednesday or Tuesday. No dataset score
-establishes live detection or automatic-blocking readiness.
+of that later sniffer work. The sniffer CLI's `--predict` and Python API now default
+to the unified candidate; historical weekday models require an explicit dataset.
+No dataset score establishes live detection or automatic-blocking readiness.
 
 ## 2. Source code responsibilities
 
@@ -59,9 +63,8 @@ establishes live detection or automatic-blocking readiness.
 | [test_reference.py](../../tests/test_reference.py) | Normal-reference no-fitting, overlap union and fingerprint contracts |
 | [test_sniffer.py](../../tests/test_sniffer.py) | Synthetic TCP/UDP flow regressions; capture parity remains unvalidated |
 
-Friday remains the default when no dataset argument is supplied. Other days are
-selected explicitly, e.g. `--dataset wednesday` or `dataset="wednesday"` in Python.
-These are separate classifiers, not one model covering all weekday attack types.
+Historical weekday models are selected explicitly, e.g. `--dataset wednesday` or
+`dataset="wednesday"` in Python. Inference without a dataset now selects `unified`.
 
 ## 3. Data sources and feature contract
 
@@ -304,7 +307,8 @@ nonnumeric inputs. Empty batches return `[]`. Complete per-feature domain checks
 (such as every discrete field's valid range) remain future work.
 
 The suite is now organized by responsibility with shared pytest fixtures and
-dataset parametrization: 121 cases pass, including four sniffer regressions.
+dataset parametrization: 169 cases pass, including seven sniffer cases and
+the new unified contracts.
 The original 23 unittest tests were migrated and their contracts retained.
 Integration fixtures use small real Random Forest and XGBoost fits, temporary
 project paths and isolated inference caches. See the [test guide](../../tests/README.md).
