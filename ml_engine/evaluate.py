@@ -58,7 +58,24 @@ def evaluate_model(dataset="friday", bundle_path=None, splits_path=None, reports
             result["original_label_results"][label] = {
                 "support": int(mask.sum()),
                 "family_accuracy": float(np.mean(prediction[mask] == y_test[mask])),
+                "target_label_counts": test.loc[mask, LABEL_COLUMN].value_counts().sort_index().to_dict(),
                 "predicted_label_counts": {name: int((predicted_names == name).sum()) for name in classes},
+            }
+    if "_source_day" in test:
+        result["source_results"] = {}
+        benign = classes.index("BENIGN")
+        sources = test["_source_day"].to_numpy()
+        for day in sorted(set(sources)):
+            mask = sources == day
+            normal = mask & (y_test == benign)
+            attacks = mask & (y_test != benign)
+            false_positives = int((prediction[normal] != benign).sum())
+            result["source_results"][day] = {
+                "rows": int(mask.sum()), "accuracy": float(np.mean(prediction[mask] == y_test[mask])),
+                "benign_rows": int(normal.sum()), "false_positives": false_positives,
+                "benign_false_positive_rate": false_positives / int(normal.sum()) if normal.any() else None,
+                "attack_rows": int(attacks.sum()),
+                "any_attack_recall": float(np.mean(prediction[attacks] != benign)) if attacks.any() else None,
             }
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "evaluation.json").write_text(json.dumps(result, indent=2) + "\n")
