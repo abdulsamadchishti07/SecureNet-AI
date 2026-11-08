@@ -21,6 +21,7 @@ from ml_engine.preprocess import (
 )
 
 MONDAY = DatasetConfig("monday", "monday_reference_only", ("BENIGN",), {})
+DEFAULT_MODEL_DAYS = tuple(name for name, config in DATASETS.items() if not config.source_days)
 
 
 def feature_hashes(frame):
@@ -108,14 +109,23 @@ def load_existing_run(day):
     payload = joblib.load(config.splits_path)
     if payload.get("schema_version") != SCHEMA_VERSION or payload.get("dataset", "friday") != day:
         raise ValueError("Saved split schema/dataset identity mismatch")
-    if sha256_file(config.raw_csv) != payload["audit"]["source_sha256"]:
-        raise ValueError(f"Saved {day} raw source changed since preparation")
-    source = read_source(config.raw_csv)
     parts = list(payload["splits"].values())
     previous = pd.concat(parts, ignore_index=True)
+    if "sources" in payload["audit"]:
+        for info in payload["audit"]["sources"].values():
+            if sha256_file(info["path"]) != info["source_sha256"]:
+                raise ValueError(f"Saved {day} raw source changed since preparation")
+        if "_connection_hash" not in previous:
+            raise ValueError("Multi-source run is missing connection provenance")
+        connections = previous["_connection_hash"].to_numpy(dtype=np.uint64)
+    else:
+        if sha256_file(config.raw_csv) != payload["audit"]["source_sha256"]:
+            raise ValueError(f"Saved {day} raw source changed since preparation")
+        source = read_source(config.raw_csv)
+        connections = connection_hashes(source.iloc[previous["_row_id"]])
     return bundle, {
         "feature_hashes": np.unique(feature_hashes(previous)),
-        "connection_hashes": np.unique(connection_hashes(source.iloc[previous["_row_id"]])),
+        "connection_hashes": np.unique(connections),
         "partitions_considered": list(payload["splits"]),
         "bundle_sha256": sha256_file(bundle_path),
         "splits_sha256": metadata["split_artifact_sha256"],
@@ -144,7 +154,7 @@ def false_alarm_metrics(labels):
 
 
 def evaluate_monday(config=MONDAY, model_days=None):
-    model_days = list(DATASETS) if model_days is None else list(model_days)
+    model_days = list(DEFAULT_MODEL_DAYS) if model_days is None else list(model_days)
     if not model_days or len(model_days) != len(set(model_days)):
         raise ValueError("Choose at least one distinct saved model")
     reference_path = config.processed_dir / "monday_reference.pkl"
@@ -222,7 +232,7 @@ def main():
     action = parser.add_mutually_exclusive_group()
     action.add_argument("--prepare-only", action="store_true")
     action.add_argument("--evaluate-only", action="store_true")
-    parser.add_argument("--models", nargs="+", choices=tuple(DATASETS), default=list(DATASETS))
+    parser.add_argument("--models", nargs="+", choices=tuple(DATASETS), default=list(DEFAULT_MODEL_DAYS))
     args = parser.parse_args()
     if not args.evaluate_only:
         prepare_monday()
