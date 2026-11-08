@@ -1,0 +1,80 @@
+{
+  "date": "2026-11-08",
+  "timezone": "Asia/Karachi",
+  "milestone": "response chunk 1: local dry-run integration",
+  "pytest": {
+    "passed": 243,
+    "failures": 0,
+    "errors": 0,
+    "sniffer_cases": 12,
+    "known_warning": "joblib/NumPy array-shape deprecation"
+  },
+  "offline_demo": {
+    "fixture": "runtime/response_demo_offline.pcap",
+    "synthetic_packets": 6,
+    "completed_flows": 3,
+    "labels": [
+      "PORTSCAN",
+      "PORTSCAN",
+      "PORTSCAN"
+    ],
+    "scores": [
+      0.9966566177859643,
+      0.9966566177859643,
+      0.9966566177859643
+    ],
+    "decisions": [
+      "alert",
+      "alert",
+      "candidate"
+    ],
+    "summary": {
+      "mode": "dry_run",
+      "accepted": 3,
+      "dropped": 0,
+      "pending": 0,
+      "capacity": 1024,
+      "processed": 3,
+      "unlogged": 0,
+      "would_block": 1,
+      "would_unblock": 0,
+      "active_simulated_blocks": 1,
+      "worker_failed": false,
+      "log_path": "runtime/response_verified_alerts.jsonl"
+    },
+    "model_sha256_matches_loaded_artifact": true,
+    "saved_audit_copy": "reports/response/demo_events.json"
+  },
+  "preservation": {
+    "historical_files_unchanged": 89,
+    "baseline": "reports/unified/preserved_previous_runs.json",
+    "unified_bundle_and_splits_unchanged": true,
+    "unified_artifact_hashes": {
+      "bundle": "5e8fcee635593d6917cf573284ac137797768f37db33bc3ae6501d7f9fe1f3d6",
+      "splits": "1ef6d42ae08f9d4f5f939ed94c27f162fe2c9d74d42b5bb8271bee9ac8f2d9be"
+    }
+  },
+  "source_sha256": {
+    "ml_engine/predictor.py": "a3a0a12d796b3cfb5eef292882e3977899ac8f2e74c0b6d19dceec953f6a6cc1",
+    "sniffer/main.py": "ff95203089f3ac093196278e8468d277d691eb665572460e49840aef8fc8b9f4",
+    "sniffer/events.py": "cec31b7be4f88f2ccbfa8b752b8113503c7f6d2678eb29412edaca8bb7cceac7",
+    "sniffer/publisher.py": "62b2640cc40d887c2d9bf7a96ed04e1f0ba8cde3773f15080fa5f0abc8e82f18",
+    "sniffer/rules.py": "04e988aef77c9312d016fead36255c3ad1da692c22a953046fa1aace3cdd36b3",
+    "backend/__init__.py": "2f1efe71ab68a58604c35299b2f8d1bb05b749f8035b8b1d329fc0b991948020",
+    "backend/firewall.py": "48f0d7bed51ce3491659a5b30175711d34d3ed1cd31538f6f7222ed0c91a9b9a",
+    "backend/worker.py": "97b114c42fb8800eabdec4ec7d2c67b495ee394c955743fcfe1b7c9b2dfdde08",
+    "scripts/create_response_demo.py": "b7de027a19785d64cb81fbf58e7610c643306f2d27816ae7bb85a6821c20651c"
+  },
+  "execution_boundaries": {
+    "real_firewall_execution_implemented": false,
+    "live_packet_capture_performed": false,
+    "original_capture_parity_verified": false,
+    "model_retrained": false
+  },
+  "limits": [
+    "Synthetic smoke checks wiring only, not independent detection or original-PCAP feature parity.",
+    "Policy scores/windows and source-IP attribution are unvalidated for active blocking.",
+    "The queue and block state are process-local; no Redis, transactional persistence or restart recovery.",
+    "JSONL flushes per record but is not an fsync-backed durable queue."
+  ]
+}
