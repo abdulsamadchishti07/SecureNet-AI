@@ -6,7 +6,7 @@ from collections.abc import Mapping
 import joblib
 import numpy as np
 
-from ml_engine.datasets import get_dataset
+from ml_engine.datasets import get_dataset, DEFAULT_INFERENCE_DATASET
 from ml_engine.preprocess import SELECTED_COLUMNS, SCHEMA_VERSION
 
 MODELS_DIR = get_dataset("friday").models_dir
@@ -15,7 +15,11 @@ _bundle = None
 _weekday_bundles = {}
 
 
-def _load_model(dataset="friday"):
+class FeatureValidationError(ValueError):
+    """Invalid flow input; separate from model/scaler/artifact failures."""
+
+
+def _load_model(dataset=DEFAULT_INFERENCE_DATASET):
     """Publish cached state only after all bundle components are validated."""
     global _bundle
     config = get_dataset(dataset)
@@ -51,25 +55,25 @@ def _feature_matrix(features_list):
     rows = []
     for index, features in enumerate(features_list):
         if not isinstance(features, Mapping):
-            raise ValueError(f"Flow {index} must be a feature mapping")
+            raise FeatureValidationError(f"Flow {index} must be a feature mapping")
         missing = [column for column in SELECTED_COLUMNS if column not in features]
         if missing:
-            raise ValueError(f"Flow {index} missing required features: {missing}")
+            raise FeatureValidationError(f"Flow {index} missing required features: {missing}")
         if any(isinstance(features[column], (bool, str)) for column in SELECTED_COLUMNS):
-            raise ValueError("Flow features must be numeric")
+            raise FeatureValidationError("Flow features must be numeric")
         rows.append([features[column] for column in SELECTED_COLUMNS])
     try:
         matrix = np.asarray(rows, dtype=float)
     except (TypeError, ValueError) as exc:
-        raise ValueError("Flow features must be numeric") from exc
+        raise FeatureValidationError("Flow features must be numeric") from exc
     if matrix.shape != (len(rows), len(SELECTED_COLUMNS)) or not np.isfinite(matrix).all():
-        raise ValueError("Flow features must be finite numeric scalars")
+        raise FeatureValidationError("Flow features must be finite numeric scalars")
     if (matrix < 0).any():
-        raise ValueError("Flow features must be nonnegative")
+        raise FeatureValidationError("Flow features must be nonnegative")
     return matrix
 
 
-def predict_batch(features_list, dataset="friday"):
+def predict_batch(features_list, dataset=DEFAULT_INFERENCE_DATASET):
     """Return predictions in input order; an empty batch returns an empty list."""
     get_dataset(dataset)
     features_list = list(features_list)
@@ -95,6 +99,6 @@ def predict_batch(features_list, dataset="friday"):
     return results
 
 
-def predict(features, dataset="friday"):
+def predict(features, dataset=DEFAULT_INFERENCE_DATASET):
     """Classify one flow containing all 20 raw-valued selected features."""
     return predict_batch([features], dataset=dataset)[0]
