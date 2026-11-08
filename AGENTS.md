@@ -1,6 +1,59 @@
 # SecureNet AI — Agent Handoff
 
-Last updated: 2026-11-07 (Asia/Karachi).
+Last updated: 2026-11-08 (Asia/Karachi).
+
+## Current unified implementation — completed 2026-11-08
+
+- User supplied a unified-detector implementation plan and confirmed seven broad
+  classes, the existing 20 features, and supported Attempted flows mapped to BENIGN.
+  Rare excluded families still take precedence over the Attempted mapping.
+- Unified classes: BENIGN, BOTNET, BRUTE_FORCE, DDOS, DOS, PORTSCAN, WEB_ATTACK.
+  Historical weekday label policies/artifacts remain unchanged.
+- Added `ml_engine.unify` with chunked original-CSV ingestion, source checksums and
+  row provenance, global duplicate/conflict removal and globally recomputed
+  bidirectional connection groups. `normalize_rows`, `deduplicate_flows` and
+  `connection_keys` are shared helpers in preprocessing.
+- Corrected the supplied sampling order: reserve global 60/20/20 partitions first,
+  then cap training BENIGN at 150,000 across source days. Validation/test retain
+  cleaned source prevalence; discarded training row IDs are recorded.
+- Registered `unified_v1`; shared RF/XGBoost training/evaluation support seven
+  classes, with two training workers. Evaluation adds per-source false alarms and
+  original-label target counts. Inference and sniffer now default to `unified`;
+  explicit weekday overrides remain, and missing unified artifacts do not fall back.
+- Sniffer catches input-specific `FeatureValidationError` only, preserving model/
+  artifact errors. Monday's default historical four-model comparison is preserved;
+  explicit unified exposure loading supports multi-source checksums/hashes.
+- Shared pytest fixtures include the seven-class policy; component unification
+  tests cover chunk/day conflicts, source-row parity, global groups, training-only
+  caps and real small-model end-to-end behavior. All 169 parametrized cases pass,
+  including seven sniffer cases. Joblib/NumPy deprecation warnings remain visible.
+- Full preparation read 2,099,971 source rows and retained 2,081,457 after removing
+  110 excluded rows, 18,400 same-target duplicates and four conflicting rows.
+  There are 1,083,995 global connection groups; no invalid/header rows were found.
+- Final train/validation/test: 451,304 / 416,291 / 416,290 rows. Training BENIGN is
+  exactly 150,000 (30,000 per source); 797,572 training-only benign rows were dropped.
+- Random Forest won validation macro F1 (99.8866% versus XGBoost 99.5254%). Selected
+  test accuracy is 99.9649283%, macro F1 99.8192265%, benign FPR 0.0275440%
+  (87/315,858). Of 146 errors, 17 attacks were missed and 42 had wrong attack families.
+- WEB_ATTACK has only 91 cleaned rows and 19 test examples (17 brute-force, two XSS).
+  All 19 correct predictions share one endpoint pair across partitions; this does
+  not establish robust web detection. All attack classes have shared endpoint pairs.
+- Full source-row/label/connection parity, split disjointness, training-only scaler
+  statistics and default single/batch/direct predictions were verified. A synthetic
+  offline PCAP produced the same default seven-class prediction as the public API;
+  it is not original-capture parity. No actual network capture was performed.
+- SHA-256 confirms 89 prior dataset/model/report files unchanged. The preservation
+  baseline is saved in `reports/unified/preserved_previous_runs.json`.
+- Measured preparation/training: 665.33 / 142.12 seconds; peak RSS 2.398 / 0.830 GiB.
+  Host swap was already in use. Details: `reports/unified/resources.json`.
+- Outputs are `dataset/processed/{cleaned_unified.csv,unified_splits.pkl}`,
+  `ml_engine/models/unified_v1/` and `reports/unified/`. Guide:
+  `docs/ML Engine/UNIFIED.md`; results: `reports/unified/README.md`. Existing output
+  guards require archiving before reruns. No current-task files have been committed
+  or pushed; when requested, stage and commit each file separately.
+- This is an experimental within-capture candidate, not a production-validity
+  milestone. Provenance, independent campaigns, source-port ablation, non-Attempted
+  web support and PCAP parity remain unresolved. No firewall or backend work.
 
 ## Priority correction — validity review
 
@@ -13,8 +66,9 @@ Changing the group key alone cannot provide both pair independence and full clas
 coverage. Source-port ablations have not been run; score causation is not proved.
 
 The hypothetical four-model OR on the existing Monday common cohort flags
-3,357 / 189,279 flows (1.7736%). It is not deployed; the sniffer still uses Friday.
-Unconditional Attempted-to-attack merging needs review against the exact release
+3,357 / 189,279 flows (1.7736%). It is not deployed. The November 8 unified candidate
+now supplies default inference; the historical weekday models remain explicit.
+Historical unconditional Attempted-to-attack merging needs review against the exact release
 and intended detector target. The 2022 reprocessing authors recommend a BENIGN
 mapping when uncertain; local provenance is consistent with that family but is
 not checksum-verified. Do not tune Thursday subtypes before resolving these gates.
@@ -29,9 +83,10 @@ Revised order: provenance/target definitions and independent-campaign feasibilit
 differential PCAP replay; defensible evaluation and port ablations; unified serving
 candidate with supported coverage. Per-flow error isolation, vectorized decoding,
 trusted artifact loading and legacy quarantine can proceed independently. Current
-runtime raises on invalid inputs without a sniffer error boundary; pickle loading
-requires trusted artifacts. These fixes, retraining, relabelling and migration
-were not performed during the review. Evidence: `reports/validity_review/findings.json`.
+runtime rejects invalid inputs; the sniffer now isolates input-validation failures.
+Pickle loading still requires trusted artifacts. No fixes, retraining, relabelling
+or migration were performed during the original review; subsequent changes are
+recorded above. Evidence: `reports/validity_review/findings.json`.
 
 ## User intent and current authorization
 
@@ -39,6 +94,8 @@ The user is building SecureNet AI, a final-year network intrusion detection and
 response project. The current work is offline weekday ML training before
 integrating live traffic. Corrected Friday, Thursday, Wednesday and Tuesday baselines are done.
 Monday normal-reference preparation and saved-model false-alarm evaluation are also done.
+The user subsequently authorized and clarified the unified seven-class experiment;
+it is complete as recorded above. Live validation and response remain future work.
 
 The user first requested analysis and a plan, then authorized fixing Friday's data
 leakage and running the corrected pipeline. That run is complete. The user then
@@ -54,7 +111,7 @@ The original analysis was read-only. The implementation now changes the ML
 pipeline, adds focused tests/reports, and keeps legacy artifacts in their original
 locations. See the latest change-log entry and reports for completion status.
 
-## Current test suite — consolidated 2026-11-07
+## Current test suite — updated 2026-11-08
 
 - The user explicitly requested removing weekday-specific test files and using
   pytest fixtures/parametrization. Tests now follow software responsibilities.
@@ -63,16 +120,17 @@ locations. See the latest change-log entry and reports for completion status.
   responsibilities and coverage limits are in `tests/README.md`.
 - `tests/conftest.py` owns independent expected label-policy cases, one synthetic
   flow factory, per-test temporary project paths, fresh caches and small real RF/
-  XGBoost fits. Shared assertions run across all four configured classifier scopes.
-- There are 121 passing parametrized cases, including four sniffer tests. Original
+  XGBoost fits. Shared assertions run across all five configured classifier scopes.
+- There are 169 passing parametrized cases, including seven sniffer cases. Original
   23-test counts elsewhere in this handoff are historical. Tests do not require
   local CSV/model artifacts, root capture privileges or external services.
 - Combined test report: `--junitxml=reports/tests/pytest.xml` (ignored by Git).
   `reports/README.md` indexes completed experiment evidence kept in its original
   locations to preserve saved paths/checksums. Historical test names in run records
   describe the pre-consolidation suite.
-- This refactor changes tests/configuration/docs only. Campaign evaluation,
-  capture parity, Attempted labels and runtime defects above remain open.
+- The original consolidation changed tests/configuration/docs only. The subsequent
+  unified implementation also changes runtime code and the new target policy.
+  Independent campaigns, capture parity, port ablations and artifact trust remain open.
 
 ## Project context
 
@@ -80,6 +138,7 @@ locations. See the latest change-log entry and reports for completion status.
 - Intended pipeline: packet capture → bidirectional flow features → ML inference
   → backend decisions → storage, alerts, firewall response → dashboard.
 - Python ML prototype exists. Backend, frontend, and deployment remain planned.
+- Unified classes/default: BENIGN, BOTNET, BRUTE_FORCE, DDOS, DOS, PORTSCAN, WEB_ATTACK.
 - Friday classes: BENIGN, BOTNET, DDOS, PORTSCAN.
 - Thursday classes: BENIGN, PORTSCAN, WEB_BRUTE_FORCE, WEB_XSS.
 - Wednesday classes: BENIGN, DOS_GOLDENEYE, DOS_HULK, DOS_SLOWHTTPTEST, DOS_SLOWLORIS.
@@ -95,7 +154,8 @@ locations. See the latest change-log entry and reports for completion status.
 
 | Path | State / purpose |
 | --- | --- |
-| `ml_engine/datasets.py` | Explicit Friday/Thursday/Wednesday/Tuesday policies and separate paths |
+| `ml_engine/datasets.py` | Unified and preserved weekday policies, paths and inference default |
+| `ml_engine/unify.py` | Five-source normalization, global dedup/groups, splits and training-only benign cap |
 | `ml_engine/monday.py` | Normal-only reference and overlap-controlled saved-model false alarms |
 | `ml_engine/preprocess.py` | Weekday cleaning/deduplication and grouped 60/20/20 raw-valued splits |
 | `ml_engine/train.py` | Training-only scaling, class weights, RF/XGBoost, validation model selection |
@@ -108,19 +168,21 @@ locations. See the latest change-log entry and reports for completion status.
 | `sniffer/rules.py` | Rule evaluation placeholder |
 | `sniffer/main.py` | CLI: `-i IFACE`/`-r PCAP`, JSON lines, optional `--predict` (detection only) |
 | `dataset/raw/` | Local CSVs for all five weekdays, including `_plus` variants |
-| `dataset/processed/` | Separate raw cleaned CSVs and schema-v2 weekday split pickles |
-| `ml_engine/models/` | Preserved legacy artifacts; `friday_v2/`, `thursday_v1/`, `wednesday_v1/`, `tuesday_v1/` |
+| `dataset/processed/` | Unified and separate weekday cleaned CSVs/raw-valued split pickles |
+| `ml_engine/models/` | `unified_v1/` default candidate plus preserved historical weekday/legacy artifacts |
 | `requirements.txt` | Unpinned ML dependencies plus Scapy |
 | `README.md` | Setup/run commands, split strategy, artifact paths and limitations |
 | `docs/ML Engine/Friday.md` | Legacy Friday plan; source variant/provenance still needs documentation |
 | `docs/ML Engine/WEDNESDAY.md` | Wednesday methodology, results, limits and usage |
 | `docs/ML Engine/TUESDAY.md` | Tuesday methodology, results, limits and usage |
 | `docs/ML Engine/MONDAY.md` | Monday normal-reference method, limits, results and usage |
+| `docs/ML Engine/UNIFIED.md` | Current unified target policy, methods, commands and limitations |
 | `tests/conftest.py` | Shared policy cases, flow factory, isolated paths/caches and small real estimators |
 | `tests/test_preprocessing.py` | Label/cleaning, raw-value and deterministic connection split contracts |
 | `tests/test_training.py` | Training-only transforms, validation selection and saved-run guards |
 | `tests/test_inference.py` | Inputs, feature order, single/batch/direct agreement and bundle identity |
 | `tests/test_evaluation.py` | Report coverage and changed/mismatched artifact rejection |
+| `tests/test_unification.py` | Global source contracts, training-only caps and end-to-end unified behavior |
 | `tests/test_reference.py` | Normal-only no-fitting, overlap filtering and fingerprint contracts |
 | `tests/test_sniffer.py` | Synthetic packet/flow regressions; not source-capture parity proof |
 | `reports/friday/` | Baseline checksums, data audit, training/evaluation results, verification, PNG |
@@ -631,3 +693,14 @@ complete. Integration into training is a different, still-unimplemented mileston
   Existing dependency deprecation warnings arise from joblib/NumPy persistence.
   The validity review's scientific and serving issues remain unresolved; do not
   infer model generalization from a green regression suite.
+- 2026-11-08: Implemented and ran the user-approved unified seven-class experiment
+  with the existing 20 features and supported Attempted flows mapped to BENIGN.
+  Recomputed global cleaning/groups across five original CSVs; capped BENIGN only
+  after reserving validation/test. Trained RF/XGBoost, selected RF on validation and
+  evaluated once: accuracy 99.9649283%, macro F1 99.8192265%, benign FPR 0.0275440%.
+  Default API/sniffer now use the unified bundle, retaining explicit weekday scopes.
+  All 169 tests pass; full source/split/scaler/API checks and an offline synthetic
+  PCAP smoke passed. Verified 89 prior files unchanged. Added reports, measured
+  resources, methodology and handoff notes. Campaign overlap, tiny web support,
+  provenance, port ablation and original-PCAP parity remain unresolved. No live
+  capture, backend/firewall work, current-task commits or push was performed.
