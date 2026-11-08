@@ -3,6 +3,7 @@
 - **Start here:** [Validity review and revised priorities](<ML Engine/VALIDITY_REVIEW.md>)
 - [Unified seven-class detector: method, labels and usage](<ML Engine/UNIFIED.md>)
 - [Completed unified experiment and verification](../reports/unified/README.md)
+- [Local response engine, offline demo and revised sprint plan](RESPONSE_ENGINE.md)
 - [Unified pytest suite and commands](../tests/README.md)
 - [Test reports and historical experiment index](../reports/README.md)
 
