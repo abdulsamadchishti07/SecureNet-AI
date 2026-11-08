@@ -1,0 +1,62 @@
+{
+  "preprocess": {
+    "command": [
+      ".venv/bin/python",
+      "-m",
+      "ml_engine.unify"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 665.3254274719984,
+    "user_seconds": 643.622319,
+    "system_seconds": 14.69494,
+    "peak_rss_kib_linux": 2514640
+  },
+  "train": {
+    "command": [
+      ".venv/bin/python",
+      "-m",
+      "ml_engine.train",
+      "--dataset",
+      "unified"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 142.12239925500035,
+    "user_seconds": 275.218134,
+    "system_seconds": 1.8408039999999999,
+    "peak_rss_kib_linux": 870092
+  },
+  "evaluate": {
+    "command": [
+      ".venv/bin/python",
+      "-m",
+      "ml_engine.evaluate",
+      "--dataset",
+      "unified"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 9.947018191996904,
+    "user_seconds": 12.568372,
+    "system_seconds": 1.6688619999999998,
+    "peak_rss_kib_linux": 734044
+  },
+  "verification": {
+    "command": [
+      ".venv/bin/python",
+      "/tmp/securenet-unified-verify.py"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 39.69816078299846,
+    "user_seconds": 34.244052,
+    "system_seconds": 6.782602,
+    "peak_rss_kib_linux": 1852376
+  },
+  "date": "2026-11-08",
+  "timezone": "Asia/Karachi",
+  "pytest": {
+    "cases": 169,
+    "failures": 0,
+    "errors": 0,
+    "known_warning": "joblib/NumPy array-shape deprecation"
+  },
+  "measurement_note": "Linux child-process peak RSS; timings depend on this machine. Host swap was already in use; no no-swapping claim."
+}
