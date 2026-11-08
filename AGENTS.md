@@ -2,6 +2,49 @@
 
 Last updated: 2026-11-08 (Asia/Karachi).
 
+## Current response integration — completed first chunk, 2026-11-08
+
+- User supplied the response-engine sprint plan and said to start after the
+  readiness review. Implemented the agreed first chunk: structured detection
+  events, a bounded local queue, JSONL auditing and dry-run firewall decisions.
+  Real firewall execution, Redis, APIs, database and dashboard remain later work.
+- `--respond` requires `--predict` and always simulates. Default inference remains
+  unified; the existing detection-only stdout format is preserved. Audit defaults
+  to `runtime/alerts.jsonl`; queue/response summary is on stderr. `runtime/` is ignored.
+- `sniffer/events.py` validates/freeze-copies IPs, the 20 features, prediction
+  probabilities and model identity. Predictor caches the SHA-256 of exactly the
+  deserialized bytes so events identify the model even after a disk file changes.
+  This is provenance, not authentication; pickle still requires trusted files.
+- Queue capacity 1,024; overflow rejects the incoming event and is counted/warned.
+  Worker failure raises, and normal shutdown drains accepted events, including a
+  tested final-publish/timeout race. Logs append and flush per record; no fsync/
+  transactional durability or crash replay. New log files use permissions 0600.
+- Policy defaults: score >=0.90, three distinct event IDs for one source/model/
+  class within 60 seconds of consumer processing time. WEB_ATTACK and historical
+  attack-label scopes remain alert-only. BENIGN is ignored but recorded. Evidence
+  and duplicate caches are bounded; thresholds are experimental, not calibrated.
+- `backend/firewall.py` simulates validated IPv4 INPUT rule proposals, protected
+  CIDRs, duplicate suppression and 900-second monotonic expiry. It never executes
+  commands. Configure gateway/DNS/admin/sensor addresses with repeated `--protect`;
+  there is no automatic discovery or blanket private-subnet exemption. Virtual
+  blocks and policy state exist only in that process and expire only while it runs.
+- Added `scripts/create_response_demo.py` to write six synthetic packets with
+  explicit Ethernet addresses and no packet transmission. Real saved-model replay
+  produced three PORTSCAN predictions (score 0.9966566), two alerts then one
+  `would_block`; three events accepted/processed, zero dropped/pending/unlogged.
+- All 243 parametrized cases pass, including 12 sniffer cases; dependency warnings
+  remain. SHA-256 verified 89 historical files plus unified bundle/splits unchanged.
+  No model retraining, live capture or host firewall changes were performed.
+- Guide and revised sprint sequence: `docs/RESPONSE_ENGINE.md`. Evidence:
+  `reports/response/{README.md,verification.json,demo_events.json}`. Local replay
+  output: `runtime/response_verified_{alerts.jsonl,predictions.jsonl,summary.log}`.
+- Next chunk: persistent alerts/actions and an authenticated backend/event broker;
+  isolated lab/replay and policy validation precede any privileged response service.
+  Do not call this live-validated prevention or promise one-second attack-onset
+  blocking: flow finalization can wait for the five-second grace/120-second timeout.
+- Current response changes are not committed or pushed. If asked, stage and commit
+  each file separately. Earlier commit-status notes below are historical.
+
 ## Current unified implementation — completed 2026-11-08
 
 - User supplied a unified-detector implementation plan and confirmed seven broad
@@ -96,6 +139,8 @@ integrating live traffic. Corrected Friday, Thursday, Wednesday and Tuesday base
 Monday normal-reference preparation and saved-model false-alarm evaluation are also done.
 The user subsequently authorized and clarified the unified seven-class experiment;
 it is complete as recorded above. Live validation and response remain future work.
+The user then authorized starting response integration. Its local dry-run first
+chunk is complete above; active prevention and external-service work remain future.
 
 The user first requested analysis and a plan, then authorized fixing Friday's data
 leakage and running the corrected pipeline. That run is complete. The user then
@@ -121,7 +166,7 @@ locations. See the latest change-log entry and reports for completion status.
 - `tests/conftest.py` owns independent expected label-policy cases, one synthetic
   flow factory, per-test temporary project paths, fresh caches and small real RF/
   XGBoost fits. Shared assertions run across all five configured classifier scopes.
-- There are 169 passing parametrized cases, including seven sniffer cases. Original
+- There are 243 passing parametrized cases, including 12 sniffer cases. Original
   23-test counts elsewhere in this handoff are historical. Tests do not require
   local CSV/model artifacts, root capture privileges or external services.
 - Combined test report: `--junitxml=reports/tests/pytest.xml` (ignored by Git).
@@ -164,9 +209,13 @@ locations. See the latest change-log entry and reports for completion status.
 | `ml_engine/__init__.py` | Lazily imports public entry points |
 | `sniffer/capture.py` | `start_capture()`: pcap/pcapng reader or live Scapy AsyncSniffer |
 | `sniffer/extractor.py` | Flow table emitting 20 features + IPs; CICFlowMeter parity unvalidated |
-| `sniffer/publisher.py` | Redis publishing placeholder |
-| `sniffer/rules.py` | Rule evaluation placeholder |
-| `sniffer/main.py` | CLI: `-i IFACE`/`-r PCAP`, JSON lines, optional `--predict` (detection only) |
+| `sniffer/events.py` | Validated immutable model/source-tagged detection events |
+| `sniffer/publisher.py` | Bounded in-process event queue with overflow accounting |
+| `sniffer/rules.py` | Bounded repeated-flow dry-run policy with alert-only coverage gates |
+| `sniffer/main.py` | CLI capture/prediction and opt-in `--respond` dry-run audit |
+| `backend/firewall.py` | Firewall simulation, protection, idempotency and expiry; no executor |
+| `backend/worker.py` | Local consumer, JSONL audit, shutdown drain and failure propagation |
+| `scripts/create_response_demo.py` | Offline synthetic fixture generator; sends no packets |
 | `dataset/raw/` | Local CSVs for all five weekdays, including `_plus` variants |
 | `dataset/processed/` | Unified and separate weekday cleaned CSVs/raw-valued split pickles |
 | `ml_engine/models/` | `unified_v1/` default candidate plus preserved historical weekday/legacy artifacts |
@@ -183,6 +232,8 @@ locations. See the latest change-log entry and reports for completion status.
 | `tests/test_inference.py` | Inputs, feature order, single/batch/direct agreement and bundle identity |
 | `tests/test_evaluation.py` | Report coverage and changed/mismatched artifact rejection |
 | `tests/test_unification.py` | Global source contracts, training-only caps and end-to-end unified behavior |
+| `tests/test_response.py` | Events, transport, policy, audit failures and shutdown/expiry contracts |
+| `tests/test_firewall.py` | Simulated firewall contracts with real subprocess execution forbidden |
 | `tests/test_reference.py` | Normal-only no-fitting, overlap filtering and fingerprint contracts |
 | `tests/test_sniffer.py` | Synthetic packet/flow regressions; not source-capture parity proof |
 | `reports/friday/` | Baseline checksums, data audit, training/evaluation results, verification, PNG |
@@ -191,8 +242,9 @@ locations. See the latest change-log entry and reports for completion status.
 | `reports/tuesday/` | Tuesday audit/results/verification and previous-file preservation checksums |
 | `reports/monday/` | Normal-reference audit, false-alarm evaluation and preservation checks |
 
-No backend, database integration, firewall response, notifications, dashboard,
-or Docker setup exists yet.
+The backend package currently contains response simulation only. HTTP APIs,
+database integration, actual firewall execution, notifications, dashboard and
+Docker setup do not exist yet.
 
 ## Current Monday reference — completed 2026-11-07
 
@@ -704,3 +756,14 @@ complete. Integration into training is a different, still-unimplemented mileston
   resources, methodology and handoff notes. Campaign overlap, tiny web support,
   provenance, port ablation and original-PCAP parity remain unresolved. No live
   capture, backend/firewall work, current-task commits or push was performed.
+- 2026-11-08: User authorized starting response integration. Added immutable events,
+  model-byte identity, bounded local transport, repeated-flow/coverage gates,
+  protected/idempotent firewall simulation and background JSONL audit. Connected
+  opt-in `--respond`, added an offline fixture generator, component tests, guide,
+  revised sprint sequence and saved evidence. All 243 tests pass. Actual-model
+  synthetic replay yielded three PORTSCAN events and one `would_block`; all events
+  drained/logged. Fixed and tested the shutdown publish/timeout race. Verified 91
+  historical/unified artifact files unchanged. No live capture, real firewall rules,
+  retraining, external services, current-task commits or push. Next: persistence/
+  authenticated API and explicit broker semantics, with lab validation before
+  privileged prevention.
