@@ -1,0 +1,404 @@
+{
+  "dataset": "unified",
+  "schema_version": 2,
+  "status": "experimental within-capture baseline; not production validated",
+  "sources": {
+    "monday": {
+      "path": "/home/abdulsamad/Projects/SecureNet AI/dataset/raw/monday.csv",
+      "source_sha256": "c493314d7f2cd5614193d3fd8de6d0731edfe1383ccf24df0323c8c6899ba7ab",
+      "raw_rows": 371621,
+      "duplicate_header_rows": 0,
+      "invalid_rows": 0,
+      "excluded_rows": 0,
+      "raw_label_counts": {
+        "BENIGN": 371621
+      },
+      "excluded_label_counts": {}
+    },
+    "tuesday": {
+      "path": "/home/abdulsamad/Projects/SecureNet AI/dataset/raw/tuesday.csv",
+      "source_sha256": "664b615572fdbd88ae24d01f33a538983277359151e9fd5172d40da092362f71",
+      "raw_rows": 322078,
+      "duplicate_header_rows": 0,
+      "invalid_rows": 0,
+      "excluded_rows": 0,
+      "raw_label_counts": {
+        "BENIGN": 315106,
+        "FTP-Patator": 3972,
+        "FTP-Patator - Attempted": 12,
+        "SSH-Patator": 2961,
+        "SSH-Patator - Attempted": 27
+      },
+      "excluded_label_counts": {}
+    },
+    "wednesday": {
+      "path": "/home/abdulsamad/Projects/SecureNet AI/dataset/raw/wednesday.csv",
+      "source_sha256": "87c6ab27cef32df2dcac315ecd992f918484e71856f32b0d2a55eb171a774d60",
+      "raw_rows": 496640,
+      "duplicate_header_rows": 0,
+      "invalid_rows": 0,
+      "excluded_rows": 11,
+      "raw_label_counts": {
+        "BENIGN": 319119,
+        "DoS Hulk": 158468,
+        "DoS Hulk - Attempted": 581,
+        "DoS Slowhttptest": 1740,
+        "DoS Slowhttptest - Attempted": 3368,
+        "DoS Slowloris": 3859,
+        "DoS Slowloris - Attempted": 1847,
+        "DoS GoldenEye": 7567,
+        "DoS GoldenEye - Attempted": 80,
+        "Heartbleed": 11
+      },
+      "excluded_label_counts": {
+        "Heartbleed": 11
+      }
+    },
+    "thursday": {
+      "path": "/home/abdulsamad/Projects/SecureNet AI/dataset/raw/thursday.csv",
+      "source_sha256": "e3cac669f495df33da7ae1e8fcc06ed511d3161b97a7ba9263f2d476cf467a0e",
+      "raw_rows": 362075,
+      "duplicate_header_rows": 0,
+      "invalid_rows": 0,
+      "excluded_rows": 99,
+      "raw_label_counts": {
+        "BENIGN": 288171,
+        "Infiltration": 36,
+        "Infiltration - Attempted": 45,
+        "Infiltration - Portscan": 71767,
+        "Web Attack - Brute Force": 73,
+        "Web Attack - Brute Force - Attempted": 1292,
+        "Web Attack - SQL Injection": 13,
+        "Web Attack - SQL Injection - Attempted": 5,
+        "Web Attack - XSS": 18,
+        "Web Attack - XSS - Attempted": 655
+      },
+      "excluded_label_counts": {
+        "Infiltration": 36,
+        "Infiltration - Attempted": 45,
+        "Web Attack - SQL Injection": 13,
+        "Web Attack - SQL Injection - Attempted": 5
+      }
+    },
+    "friday": {
+      "path": "/home/abdulsamad/Projects/SecureNet AI/dataset/raw/friday.csv",
+      "source_sha256": "e16fa2655766ed685fe3e43455d7e4024a81f8a1965c1eabf56e53dc9f07fb6b",
+      "raw_rows": 547557,
+      "duplicate_header_rows": 0,
+      "invalid_rows": 0,
+      "excluded_rows": 0,
+      "raw_label_counts": {
+        "BENIGN": 288544,
+        "Botnet": 736,
+        "Botnet - Attempted": 4067,
+        "DDoS": 95144,
+        "Portscan": 159066
+      },
+      "excluded_label_counts": {}
+    }
+  },
+  "raw_rows": 2099971,
+  "same_label_duplicates_removed": 18400,
+  "conflicting_label_rows_removed": 4,
+  "excluded_rows": 110,
+  "invalid_rows": 0,
+  "duplicate_header_rows": 0,
+  "clean_rows": 2081457,
+  "class_counts": {
+    "BENIGN": 1579288,
+    "BOTNET": 736,
+    "BRUTE_FORCE": 6933,
+    "DDOS": 95144,
+    "DOS": 171607,
+    "PORTSCAN": 227658,
+    "WEB_ATTACK": 91
+  },
+  "label_mapping": {
+    "Botnet": "BOTNET",
+    "Botnet - Attempted": "BENIGN",
+    "Portscan": "PORTSCAN",
+    "DDoS": "DDOS",
+    "Infiltration - Portscan": "PORTSCAN",
+    "Web Attack - Brute Force": "WEB_ATTACK",
+    "Web Attack - Brute Force - Attempted": "BENIGN",
+    "Web Attack - XSS": "WEB_ATTACK",
+    "Web Attack - XSS - Attempted": "BENIGN",
+    "DoS GoldenEye": "DOS",
+    "DoS GoldenEye - Attempted": "BENIGN",
+    "DoS Hulk": "DOS",
+    "DoS Hulk - Attempted": "BENIGN",
+    "DoS Slowhttptest": "DOS",
+    "DoS Slowhttptest - Attempted": "BENIGN",
+    "DoS Slowloris": "DOS",
+    "DoS Slowloris - Attempted": "BENIGN",
+    "FTP-Patator": "BRUTE_FORCE",
+    "FTP-Patator - Attempted": "BENIGN",
+    "SSH-Patator": "BRUTE_FORCE",
+    "SSH-Patator - Attempted": "BENIGN"
+  },
+  "excluded_label_policy": [
+    "Infiltration",
+    "Infiltration - Attempted",
+    "Web Attack - SQL Injection",
+    "Web Attack - SQL Injection - Attempted",
+    "Heartbleed"
+  ],
+  "attempted_policy": "BENIGN for supported Attempted labels; excluded families take precedence",
+  "feature_names": [
+    "Src Port",
+    "Dst Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Min",
+    "Packet Length Max",
+    "Packet Length Mean",
+    "FIN Flag Count",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "PSH Flag Count",
+    "ACK Flag Count",
+    "Average Packet Size"
+  ],
+  "random_state": 42,
+  "connection_groups": 1083995,
+  "class_group_counts": {
+    "BENIGN": 812256,
+    "BOTNET": 736,
+    "BRUTE_FORCE": 6932,
+    "DDOS": 45160,
+    "DOS": 14116,
+    "PORTSCAN": 223352,
+    "WEB_ATTACK": 91
+  },
+  "split_method": "global stratified connection groups, approximately 60/20/20 before training-only subsampling",
+  "limitations": [
+    "Connection groups are not independent campaigns or hosts; endpoint overlap is reported explicitly.",
+    "Sources, including Monday and previous test populations, have already been inspected in earlier experiments.",
+    "Exact regenerated dataset release and extractor parity remain unverified.",
+    "Coarse WEB_ATTACK has limited non-Attempted support; no payload-semantic guarantee.",
+    "Source ports remain features; port ablation and independent lab evaluation remain pending.",
+    "No live or firewall readiness claim; metrics reflect this cleaned source population only."
+  ],
+  "training_sampling": {
+    "policy": "BENIGN only, training only, near-equal source-day quotas with availability redistribution",
+    "benign_cap": 150000,
+    "discarded_training_benign_rows": 797572,
+    "original_partition_rows": {
+      "train": 1248876,
+      "validation": 416291,
+      "test": 416290
+    },
+    "training_benign_by_source": {
+      "monday": 30000,
+      "tuesday": 30000,
+      "wednesday": 30000,
+      "thursday": 30000,
+      "friday": 30000
+    }
+  },
+  "splits": {
+    "train": {
+      "rows": 451304,
+      "groups": 274558,
+      "class_counts": {
+        "BENIGN": 150000,
+        "BOTNET": 441,
+        "BRUTE_FORCE": 4159,
+        "DDOS": 57086,
+        "DOS": 102970,
+        "PORTSCAN": 136594,
+        "WEB_ATTACK": 54
+      },
+      "source_counts": {
+        "monday": 30000,
+        "tuesday": 34159,
+        "wednesday": 132970,
+        "thursday": 71212,
+        "friday": 182963
+      },
+      "original_label_counts": {
+        "BENIGN": 148796,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "Botnet": 441,
+        "Botnet - Attempted": 421,
+        "DDOS": 0,
+        "DDoS": 57086,
+        "DOS": 0,
+        "DoS GoldenEye": 4575,
+        "DoS GoldenEye - Attempted": 7,
+        "DoS Hulk": 95060,
+        "DoS Hulk - Attempted": 62,
+        "DoS Slowhttptest": 1044,
+        "DoS Slowhttptest - Attempted": 324,
+        "DoS Slowloris": 2291,
+        "DoS Slowloris - Attempted": 181,
+        "FTP-Patator": 2383,
+        "FTP-Patator - Attempted": 0,
+        "Heartbleed": 0,
+        "Infiltration": 0,
+        "Infiltration - Attempted": 0,
+        "Infiltration - Portscan": 41158,
+        "PORTSCAN": 0,
+        "Portscan": 95436,
+        "SSH-Patator": 1776,
+        "SSH-Patator - Attempted": 4,
+        "WEB_ATTACK": 0,
+        "Web Attack - Brute Force": 43,
+        "Web Attack - Brute Force - Attempted": 147,
+        "Web Attack - SQL Injection": 0,
+        "Web Attack - SQL Injection - Attempted": 0,
+        "Web Attack - XSS": 11,
+        "Web Attack - XSS - Attempted": 58
+      }
+    },
+    "validation": {
+      "rows": 416291,
+      "groups": 216800,
+      "class_counts": {
+        "BENIGN": 315858,
+        "BOTNET": 148,
+        "BRUTE_FORCE": 1387,
+        "DDOS": 19029,
+        "DOS": 34319,
+        "PORTSCAN": 45532,
+        "WEB_ATTACK": 18
+      },
+      "source_counts": {
+        "monday": 73762,
+        "tuesday": 63697,
+        "wednesday": 98828,
+        "thursday": 71569,
+        "friday": 108435
+      },
+      "original_label_counts": {
+        "BENIGN": 313524,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "Botnet": 148,
+        "Botnet - Attempted": 769,
+        "DDOS": 0,
+        "DDoS": 19029,
+        "DOS": 0,
+        "DoS GoldenEye": 1494,
+        "DoS GoldenEye - Attempted": 17,
+        "DoS Hulk": 31714,
+        "DoS Hulk - Attempted": 112,
+        "DoS Slowhttptest": 346,
+        "DoS Slowhttptest - Attempted": 677,
+        "DoS Slowloris": 765,
+        "DoS Slowloris - Attempted": 356,
+        "FTP-Patator": 789,
+        "FTP-Patator - Attempted": 2,
+        "Heartbleed": 0,
+        "Infiltration": 0,
+        "Infiltration - Attempted": 0,
+        "Infiltration - Portscan": 13736,
+        "PORTSCAN": 0,
+        "Portscan": 31796,
+        "SSH-Patator": 598,
+        "SSH-Patator - Attempted": 6,
+        "WEB_ATTACK": 0,
+        "Web Attack - Brute Force": 13,
+        "Web Attack - Brute Force - Attempted": 267,
+        "Web Attack - SQL Injection": 0,
+        "Web Attack - SQL Injection - Attempted": 0,
+        "Web Attack - XSS": 5,
+        "Web Attack - XSS - Attempted": 128
+      }
+    },
+    "test": {
+      "rows": 416290,
+      "groups": 216802,
+      "class_counts": {
+        "BENIGN": 315858,
+        "BOTNET": 147,
+        "BRUTE_FORCE": 1387,
+        "DDOS": 19029,
+        "DOS": 34318,
+        "PORTSCAN": 45532,
+        "WEB_ATTACK": 19
+      },
+      "source_counts": {
+        "monday": 74374,
+        "tuesday": 63804,
+        "wednesday": 98373,
+        "thursday": 70947,
+        "friday": 108792
+      },
+      "original_label_counts": {
+        "BENIGN": 313443,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "Botnet": 147,
+        "Botnet - Attempted": 854,
+        "DDOS": 0,
+        "DDoS": 19029,
+        "DOS": 0,
+        "DoS GoldenEye": 1498,
+        "DoS GoldenEye - Attempted": 15,
+        "DoS Hulk": 31694,
+        "DoS Hulk - Attempted": 122,
+        "DoS Slowhttptest": 350,
+        "DoS Slowhttptest - Attempted": 663,
+        "DoS Slowloris": 776,
+        "DoS Slowloris - Attempted": 374,
+        "FTP-Patator": 800,
+        "FTP-Patator - Attempted": 3,
+        "Heartbleed": 0,
+        "Infiltration": 0,
+        "Infiltration - Attempted": 0,
+        "Infiltration - Portscan": 13715,
+        "PORTSCAN": 0,
+        "Portscan": 31817,
+        "SSH-Patator": 587,
+        "SSH-Patator - Attempted": 2,
+        "WEB_ATTACK": 0,
+        "Web Attack - Brute Force": 17,
+        "Web Attack - Brute Force - Attempted": 249,
+        "Web Attack - SQL Injection": 0,
+        "Web Attack - SQL Injection - Attempted": 0,
+        "Web Attack - XSS": 2,
+        "Web Attack - XSS - Attempted": 133
+      }
+    }
+  },
+  "endpoint_overlap": {
+    "BENIGN": {
+      "pairs": 49554,
+      "pairs_shared_across_partitions": 25279
+    },
+    "BOTNET": {
+      "pairs": 5,
+      "pairs_shared_across_partitions": 5
+    },
+    "BRUTE_FORCE": {
+      "pairs": 1,
+      "pairs_shared_across_partitions": 1
+    },
+    "DDOS": {
+      "pairs": 1,
+      "pairs_shared_across_partitions": 1
+    },
+    "DOS": {
+      "pairs": 1,
+      "pairs_shared_across_partitions": 1
+    },
+    "PORTSCAN": {
+      "pairs": 13,
+      "pairs_shared_across_partitions": 13
+    },
+    "WEB_ATTACK": {
+      "pairs": 1,
+      "pairs_shared_across_partitions": 1
+    }
+  },
+  "preprocessing_seconds": 662.8774509520008
+}
