@@ -109,13 +109,15 @@ def test_loopback_and_unbuilt_or_fragmented_packets(packet_factory):
     assert (flow["Total Fwd Packet"], flow["Total Bwd packets"], flow["Packet Length Max"]) == (1, 1, 3)
 
 
-def test_cli_skips_invalid_flows_and_continues(train_dataset, dataset_cases, monkeypatch, capsys):
-    run = train_dataset(next(c for c in dataset_cases if c.name == "friday"))
+@pytest.mark.parametrize("dataset_name", ["friday", "unified"])
+def test_cli_skips_invalid_flows_and_continues(dataset_name, train_dataset, dataset_cases, monkeypatch, capsys):
+    run = train_dataset(next(c for c in dataset_cases if c.name == dataset_name))
     capsys.readouterr()
     valid = run.raw.iloc[0][SELECTED_COLUMNS].to_dict()
     monkeypatch.setattr(sniffer_main, "start_capture", lambda *a: iter(()))
     monkeypatch.setattr(sniffer_main, "run", lambda p, cb, g: (cb({**valid, "Flow IAT Mean": -1}), cb(valid)))
-    sniffer_main.main(["-r", "synthetic.pcap", "--predict"])
+    override = ["--dataset", "friday"] if dataset_name == "friday" else []
+    sniffer_main.main(["-r", "synthetic.pcap", "--predict", *override])
     out, err = capsys.readouterr()
     assert json.loads(out)["label"] in run.config.classes
     assert "Dropped invalid flow" in err
