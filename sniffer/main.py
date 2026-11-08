@@ -11,6 +11,7 @@ import time
 
 from sniffer.capture import start_capture
 from sniffer.extractor import FlowTable, parse
+from ml_engine.datasets import DATASETS, DEFAULT_INFERENCE_DATASET
 
 
 def run(packets, on_flow, termination_grace=5.0):
@@ -43,20 +44,22 @@ def main(argv=None):
     source.add_argument("-r", "--pcap", help="read a pcap/pcapng file instead")
     parser.add_argument("-f", "--filter", help="BPF capture filter, e.g. 'not port 22'")
     parser.add_argument("--predict", action="store_true",
-                        help="classify each flow with the Friday model (detection only, no blocking)")
+                        help="classify each flow with the unified model (detection only, no blocking)")
+    parser.add_argument("--dataset", choices=tuple(DATASETS), default=DEFAULT_INFERENCE_DATASET,
+                        help="explicit model override for baseline comparisons")
     parser.add_argument("--termination-grace", type=float, default=5.0,
                         help="seconds a torn-down TCP flow stays idle before it is emitted (default 5)")
     args = parser.parse_args(argv)
 
     if args.predict:
-        from ml_engine.predictor import _load_model, predict
-        _load_model()  # validate bundle upfront so per-flow ValueError only catches input errors
+        from ml_engine.predictor import FeatureValidationError, _load_model, predict
+        _load_model(args.dataset)
 
     def on_flow(features):
         if args.predict:
             try:
-                features = {**features, **predict(features)}
-            except ValueError as exc:
+                features = {**features, **predict(features, dataset=args.dataset)}
+            except FeatureValidationError as exc:
                 print(f"Dropped invalid flow: {exc}", file=sys.stderr)
                 return
         print(json.dumps(features), flush=True)
