@@ -200,3 +200,31 @@ def trained_run(dataset_case, train_dataset):
 @pytest.fixture
 def valid_features():
     return {column: 1 for column in preprocess.SELECTED_COLUMNS}
+
+
+@pytest.fixture
+def manual_clock():
+    class Clock:
+        value = 0.0
+
+        def __call__(self):
+            return self.value
+
+        def advance(self, seconds):
+            self.value += seconds
+    return Clock()
+
+
+@pytest.fixture
+def response_event_factory(valid_features):
+    from sniffer.events import DetectionEvent
+
+    def make(label="PORTSCAN", confidence=0.99, src_ip="10.10.0.9", **metadata):
+        features = {**valid_features, "Src Port": 40000, "Dst Port": 80, "Protocol": 6}
+        probabilities = dict.fromkeys(datasets.get_dataset("unified").classes, 0.0)
+        probabilities[label] = confidence
+        probabilities["BENIGN" if label != "BENIGN" else "PORTSCAN"] += 1 - confidence
+        return DetectionEvent(src_ip=src_ip, dst_ip="10.10.0.2", features=features,
+            label=label, confidence=confidence, probabilities=probabilities,
+            model_scope="unified", model_sha256="a" * 64, source="pcap", **metadata)
+    return make
