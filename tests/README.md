@@ -20,6 +20,7 @@ Adding a policy requires one set of expected labels, rather than another test fi
 | `test_evaluation.py` | Per-class/original-label reporting and changed/mismatched artifact rejection |
 | `test_reference.py` | Normal-only evaluation, no fitting, numeric/connection hashes and shared overlap exclusions |
 | `test_sniffer.py` | Synthetic TCP/UDP feature and flow-lifecycle regressions |
+| `test_unification.py` | Global multi-source conflicts/grouping, source parity, training-only caps and unified default inference |
 
 Every test receives an isolated temporary project root and inference caches.
 Integration fixtures use small real Random Forest and XGBoost estimators. They
