@@ -1,6 +1,7 @@
 """Synthetic packet regressions; these do not establish capture-to-CSV parity."""
 
 import json
+from hashlib import sha256
 import pytest
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.l2 import Ether
@@ -121,3 +122,38 @@ def test_cli_skips_invalid_flows_and_continues(dataset_name, train_dataset, data
     out, err = capsys.readouterr()
     assert json.loads(out)["label"] in run.config.classes
     assert "Dropped invalid flow" in err
+
+
+def test_cli_response_connects_predictions_to_dry_run_audit(
+        train_dataset, dataset_cases, response_event_factory, monkeypatch, capsys, tmp_path):
+    trained = train_dataset(next(c for c in dataset_cases if c.name == "unified"))
+    capsys.readouterr()
+    prediction = response_event_factory().to_dict()
+    monkeypatch.setattr(predictor, "predict", lambda *a, **kw: {
+        key: prediction[key] for key in ("label", "confidence", "probabilities")})
+    flows = [{**trained.raw.iloc[0][SELECTED_COLUMNS].to_dict(),
+              "Src IP": "10.10.0.9", "Dst IP": "10.10.0.2", "Src Port": 40000 + i}
+             for i in range(4)]
+    monkeypatch.setattr(sniffer_main, "start_capture", lambda *a: iter(()))
+    monkeypatch.setattr(sniffer_main, "run", lambda p, cb, g: [cb(flow) for flow in flows])
+    path = tmp_path / "alerts.jsonl"
+    sniffer_main.main(["-r", "synthetic.pcap", "--predict", "--respond", "--alert-log", str(path)])
+    out, err = capsys.readouterr()
+    records = [json.loads(line) for line in path.read_text().splitlines()]
+    assert len(out.splitlines()) == len(records) == 4
+    assert [r["decision"]["action"] for r in records] == ["alert", "alert", "candidate", "candidate"]
+    assert records[2]["firewall"]["status"] == "would_block"
+    assert records[3]["firewall"]["status"] == "already_simulated"
+    assert records[0]["event"]["source"] == "pcap"
+    assert records[0]["event"]["model_sha256"] == sha256(trained.bundle_path.read_bytes()).hexdigest()
+    assert '"would_block": 1' in err
+    assert '"dropped": 0' in err
+
+
+@pytest.mark.parametrize("options", [[], ["--predict", "--queue-size", "0"],
+    ["--predict", "--response-confidence", "nan"], ["--predict", "--protect", "bad"]])
+def test_cli_rejects_invalid_response_options(options, capsys):
+    with pytest.raises(SystemExit) as caught:
+        sniffer_main.main(["-r", "synthetic.pcap", "--respond", *options])
+    assert caught.value.code == 2
+    assert "error:" in capsys.readouterr().err
