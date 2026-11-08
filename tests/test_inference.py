@@ -1,6 +1,7 @@
 """Inference input contracts, feature ordering and bundle identity checks."""
 
 import shutil
+from hashlib import sha256
 
 import numpy as np
 import pytest
@@ -64,3 +65,12 @@ def test_mismatched_bundle_does_not_initialize_inference(trained_run):
         predictor.predict(flow, dataset=other)
     assert predictor._bundle is None
     assert predictor._weekday_bundles == {}
+
+
+def test_fingerprint_identifies_loaded_bytes_even_after_file_changes(trained_run):
+    expected = sha256(trained_run.bundle_path.read_bytes()).hexdigest()
+    loaded = predictor._load_model(trained_run.config.name)
+    assert loaded["_artifact_sha256"] == expected
+    trained_run.bundle_path.write_bytes(b"changed on disk after loading")
+    assert predictor._load_model(trained_run.config.name) is loaded
+    assert loaded["_artifact_sha256"] == expected
