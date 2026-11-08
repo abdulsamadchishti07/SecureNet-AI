@@ -1,6 +1,8 @@
 """Classify flows with the validation-selected model and its matching transforms."""
 
 import os
+from hashlib import sha256
+from io import BytesIO
 from collections.abc import Mapping
 
 import joblib
@@ -30,7 +32,11 @@ def _load_model(dataset=DEFAULT_INFERENCE_DATASET):
             raise FileNotFoundError(
                 f"{dataset.title()} model missing. Run preprocessing and training first."
             )
-        bundle = joblib.load(bundle_path)
+        # Hash exactly the bytes deserialized, including when this bundle is later
+        # served from cache. This is provenance, not authentication of pickle files.
+        with open(bundle_path, "rb") as artifact:
+            serialized = artifact.read()
+        bundle = joblib.load(BytesIO(serialized))
         metadata = bundle["metadata"]
         if metadata.get("dataset", "friday") != dataset:
             raise ValueError("Bundle dataset does not match requested inference dataset")
@@ -43,6 +49,7 @@ def _load_model(dataset=DEFAULT_INFERENCE_DATASET):
             raise ValueError("Label encoder does not match bundle metadata")
         if set(metadata["classes"]) != set(config.classes):
             raise ValueError("Bundle classes do not match requested dataset")
+        bundle["_artifact_sha256"] = sha256(serialized).hexdigest()
         if dataset == "friday":
             _bundle = bundle
         else:
