@@ -48,9 +48,12 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def clean_data(raw, dataset="friday", config=None):
-    """Remove invalid rows, identical inputs and conflicting labels."""
-    config = config or get_dataset(dataset)
+def normalize_rows(raw, config):
+    """Normalize one source/chunk without discarding evidence of label conflicts.
+
+    Duplicate/conflict removal belongs after sources are combined. Removing a
+    conflict from one chunk early could hide that conflict from another source.
+    """
     dataset = config.name
     df = raw.copy()
     df.columns = df.columns.str.strip()
@@ -58,7 +61,8 @@ def clean_data(raw, dataset="friday", config=None):
     missing = sorted(set(required) - set(df.columns))
     if missing:
         raise ValueError(f"Missing {dataset.title()} columns: {missing}")
-    df = df[required].copy()
+    provenance = [name for name in ("_source_day", "_source_row_id") if name in df]
+    df = df[required + provenance].copy()
     df["_row_id"] = np.arange(len(df))
     audit = {"raw_rows": len(df)}
     labels = df[LABEL_COLUMN].astype("string").str.strip()
@@ -85,6 +89,12 @@ def clean_data(raw, dataset="friday", config=None):
     )
     audit["invalid_rows"] = int(invalid.sum())
     df = df.loc[~invalid].copy()
+    return df, audit
+
+
+def deduplicate_flows(df):
+    """Remove same-target duplicate inputs and all remaining conflicting targets."""
+    audit = {}
     before = len(df)
     df = df.drop_duplicates(SELECTED_COLUMNS + [LABEL_COLUMN])
     audit["same_label_duplicates_removed"] = before - len(df)
@@ -92,8 +102,11 @@ def clean_data(raw, dataset="friday", config=None):
     ambiguous = df.duplicated(SELECTED_COLUMNS, keep=False)
     audit["conflicting_label_rows_removed"] = int(ambiguous.sum())
     df = df.loc[~ambiguous].copy()
-    if df.empty or set(df[LABEL_COLUMN]) != set(config.classes):
-        raise ValueError(f"Cleaning must leave examples of all {dataset.title()} classes")
+    return df, audit
+
+
+def connection_keys(df):
+    """Canonical date-free five-tuples; these identify connections, not campaigns."""
     # Canonical endpoints keep reverse and repeated connections together.
     # IPs are split metadata only, never classifier features.
     source = df["Src IP dec"].astype("int64").astype(str) + ":" + df["Src Port"].astype("int64").astype(str)
@@ -101,6 +114,18 @@ def clean_data(raw, dataset="friday", config=None):
     forward = source <= target
     keys = source.where(forward, target) + "|" + target.where(forward, source)
     keys += "|" + df["Protocol"].astype("int64").astype(str)
+    return keys
+
+
+def clean_data(raw, dataset="friday", config=None):
+    """Remove invalid rows, identical inputs and conflicting labels."""
+    config = config or get_dataset(dataset)
+    df, audit = normalize_rows(raw, config)
+    df, duplicate_audit = deduplicate_flows(df)
+    audit.update(duplicate_audit)
+    if df.empty or set(df[LABEL_COLUMN]) != set(config.classes):
+        raise ValueError(f"Cleaning must leave examples of all {config.name.title()} classes")
+    keys = connection_keys(df)
     df["_group_id"] = pd.factorize(keys, sort=True)[0]
     df = df.drop(columns=METADATA_COLUMNS).reset_index(drop=True)
     audit["clean_rows"] = len(df)
