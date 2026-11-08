@@ -1,0 +1,681 @@
+{
+  "dataset": "unified",
+  "selected_model": "random_forest",
+  "selection": "validation macro F1 (test set not used for selection)",
+  "test_rows": 416290,
+  "test_class_counts": {
+    "BENIGN": 315858,
+    "BOTNET": 147,
+    "BRUTE_FORCE": 1387,
+    "DDOS": 19029,
+    "DOS": 34318,
+    "PORTSCAN": 45532,
+    "WEB_ATTACK": 19
+  },
+  "limitations": [
+    "Connection groups are not independent campaigns or hosts; endpoint overlap is reported explicitly.",
+    "Sources, including Monday and previous test populations, have already been inspected in earlier experiments.",
+    "Exact regenerated dataset release and extractor parity remain unverified.",
+    "Coarse WEB_ATTACK has limited non-Attempted support; no payload-semantic guarantee.",
+    "Source ports remain features; port ablation and independent lab evaluation remain pending.",
+    "No live or firewall readiness claim; metrics reflect this cleaned source population only."
+  ],
+  "accuracy": 0.9996492829517885,
+  "macro_f1": 0.9981922647660252,
+  "benign_false_positive_rate": 0.00027544022947020494,
+  "classification_report": {
+    "BENIGN": {
+      "precision": 0.9999461664154433,
+      "recall": 0.9997245597705298,
+      "f1-score": 0.9998353508135887,
+      "support": 315858.0
+    },
+    "BOTNET": {
+      "precision": 0.9931972789115646,
+      "recall": 0.9931972789115646,
+      "f1-score": 0.9931972789115646,
+      "support": 147.0
+    },
+    "BRUTE_FORCE": {
+      "precision": 0.9949748743718593,
+      "recall": 0.9992790194664743,
+      "f1-score": 0.9971223021582734,
+      "support": 1387.0
+    },
+    "DDOS": {
+      "precision": 0.9989488068958268,
+      "recall": 0.9987913185138473,
+      "f1-score": 0.9988700564971752,
+      "support": 19029.0
+    },
+    "DOS": {
+      "precision": 0.998835279387357,
+      "recall": 0.9995629115915846,
+      "f1-score": 0.9991989630212202,
+      "support": 34318.0
+    },
+    "PORTSCAN": {
+      "precision": 0.9986615175319261,
+      "recall": 0.9995827110603531,
+      "f1-score": 0.9991219019603539,
+      "support": 45532.0
+    },
+    "WEB_ATTACK": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 19.0
+    },
+    "accuracy": 0.9996492829517885,
+    "macro avg": {
+      "precision": 0.9977948462162824,
+      "recall": 0.9985911141877647,
+      "f1-score": 0.9981922647660252,
+      "support": 416290.0
+    },
+    "weighted avg": {
+      "precision": 0.9996495437389862,
+      "recall": 0.9996492829517885,
+      "f1-score": 0.9996493541244752,
+      "support": 416290.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      315771,
+      1,
+      5,
+      8,
+      12,
+      61,
+      0
+    ],
+    [
+      1,
+      146,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      1386,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      19006,
+      23,
+      0,
+      0
+    ],
+    [
+      5,
+      0,
+      0,
+      10,
+      34303,
+      0,
+      0
+    ],
+    [
+      10,
+      0,
+      2,
+      2,
+      5,
+      45513,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      19
+    ]
+  ],
+  "original_label_results": {
+    "BENIGN": {
+      "support": 313443,
+      "family_accuracy": 0.9997351990633065,
+      "target_label_counts": {
+        "BENIGN": 313443,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 313360,
+        "BOTNET": 1,
+        "BRUTE_FORCE": 4,
+        "DDOS": 8,
+        "DOS": 12,
+        "PORTSCAN": 58,
+        "WEB_ATTACK": 0
+      }
+    },
+    "Botnet": {
+      "support": 147,
+      "family_accuracy": 0.9931972789115646,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 147,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 1,
+        "BOTNET": 146,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "Botnet - Attempted": {
+      "support": 854,
+      "family_accuracy": 0.9988290398126464,
+      "target_label_counts": {
+        "BENIGN": 854,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 853,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 1,
+        "WEB_ATTACK": 0
+      }
+    },
+    "DDoS": {
+      "support": 19029,
+      "family_accuracy": 0.9987913185138473,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 19029,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 19006,
+        "DOS": 23,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "DoS GoldenEye": {
+      "support": 1498,
+      "family_accuracy": 0.9953271028037384,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 1498,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 1,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 6,
+        "DOS": 1491,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "DoS GoldenEye - Attempted": {
+      "support": 15,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 15,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 15,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "DoS Hulk": {
+      "support": 31694,
+      "family_accuracy": 0.9998737931469679,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 31694,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 4,
+        "DOS": 31690,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "DoS Hulk - Attempted": {
+      "support": 122,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 122,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 122,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "DoS Slowhttptest": {
+      "support": 350,
+      "family_accuracy": 0.9885714285714285,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 350,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 4,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 346,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "DoS Slowhttptest - Attempted": {
+      "support": 663,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 663,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 663,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "DoS Slowloris": {
+      "support": 776,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 776,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 776,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "DoS Slowloris - Attempted": {
+      "support": 374,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 374,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 374,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "FTP-Patator": {
+      "support": 800,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 800,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 800,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "FTP-Patator - Attempted": {
+      "support": 3,
+      "family_accuracy": 0.0,
+      "target_label_counts": {
+        "BENIGN": 3,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 1,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 2,
+        "WEB_ATTACK": 0
+      }
+    },
+    "Infiltration - Portscan": {
+      "support": 13715,
+      "family_accuracy": 0.9994896099161502,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 13715,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 5,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 2,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 13708,
+        "WEB_ATTACK": 0
+      }
+    },
+    "Portscan": {
+      "support": 31817,
+      "family_accuracy": 0.9996228431341736,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 31817,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 5,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 2,
+        "DOS": 5,
+        "PORTSCAN": 31805,
+        "WEB_ATTACK": 0
+      }
+    },
+    "SSH-Patator": {
+      "support": 587,
+      "family_accuracy": 0.9982964224872232,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 587,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 1,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 586,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "SSH-Patator - Attempted": {
+      "support": 2,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 2,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 2,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "Web Attack - Brute Force": {
+      "support": 17,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 17
+      },
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 17
+      }
+    },
+    "Web Attack - Brute Force - Attempted": {
+      "support": 249,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 249,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 249,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    },
+    "Web Attack - XSS": {
+      "support": 2,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 2
+      },
+      "predicted_label_counts": {
+        "BENIGN": 0,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 2
+      }
+    },
+    "Web Attack - XSS - Attempted": {
+      "support": 133,
+      "family_accuracy": 1.0,
+      "target_label_counts": {
+        "BENIGN": 133,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      },
+      "predicted_label_counts": {
+        "BENIGN": 133,
+        "BOTNET": 0,
+        "BRUTE_FORCE": 0,
+        "DDOS": 0,
+        "DOS": 0,
+        "PORTSCAN": 0,
+        "WEB_ATTACK": 0
+      }
+    }
+  },
+  "source_results": {
+    "friday": {
+      "rows": 108792,
+      "accuracy": 0.9994760644165012,
+      "benign_rows": 57799,
+      "false_positives": 21,
+      "benign_false_positive_rate": 0.00036332808526099065,
+      "attack_rows": 50993,
+      "any_attack_recall": 0.9998823367913243
+    },
+    "monday": {
+      "rows": 74374,
+      "accuracy": 0.9999327722053406,
+      "benign_rows": 74374,
+      "false_positives": 5,
+      "benign_false_positive_rate": 6.7227794659424e-05,
+      "attack_rows": 0,
+      "any_attack_recall": null
+    },
+    "thursday": {
+      "rows": 70947,
+      "accuracy": 0.9993516286805644,
+      "benign_rows": 57213,
+      "false_positives": 39,
+      "benign_false_positive_rate": 0.0006816632583503749,
+      "attack_rows": 13734,
+      "any_attack_recall": 0.9996359400029124
+    },
+    "tuesday": {
+      "rows": 63804,
+      "accuracy": 0.9997649050216287,
+      "benign_rows": 62417,
+      "false_positives": 14,
+      "benign_false_positive_rate": 0.00022429786756813047,
+      "attack_rows": 1387,
+      "any_attack_recall": 0.9992790194664743
+    },
+    "wednesday": {
+      "rows": 98373,
+      "accuracy": 0.9997661960090676,
+      "benign_rows": 64055,
+      "false_positives": 8,
+      "benign_false_positive_rate": 0.00012489267036140816,
+      "attack_rows": 34318,
+      "any_attack_recall": 0.9998543038638615
+    }
+  }
+}
