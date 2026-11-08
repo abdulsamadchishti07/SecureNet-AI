@@ -63,6 +63,11 @@ def test_normal_reference_rejects_attack_labels_and_has_no_classifier(valid_feat
         datasets.get_dataset("monday")
 
 
+def test_reference_defaults_preserve_the_original_weekday_comparison():
+    assert set(monday.DEFAULT_MODEL_DAYS) == {"friday", "thursday", "wednesday", "tuesday"}
+    assert "unified" not in monday.DEFAULT_MODEL_DAYS
+
+
 def test_preparing_reference_deduplicates_without_publishing_a_model(reference_run):
     assert reference_run.reference_audit["clean_rows"] == 4
     assert reference_run.reference_audit["same_label_duplicates_removed"] == 1
