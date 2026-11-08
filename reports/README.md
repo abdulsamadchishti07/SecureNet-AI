@@ -18,6 +18,7 @@ Interpret scores using the [validity review](../docs/ML%20Engine/VALIDITY_REVIEW
 
 | Evidence | Purpose |
 | --- | --- |
+| [Unified](unified/README.md) | Current seven-class experiment, global splits, training-only benign cap and limitations |
 | [Friday](friday/README.md) | Leakage-correction baseline and original artifact checksums |
 | [Thursday](thursday/README.md) | Web/port-scan experiment and limitations |
 | [Wednesday](wednesday/README.md) | DoS-family experiment |
