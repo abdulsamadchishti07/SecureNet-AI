@@ -1,5 +1,13 @@
 # SecureNet AI
 
+The unified seven-class candidate is documented in
+[the unified detector guide](<docs/ML Engine/UNIFIED.md>). It combines the five
+base weekday CSVs, maps supported Attempted flows to BENIGN, and samples BENIGN
+training rows only. Inference now defaults to `unified`; use `dataset="friday"`
+or another explicit scope for historical model comparisons.
+The [completed unified report](reports/unified/README.md) records the selected
+Random Forest, exact results and verification of the preserved earlier runs.
+
 **Evaluation status:** the current scores use connection-held-out splits within
 captures and share attack endpoint pairs across partitions. Campaign-independent
 detection and sniffer feature parity remain unvalidated. Read the
@@ -7,8 +15,8 @@ detection and sniffer feature parity remain unvalidated. Read the
 using headline scores or proceeding toward deployment.
 
 Network intrusion detection and response final-year project. The current working
-components are offline weekday flow classifiers; live capture and response are
-still under development. See `AGENTS.md` for the implementation roadmap.
+components include unified and historical weekday flow classifiers; live capture
+and response are still under development. See `AGENTS.md` for the implementation roadmap.
 
 Detailed ML methodology, weekday results and limitations are in
 [the ML engine documentation](<docs/ML Engine/ML_ENGINE.md>).
@@ -32,7 +40,7 @@ experiment evidence remains indexed in [reports/README.md](reports/README.md).
 ## Sniffer (flow extraction)
 
 Groups IPv4 packets into flows and prints each completed
-flow's 20 features as a JSON line; `--predict` adds the Friday model verdict
+flow's 20 features as a JSON line; `--predict` adds the unified model verdict
 (detection only, nothing is blocked).
 
 ```bash
@@ -49,6 +57,9 @@ timeout/termination departures. See the validity review before using predictions
 Monday is BENIGN-only, so it has no standalone trained attack classifier. It is
 prepared as a normal-data reference and evaluated with the four saved weekday
 models to measure false alarms, without fitting or selecting models on Monday.
+That historical comparison still defaults to those four models. The newer unified
+candidate uses Monday in its joint training/split population; its Monday test
+subset is reported separately in the unified report.
 
 ```bash
 .venv/bin/python -m ml_engine.monday --evaluate-only
@@ -104,9 +115,8 @@ For a new run after archiving any existing Tuesday models, splits and reports:
 
 Artifacts live in `ml_engine/models/tuesday_v1/`,
 `dataset/processed/tuesday_splits.pkl` and `reports/tuesday/`. Programmatic
-inference uses `predict(features, dataset="tuesday")`. Previous runs are preserved,
-and omitting the dataset still means Friday. No combined weekday model or change
-to the sniffer's default model is implied. See `reports/tuesday/README.md` and
+inference uses `predict(features, dataset="tuesday")`. Previous runs are preserved;
+omitting the dataset now selects the unified candidate. See `reports/tuesday/README.md` and
 `docs/ML Engine/TUESDAY.md` for the measured results and limits.
 
 ## Wednesday training pipeline
@@ -145,8 +155,8 @@ xdg-open reports/wednesday/confusion_matrix.png
 Wednesday writes `dataset/processed/wednesday_splits.pkl`,
 `ml_engine/models/wednesday_v1/` and `reports/wednesday/`. It does not replace
 Friday/Thursday artifacts. Programmatic inference uses
-`predict(features, dataset="wednesday")`; omitting the dataset still selects
-Friday. The existing sniffer CLI's `--predict` continues to use Friday.
+`predict(features, dataset="wednesday")`; omitting the dataset now selects
+the unified candidate, including the sniffer CLI's `--predict`.
 
 ## Thursday training pipeline
 
@@ -193,10 +203,10 @@ from ml_engine import predict
 result = predict(features, dataset="thursday")
 ```
 
-Omitting `dataset` continues to use Friday. These are separate day-specific
-classifiers, not a combined model that recognizes every weekday's attacks. Do not
-choose a day based on a predicted attack; a unified classifier requires a future
-joint training/splitting pass across the selected days.
+Omitting `dataset` now uses the unified candidate. Historical weekday classifiers
+remain available through an explicit dataset argument. Do not choose a weekday
+based on a predicted attack. The unified run recomputes global groups and
+partitions across the selected days before joint training.
 
 ## Friday training pipeline
 
@@ -239,8 +249,8 @@ corrected run directory; archive that directory and its reports before a new run
 Reprocessing changes the split artifact and requires retraining; evaluation checks
 that it matches the artifact used for training.
 
-The predictor loads `friday_v2/inference_bundle.pkl`, which contains the selected
-model, scaler, label encoder and schema together. Supply all 20 raw feature values;
+With `dataset="friday"`, the predictor loads `friday_v2/inference_bundle.pkl`, which
+contains the selected model, scaler, label encoder and schema together. Supply all 20 raw feature values;
 missing, nonfinite or negative inputs are rejected. Empty batches return `[]`.
 
 Reports in `reports/friday/` include cleaning/split counts, source checksum,
