@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_INFERENCE_DATASET = "unified"
 
 
 @dataclass(frozen=True)
@@ -13,6 +14,8 @@ class DatasetConfig:
     classes: tuple[str, ...]
     label_mapping: dict[str, str]
     excluded_labels: tuple[str, ...] = ()
+    source_days: tuple[str, ...] = ()
+    max_workers: int = 4
 
     @property
     def raw_csv(self):
@@ -85,6 +88,28 @@ DATASETS = {
         },
     ),
 }
+
+# Preserve the historical weekday policies. The unified detector has its own
+# explicitly chosen operational targets and Attempted-to-BENIGN policy.
+_coarse_labels = {
+    "FTP_BRUTE_FORCE": "BRUTE_FORCE", "SSH_BRUTE_FORCE": "BRUTE_FORCE",
+    "DOS_GOLDENEYE": "DOS", "DOS_HULK": "DOS",
+    "DOS_SLOWHTTPTEST": "DOS", "DOS_SLOWLORIS": "DOS",
+    "WEB_BRUTE_FORCE": "WEB_ATTACK", "WEB_XSS": "WEB_ATTACK",
+}
+DATASETS["unified"] = DatasetConfig(
+    name="unified", run_directory="unified_v1",
+    classes=("BENIGN", "BOTNET", "BRUTE_FORCE", "DDOS", "DOS", "PORTSCAN", "WEB_ATTACK"),
+    label_mapping={
+        source: "BENIGN" if "Attempted" in source else _coarse_labels.get(target, target)
+        for config in DATASETS.values() for source, target in config.label_mapping.items()
+    },
+    excluded_labels=tuple(dict.fromkeys(
+        label for config in DATASETS.values() for label in config.excluded_labels
+    )),
+    source_days=("monday", "tuesday", "wednesday", "thursday", "friday"),
+    max_workers=2,
+)
 
 
 def get_dataset(name):
