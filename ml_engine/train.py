@@ -80,7 +80,7 @@ def train_model(dataset="friday", splits_path=None, models_dir=None, reports_dir
     y_train = encoder.transform(train[LABEL_COLUMN])
     y_validation = encoder.transform(validation[LABEL_COLUMN])
     classes = list(encoder.classes_)
-    workers = min(4, os.cpu_count() or 1)
+    workers = min(config.max_workers, os.cpu_count() or 1)
     models = {
         "random_forest": RandomForestClassifier(
             n_estimators=200, max_depth=25, min_samples_split=5,
@@ -109,7 +109,11 @@ def train_model(dataset="friday", splits_path=None, models_dir=None, reports_dir
         "schema_version": SCHEMA_VERSION,
         "selected_model": winner,
         "selection_metric": "validation macro F1 (test set not used for selection)",
-        "balancing": "training-only balanced class weights; no resampling or synthetic rows",
+        "balancing": (
+            "training-only BENIGN subsampling and balanced class weights; no synthetic rows"
+            if "training_sampling" in payload["audit"]
+            else "training-only balanced class weights; no resampling or synthetic rows"
+        ),
         "feature_names": SELECTED_COLUMNS,
         "classes": classes,
         "scaler_fit_rows": int(scaler.n_samples_seen_),
