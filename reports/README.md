@@ -18,6 +18,7 @@ Interpret scores using the [validity review](../docs/ML%20Engine/VALIDITY_REVIEW
 
 | Evidence | Purpose |
 | --- | --- |
+| [Response integration](response/README.md) | Local dry-run consumer, offline synthetic demo and regression evidence |
 | [Unified](unified/README.md) | Current seven-class experiment, global splits, training-only benign cap and limitations |
 | [Friday](friday/README.md) | Leakage-correction baseline and original artifact checksums |
 | [Thursday](thursday/README.md) | Web/port-scan experiment and limitations |
