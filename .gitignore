@@ -32,6 +32,7 @@ ml_engine/models/friday_v2/
 ml_engine/models/thursday_v1/
 ml_engine/models/wednesday_v1/
 ml_engine/models/tuesday_v1/
+ml_engine/models/unified_v1/
 
 # Keep folder structures
 !**/models/.gitkeep
