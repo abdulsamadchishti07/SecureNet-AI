@@ -52,6 +52,20 @@ Single-packet flows are dropped. CICFlowMeter feature parity has not been
 validated by replaying matching source captures; the current extractor has known
 timeout/termination departures. See the validity review before using predictions.
 
+## Response integration — dry run
+
+The first response chunk adds a bounded local event queue, repeated-flow policy,
+JSONL audit and firewall simulation. To inspect proposed actions on an offline PCAP:
+
+```bash
+.venv/bin/python -m sniffer.main -r capture.pcap --predict --respond
+```
+
+Events and decisions append to `runtime/alerts.jsonl` (ignored by Git). This mode
+cannot execute firewall commands. WEB_ATTACK remains alert-only. See the
+[response guide and revised sprint plan](docs/RESPONSE_ENGINE.md) for an offline
+demo, settings, queue/failure behavior and the remaining live-validation gates.
+
 ## Monday normal-reference evaluation
 
 Monday is BENIGN-only, so it has no standalone trained attack classifier. It is
