@@ -1,52 +1,43 @@
 """Database engine, session management, and base schema."""
 
-import logging
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import declarative_base, sessionmaker
-
-from backend.config import settings
-
-logger = logging.getLogger("securenet.database")
-
-DATABASE_URL = settings.DATABASE_URL
+from starlette.requests import HTTPConnection
 
 
-def _create_configured_engine(url: str):
+def create_database_engine(url: str):
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     return create_engine(url, connect_args=connect_args, pool_pre_ping=True)
 
 
-engine = _create_configured_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-def get_db():
+def get_db(connection: HTTPConnection):
     """FastAPI dependency for yielding database sessions."""
-    db = SessionLocal()
+    db = connection.app.state.session_factory()
     try:
         yield db
     finally:
         db.close()
 
 
-def init_db(target_engine=None):
-    """Create all registered database tables with graceful fallback if primary DB is offline."""
-    global engine, SessionLocal
-    eng = target_engine or engine
-    try:
-        Base.metadata.create_all(bind=eng)
-    except Exception as exc:
-        if eng == engine and not DATABASE_URL.startswith("sqlite"):
-            safe_host = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else DATABASE_URL
-            logger.warning(
-                "Primary database (%s) unavailable: %s. Falling back to local SQLite.",
-                safe_host,
-                exc,
-            )
-            fallback_url = "sqlite:///./securenet.db"
-            engine = _create_configured_engine(fallback_url)
-            SessionLocal.configure(bind=engine)
-            Base.metadata.create_all(bind=engine)
-        else:
-            raise
+def init_db(engine):
+    """Initialize only the selected database; failures never select another store."""
+    inspector = inspect(engine)
+    for table in Base.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            continue
+        present = {column["name"] for column in inspector.get_columns(table.name)}
+        if set(table.columns.keys()) - present:
+            raise RuntimeError("Legacy database schema: back up and run python -m backend.manage migrate")
+    if inspector.has_table("blocked_ips"):
+        unique = inspector.get_unique_constraints("blocked_ips") + [
+            index for index in inspector.get_indexes("blocked_ips") if index.get("unique")]
+        if not any(item["column_names"] == ["block_id"] for item in unique):
+            raise RuntimeError("Legacy database schema: back up and run python -m backend.manage migrate")
+    Base.metadata.create_all(bind=engine)
+
+
+def sessions_for(engine):
+    return sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
