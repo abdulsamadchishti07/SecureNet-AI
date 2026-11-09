@@ -66,3 +66,13 @@ def test_capacity_and_manual_unblock_are_explicit():
 def test_invalid_configuration_is_rejected(options):
     with pytest.raises(ValueError):
         FirewallController(**options)
+
+
+def test_old_unblock_command_cannot_remove_new_block_for_same_ip():
+    firewall = FirewallController()
+    original = firewall.block_ip("10.10.0.9", "PORTSCAN")["block"]["block_id"]
+    firewall.unblock_ip("10.10.0.9")
+    replacement = firewall.block_ip("10.10.0.9", "DOS")["block"]["block_id"]
+    action = firewall.unblock_ip("10.10.0.9", block_id=original)
+    assert action["status"] == "stale_block"
+    assert firewall.list_active_blocks()[0]["block_id"] == replacement
