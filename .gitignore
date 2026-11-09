@@ -41,6 +41,8 @@ ml_engine/models/unified_v1/
 # Logs and runtime files
 *.log
 *.pcap
+*.db
+*.sqlite*
 runtime/
 
 # OS & Editor files
