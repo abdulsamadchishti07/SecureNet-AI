@@ -62,11 +62,15 @@ def main(argv=None):
     response.add_argument("--block-seconds", type=float, default=900)
     response.add_argument("--api-url", type=str, default=None,
                           help="optional backend API URL to ingest alerts (e.g. http://localhost:8000)")
+    response.add_argument("--sensor-id", default=None, help="sensor identity; defaults to SENSOR_ID or sensor-local")
+    response.add_argument("--outbox", type=Path, default=None, help="durable API outbox path")
     response.add_argument("--protect", action="append", default=[], metavar="IPv4/CIDR",
                           help="protect an admin/gateway/DNS address or CIDR; repeat as needed")
     args = parser.parse_args(argv)
     if args.respond and not args.predict:
         parser.error("--respond requires --predict")
+    if args.api_url and not args.respond:
+        parser.error("--api-url requires --respond")
 
     dispatcher = None
     if args.respond:
@@ -78,7 +82,8 @@ def main(argv=None):
             policy = ResponsePolicy(args.response_confidence, args.response_min_flows, args.response_window)
             firewall = FirewallController(protected=args.protect, duration_seconds=args.block_seconds)
             dispatcher = ResponseDispatcher(args.alert_log, capacity=args.queue_size,
-                                            policy=policy, firewall=firewall, api_url=args.api_url)
+                                            policy=policy, firewall=firewall, api_url=args.api_url,
+                                            sensor_id=args.sensor_id, outbox_path=args.outbox)
         except ValueError as exc:
             parser.error(str(exc))
 
