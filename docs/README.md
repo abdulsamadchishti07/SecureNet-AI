@@ -4,6 +4,7 @@
 - [Unified seven-class detector: method, labels and usage](<ML Engine/UNIFIED.md>)
 - [Completed unified experiment and verification](../reports/unified/README.md)
 - [Local response engine, offline demo and revised sprint plan](RESPONSE_ENGINE.md)
+- [Backend authentication, explicit migration and durable sensor delivery](BACKEND.md)
 - [Unified pytest suite and commands](../tests/README.md)
 - [Test reports and historical experiment index](../reports/README.md)
 
