@@ -2,6 +2,73 @@
 
 Last updated: 2026-11-09 (Asia/Karachi).
 
+## Current backend hardening — completed 2026-11-09
+
+- User asked for a backend/auth/database review, then explicitly authorized fixing
+  the pasted findings. The review itself was read-only. The implementation below
+  fixes all seven MUST FIX, four SHOULD FIX and two additional review findings.
+  It supersedes the original Sprint 2 security/completion claims below.
+- `backend/main.py::create_app` owns its settings, engine/session factory, tickets
+  and WebSocket manager. No database connects on import. Monitoring requires an
+  active user JWT; admin creation/unblock require `require_admin`. Sensor ingestion/
+  lifecycle/command routes use separate `X-Sensor-Token` and `X-Sensor-ID` headers.
+- `backend/config.py` requires explicit DATABASE_URL, independent 32+ byte JWT and
+  sensor secrets, HS256 and explicit CORS origins. Default/insecure/missing keys
+  stop startup. DB connection/schema errors never switch to another database.
+- `backend/manage.py`: private, non-overwriting `init-config`, sensor-only credential
+  export, repeatable additive `migrate`, and interactive `create-admin`. Singleton
+  bootstrap is local-only and requires an empty user table. New passwords require
+  12+ characters / <=72 UTF-8 bytes; login safely handles invalid/overlong values
+  and permits existing short nonempty passwords. Old JWT claims are rejected.
+- `backend/schemas.py` validates full 20-feature events, endpoint metadata, model
+  run/hash, probabilities, timestamps and consistent dry-run proposals. Invalid
+  data returns 422. `backend/service.py` persists provenance/payload fingerprints,
+  makes identical delivery idempotent and conflicts 409, including concurrent DB
+  uniqueness races. Both detections and lifecycle acknowledgements are idempotent.
+- `backend/models.py` adds nullable legacy-compatible provenance fields and new
+  bootstrap, firewall-event and command tables. Timestamp mapping preserves UTC
+  awareness across SQLite round trips. `init_db` refuses legacy schemas; explicit
+  migration preserves old rows and creates missing indexes/tables.
+- Every simulated block has a UUID. Manual unblock returns 202/PENDING and stores
+  the requesting admin; sensor acknowledgement completes UNBLOCKED. An overdue
+  record is EXPIRY_PENDING until the sensor confirms EXPIRED. Old commands cannot
+  remove a new block for the same IP. Actual firewall execution remains absent.
+- `backend/outbox.py` transactionally retains API messages outside the policy
+  consumer, binds them to one API/sensor, and locks one process per outbox. Defaults:
+  100,000 messages, eight attempts with capped backoff; permanent/exhausted failures
+  remain dead letters. FIFO ordering, credentials-free storage, restart recovery,
+  endpoint-specific acknowledgement validation and manual retry CLI are tested.
+- `backend/worker.py` sends asynchronously, forwards expiry and polls/acknowledges
+  unblock commands. Sensor credential comes from the agent environment; use the
+  documented sensor-only export. `--api-url` requires response mode and credentials;
+  `--sensor-id`/`--outbox` configure identity/stable storage. Pending/dead-letter
+  counts are distinct from local processing; shutdown keeps undelivered records.
+- WebSocket Authorization headers or 30-second single-use browser tickets are
+  required. Tokens in query parameters are not accepted. Bounded per-client queues,
+  send deadlines and connection/token expiry isolate slow clients. State is local:
+  one API worker and one sensor process per configured identity until a shared
+  broker/identity registry is added. Ticket URLs should not be logged.
+- All 308 pytest cases pass with private app/DB fixtures; warnings remain visible.
+  Real loopback API + offline PCAP CLI verified three predictions, four persisted
+  events overall and two acknowledged unblocks, with no real firewall actions.
+  A private Unix-socket-only PostgreSQL 18.6 cluster verified concurrent idempotency,
+  auth/control and repeated legacy migration, then was stopped and removed.
+- Final network WebSocket checks exposed a missing Uvicorn protocol dependency;
+  `websockets` is now declared/installed (17.4 in this environment). Actual loopback
+  Bearer/ticket handshakes and event delivery passed, anonymous/reused tickets were
+  rejected, four targeted regressions passed afterward and `pip check` passed.
+- SHA-256 verified 89 historical files plus unified bundle/splits unchanged. No
+  model retraining, live capture or production deployment. The configured database
+  and existing `.env` were not changed; follow `docs/BACKEND.md` before restarting
+  an existing installation. Audit historical admin assignments. Legacy block rows
+  lack sensor ownership; do not infer safe control targets for them.
+- Documentation: `docs/BACKEND.md`; evidence:
+  `reports/backend_hardening/{README.md,verification.json}`. Regressions are in
+  `tests/test_backend.py`, `tests/test_delivery.py` and the simulator suite.
+- No files were staged/committed/pushed for this fix. If requested later, stage and
+  commit files separately. Remaining work: independent lab/capture parity, policy
+  calibration, real response isolation, login rate limits, shared broker and UI.
+
 ## Current backend & API persistence — completed Sprint 2, 2026-11-09
 
 - Implemented Sprint 2 deliverables: persistent database schema, secure authentication,
@@ -185,7 +252,7 @@ The original analysis was read-only. The implementation now changes the ML
 pipeline, adds focused tests/reports, and keeps legacy artifacts in their original
 locations. See the latest change-log entry and reports for completion status.
 
-## Current test suite — updated 2026-11-08
+## Current test suite — updated 2026-11-09
 
 - The user explicitly requested removing weekday-specific test files and using
   pytest fixtures/parametrization. Tests now follow software responsibilities.
@@ -195,7 +262,7 @@ locations. See the latest change-log entry and reports for completion status.
 - `tests/conftest.py` owns independent expected label-policy cases, one synthetic
   flow factory, per-test temporary project paths, fresh caches and small real RF/
   XGBoost fits. Shared assertions run across all five configured classifier scopes.
-- There are 243 passing parametrized cases, including 12 sniffer cases. Original
+- There are 308 passing parametrized cases, including 12 sniffer cases. Original
   23-test counts elsewhere in this handoff are historical. Tests do not require
   local CSV/model artifacts, root capture privileges or external services.
 - Combined test report: `--junitxml=reports/tests/pytest.xml` (ignored by Git).
@@ -244,6 +311,15 @@ locations. See the latest change-log entry and reports for completion status.
 | `sniffer/main.py` | CLI capture/prediction and opt-in `--respond` dry-run audit |
 | `backend/firewall.py` | Firewall simulation, protection, idempotency and expiry; no executor |
 | `backend/worker.py` | Local consumer, JSONL audit, shutdown drain and failure propagation |
+| `backend/main.py` | App factory, authenticated monitoring/admin/sensor routes and WebSocket access |
+| `backend/auth.py` | JWT/password validation and user/admin/sensor dependencies |
+| `backend/database.py` | Explicit engine initialization/session injection, no fallback |
+| `backend/models.py` | User/event/block/command schema and UTC timestamp mapping |
+| `backend/service.py` | Idempotent persistence, lifecycle transitions and acknowledged commands |
+| `backend/schemas.py` | Strict ingestion/proposal/action contracts |
+| `backend/outbox.py` | Durable FIFO HTTP delivery, retries/dead letters and recovery CLI |
+| `backend/realtime.py` | Single-use browser tickets and bounded subscriber queues |
+| `backend/manage.py` | Explicit migration, private configuration and local admin bootstrap |
 | `scripts/create_response_demo.py` | Offline synthetic fixture generator; sends no packets |
 | `dataset/raw/` | Local CSVs for all five weekdays, including `_plus` variants |
 | `dataset/processed/` | Unified and separate weekday cleaned CSVs/raw-valued split pickles |
@@ -271,9 +347,9 @@ locations. See the latest change-log entry and reports for completion status.
 | `reports/tuesday/` | Tuesday audit/results/verification and previous-file preservation checksums |
 | `reports/monday/` | Normal-reference audit, false-alarm evaluation and preservation checks |
 
-The backend package currently contains response simulation only. HTTP APIs,
-database integration, actual firewall execution, notifications, dashboard and
-Docker setup do not exist yet.
+The backend includes authenticated APIs, database persistence and durable HTTP
+sensor delivery. Actual firewall execution, notifications, dashboard, shared Redis
+delivery and Docker deployment do not exist yet.
 
 ## Current Monday reference — completed 2026-11-07
 
@@ -796,3 +872,14 @@ complete. Integration into training is a different, still-unimplemented mileston
   retraining, external services, current-task commits or push. Next: persistence/
   authenticated API and explicit broker semantics, with lab validation before
   privileged prevention.
+- 2026-11-09: User authorized implementing the backend review fixes. Replaced
+  anonymous access/public bootstrap/default secrets/database fallback with scoped
+  auth, explicit bootstrap/configuration and fail-closed app/DB initialization.
+  Added strict schemas, atomic idempotency/provenance, explicit preserving migration,
+  UTC storage, acknowledged block lifecycle, durable asynchronous outbox and bounded
+  authenticated WebSockets. Fixed password boundaries and isolated test lifespan.
+  All 308 cases pass; real loopback CLI/API and isolated PostgreSQL checks passed.
+  Verified 91 previous artifact/data/report files unchanged. Saved guide/evidence
+  and updated handoff. Existing DB/env were preserved, no real rules/capture,
+  retraining, commits or push. Existing deployments need documented configuration,
+  backup/migration and restart; independent detector validation remains open.
