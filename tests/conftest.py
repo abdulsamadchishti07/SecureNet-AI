@@ -228,3 +228,63 @@ def response_event_factory(valid_features):
             label=label, confidence=confidence, probabilities=probabilities,
             model_scope="unified", model_sha256="a" * 64, source="pcap", **metadata)
     return make
+
+
+# Backend fixtures construct private app instances; no configured engine is imported.
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from backend.config import Settings
+from backend.database import sessions_for
+from backend.firewall import FirewallController
+from backend.main import create_app
+from backend.manage import bootstrap_admin
+
+PASSWORD = "ReviewPassword123!"
+
+
+@pytest.fixture
+def backend_runtime(tmp_path):
+    config = Settings(DATABASE_URL="sqlite:///" + str(tmp_path / "backend.sqlite"),
+                      SECRET_KEY="u" * 40, SENSOR_API_TOKEN="s" * 40)
+    engine = create_engine(config.DATABASE_URL, connect_args={"check_same_thread": False})
+    application = create_app(config, engine=engine)
+    with TestClient(application, raise_server_exceptions=False) as client:
+        yield SimpleNamespace(config=config, engine=engine, app=application, client=client,
+                              sessions=sessions_for(engine))
+    engine.dispose()
+
+
+@pytest.fixture
+def sensor_headers(backend_runtime):
+    config = backend_runtime.config
+    return {"X-Sensor-Token": config.SENSOR_API_TOKEN, "X-Sensor-ID": config.SENSOR_ID}
+
+
+@pytest.fixture
+def admin_headers(backend_runtime):
+    runtime = backend_runtime
+    bootstrap_admin(runtime.engine, "review_admin", "admin@example.com", PASSWORD)
+    response = runtime.client.post("/api/auth/login", data={"username": "review_admin", "password": PASSWORD})
+    assert response.status_code == 200
+    return {"Authorization": "Bearer " + response.json()["access_token"]}
+
+
+@pytest.fixture
+def operator_headers(backend_runtime, admin_headers):
+    client = backend_runtime.client
+    created = client.post("/api/auth/register", headers=admin_headers,
+        json={"username": "review_operator", "email": "operator@example.com", "password": PASSWORD})
+    assert created.status_code == 201 and not created.json()["is_admin"]
+    token = client.post("/api/auth/login", data={"username": "review_operator", "password": PASSWORD})
+    return {"Authorization": "Bearer " + token.json()["access_token"]}
+
+
+@pytest.fixture
+def payload_factory(response_event_factory):
+    def make(with_block=False):
+        event = response_event_factory().to_dict()
+        firewall = FirewallController().block_ip(event["src_ip"], event["label"]) if with_block else None
+        return {"event": event, "decision": {"action": "candidate" if with_block else "alert",
+            "reason": "repeated_high_score_flows" if with_block else "single_flow", "evidence_count": 3 if with_block else 1},
+            "firewall": firewall}
+    return make
