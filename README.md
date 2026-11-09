@@ -66,6 +66,16 @@ cannot execute firewall commands. WEB_ATTACK remains alert-only. See the
 [response guide and revised sprint plan](docs/RESPONSE_ENGINE.md) for an offline
 demo, settings, queue/failure behavior and the remaining live-validation gates.
 
+## Authenticated backend and persistent delivery
+
+The backend now protects monitoring/admin routes, uses separate sensor credentials,
+validates ingestion and handles duplicate delivery idempotently. Sensor delivery
+uses a durable outbox, and unblock requests wait for sensor acknowledgement.
+Existing databases require the explicit migration and credential setup in the
+[backend guide](docs/BACKEND.md). It also covers local setup, browser WebSocket
+tickets, retry/dead-letter handling and remaining limits. Firewall actions remain
+simulated.
+
 ## Monday normal-reference evaluation
 
 Monday is BENIGN-only, so it has no standalone trained attack classifier. It is
