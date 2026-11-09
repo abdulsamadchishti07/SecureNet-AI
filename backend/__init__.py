@@ -1,1 +1,1 @@
-"""Local response components. HTTP/database services are a later milestone."""
+"""Authenticated API, persistent events and local dry-run response components."""
