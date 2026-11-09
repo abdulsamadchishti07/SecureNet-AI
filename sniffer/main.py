@@ -60,6 +60,8 @@ def main(argv=None):
     response.add_argument("--response-min-flows", type=int, default=3)
     response.add_argument("--response-window", type=float, default=60)
     response.add_argument("--block-seconds", type=float, default=900)
+    response.add_argument("--api-url", type=str, default=None,
+                          help="optional backend API URL to ingest alerts (e.g. http://localhost:8000)")
     response.add_argument("--protect", action="append", default=[], metavar="IPv4/CIDR",
                           help="protect an admin/gateway/DNS address or CIDR; repeat as needed")
     args = parser.parse_args(argv)
@@ -76,7 +78,7 @@ def main(argv=None):
             policy = ResponsePolicy(args.response_confidence, args.response_min_flows, args.response_window)
             firewall = FirewallController(protected=args.protect, duration_seconds=args.block_seconds)
             dispatcher = ResponseDispatcher(args.alert_log, capacity=args.queue_size,
-                                            policy=policy, firewall=firewall)
+                                            policy=policy, firewall=firewall, api_url=args.api_url)
         except ValueError as exc:
             parser.error(str(exc))
 
