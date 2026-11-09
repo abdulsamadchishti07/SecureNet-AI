@@ -9,6 +9,7 @@ seaborn
 scapy
 fastapi
 uvicorn
+websockets
 sqlalchemy
 psycopg[binary]
 psycopg2-binary
