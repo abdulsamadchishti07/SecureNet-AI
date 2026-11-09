@@ -2,6 +2,11 @@
 
 Updated: 2026-11-08 (Asia/Karachi).
 
+The subsequent [backend hardening guide](BACKEND.md), dated November 9, describes
+the authenticated API, explicit database migration, sensor credentials, durable
+outbox and acknowledged lifecycle changes. This document records the original
+local first chunk; its later-backend statements are historical.
+
 The detection prototype now feeds a local response simulator. `--respond` logs
 policy decisions and proposed firewall commands. The controller has no command
 executor and cannot apply rules to the host. Real prevention is a later lab-gated
