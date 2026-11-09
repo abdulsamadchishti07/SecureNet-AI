@@ -1,6 +1,35 @@
 # SecureNet AI — Agent Handoff
 
-Last updated: 2026-11-08 (Asia/Karachi).
+Last updated: 2026-11-09 (Asia/Karachi).
+
+## Current backend & API persistence — completed Sprint 2, 2026-11-09
+
+- Implemented Sprint 2 deliverables: persistent database schema, secure authentication,
+  REST endpoints, WebSocket live broadcast, and sniffer API forwarding.
+- `backend/models.py`: SQLAlchemy models for `User` (RBAC/admin flag), `Alert` (flow,
+  model metadata, probabilities, features JSON, policy decision, timestamp), and
+  `BlockedIP` (IP, threat label, dry-run/active status, unblock timestamps, iptables rule).
+- `backend/config.py`: Environment loader parsing `backend/.env` (and root fallback) for
+  database URL, JWT secrets, Redis connection, and SMTP email parameters.
+- `backend/database.py`: SQLAlchemy engine and session factory with automatic local
+  SQLite fallback (`securenet.db`) if external PostgreSQL service is offline, ensuring
+  zero local startup failure during testing and offline development.
+- `backend/auth.py`: Bcrypt password hashing and verification, signed JWT token generation
+  and decoding, plus `get_current_user` OAuth2 dependency.
+- `backend/service.py`: `AlertService` with detection persistence (`record_detection`),
+  alert filtering (`list_alerts`), aggregate dashboard metrics (`get_summary_stats`),
+  and manual unblock management (`unblock_ip`).
+- `backend/main.py`: FastAPI application providing:
+  - Auth routes: `/api/auth/register`, `/api/auth/login`, `/api/auth/me`.
+  - Alert routes: `/api/alerts` (filtering & pagination), `/api/stats`, `/api/alerts/ingest`.
+  - Firewall routes: `/api/firewall/blocked`, `/api/firewall/unblock/{ip}`, `/api/firewall/whitelist`.
+  - WebSocket endpoint: `/ws/alerts` for real-time alert broadcasts to connected dashboard clients.
+- `backend/worker.py` & `sniffer/main.py`: Added `--api-url` support to forward detection
+  events directly to `/api/alerts/ingest` with network failure isolation and statistics tracking.
+- `tests/test_backend.py`: 8 comprehensive unit and integration tests covering password hashing,
+  JWT auth, database models, REST endpoints, firewall management, and dispatcher API forwarding.
+- Total test suite expanded to 251 passing tests (243 regression + 8 backend tests).
+- All files staged and committed separately per user instructions.
 
 ## Current response integration — completed first chunk, 2026-11-08
 
