@@ -1,13 +1,14 @@
-"""Single local consumer: policy -> simulated firewall -> append-only JSONL audit & API forwarder."""
+"""Local response consumer with durable asynchronous sensor delivery."""
 
+from collections import OrderedDict
+from datetime import datetime, timezone
+from ipaddress import IPv4Address
 import json
 import os
-import urllib.error
-import urllib.request
-from datetime import datetime, timezone
 from pathlib import Path
-from queue import Empty
+from queue import Empty, Full, Queue
 from threading import Thread
+from uuid import UUID, uuid4
 
 from backend.firewall import FirewallController
 from sniffer.publisher import EventQueue
@@ -15,15 +16,23 @@ from sniffer.rules import ResponsePolicy
 
 
 class ResponseDispatcher:
-    def __init__(self, log_path, capacity=1024, policy=None, firewall=None, api_url=None):
+    def __init__(self, log_path, capacity=1024, policy=None, firewall=None, api_url=None,
+                 api_token=None, sensor_id=None, outbox_path=None, transport=None):
         self.publisher = EventQueue(capacity)
         self.policy = policy if policy is not None else ResponsePolicy()
         self.firewall = firewall if firewall is not None else FirewallController()
         self.log_path = Path(log_path)
         self.api_url = str(api_url).rstrip("/") if api_url else None
+        self.sensor_id = sensor_id or os.getenv("SENSOR_ID", "sensor-local")
+        self.outbox_path = Path(outbox_path) if outbox_path else self.log_path.with_suffix(".outbox.sqlite3")
+        self._transport = transport
+        if self.api_url and transport is None:
+            from backend.outbox import ApiTransport
+            # An explicit credential is mandatory; never fall back to anonymous delivery.
+            self._transport = ApiTransport(self.api_url, api_token or os.getenv("SENSOR_API_TOKEN", ""), self.sensor_id)
         self.processed = self.would_block = self.would_unblock = 0
-        self.api_forwarded = self.api_failed = 0
-        self._error = self._thread = self._log = None
+        self._error = self._thread = self._log = self._sender = self._outbox = None
+        self._commands, self._seen_commands = Queue(maxsize=128), OrderedDict()
 
     def __enter__(self):
         if self._thread is not None or self.publisher.closed:
@@ -31,8 +40,21 @@ class ResponseDispatcher:
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         descriptor = os.open(self.log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
         self._log = os.fdopen(descriptor, "a", encoding="utf-8", buffering=1)
-        self._thread = Thread(target=self._run, name="securenet-response", daemon=True)
-        self._thread.start()
+        try:
+            if self.api_url:
+                from backend.outbox import ApiSender, Outbox
+                self._outbox = Outbox(self.outbox_path, self.api_url + "|" + self.sensor_id)
+                self._sender = ApiSender(self._outbox, self._transport, self._receive_commands)
+                self._sender.start()
+            self._thread = Thread(target=self._run, name="securenet-response", daemon=True)
+            self._thread.start()
+        except Exception:
+            if self._sender:
+                self._sender.close()
+            if self._outbox:
+                self._outbox.close()
+            self._log.close()
+            raise
         return self
 
     def _write(self, record):
@@ -44,52 +66,69 @@ class ResponseDispatcher:
                                 "protected_cidrs": [str(cidr) for cidr in self.firewall.protected]}, **record},
                                    allow_nan=False) + "\n")
 
-    def _forward_to_api(self, event_dict, decision_dict, firewall_action):
-        if not self.api_url:
-            return
-        payload = json.dumps({
-            "event": event_dict,
-            "decision": decision_dict,
-            "firewall": firewall_action,
-        }, allow_nan=False).encode("utf-8")
-        req = urllib.request.Request(
-            f"{self.api_url}/api/alerts/ingest",
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=2.0) as resp:
-                if resp.status in (200, 201):
-                    self.api_forwarded += 1
-                else:
-                    self.api_failed += 1
-        except Exception:
-            self.api_failed += 1
+    def _enqueue_api(self, identity, path, payload):
+        if self._outbox is not None:
+            self._outbox.enqueue(identity, path, payload)
+
+    def _receive_commands(self, commands):
+        if not isinstance(commands, list) or len(commands) > 100:
+            raise ValueError("Invalid command batch")
+        for command in commands:
+            if not isinstance(command, dict) or command.get("operation") != "unblock" or command.get("mode") != "dry_run":
+                raise ValueError("Unsupported sensor command")
+            try:
+                identity = str(UUID(command["command_id"]))
+                block_id = str(UUID(command["block_id"]))
+                ip = str(IPv4Address(command["ip"]))
+            except (KeyError, TypeError, AttributeError) as exc:
+                raise ValueError("Missing command identity or target") from exc
+            if identity in self._seen_commands or self._outbox.contains("ack:" + identity):
+                continue
+            try:
+                self._commands.put_nowait({"command_id": identity, "block_id": block_id, "ip": ip})
+            except Full:
+                return  # The server retains unacknowledged commands for the next poll.
+            self._seen_commands[identity] = True
+            if len(self._seen_commands) > 4096:
+                self._seen_commands.popitem(last=False)
+
+    def _handle_commands(self):
+        while True:
+            try:
+                command = self._commands.get_nowait()
+            except Empty:
+                break
+            action = self.firewall.unblock_ip(command["ip"], block_id=command["block_id"])
+            action["action_id"] = str(uuid4())
+            self._write({"record_type": "firewall", "command_id": command["command_id"], "action": action})
+            self._enqueue_api("ack:" + command["command_id"],
+                "/api/sensor/commands/" + command["command_id"] + "/ack", {"action": action})
+            self.would_unblock += int(action["status"] == "would_unblock")
 
     def _run(self):
         try:
             while True:
+                self._handle_commands()
                 for action in self.firewall.expire():
+                    action["action_id"] = str(uuid4())
                     self._write({"record_type": "firewall", "action": action})
+                    self._enqueue_api("action:" + action["action_id"], "/api/sensor/firewall-events", action)
                     self.would_unblock += 1
                 try:
                     event = self.publisher.get(timeout=0.1)
                 except Empty:
-                    # A final publish can race the get timeout just before close.
-                    # Once closed, no producer can add more; drain that last item too.
                     if self.publisher.closed and self.publisher.stats()["pending"] == 0:
                         break
                     continue
                 decision = self.policy.evaluate(event)
-                action = (self.firewall.block_ip(event.src_ip, event.label)
-                          if decision.action == "candidate" else None)
-                self._write({"record_type": "detection", "event": event.to_dict(),
-                             "decision": decision.to_dict(), "firewall": action})
-                if self.api_url:
-                    self._forward_to_api(event.to_dict(), decision.to_dict(), action)
+                action = self.firewall.block_ip(event.src_ip, event.label) if decision.action == "candidate" else None
+                payload = {"event": event.to_dict(), "decision": decision.to_dict(), "firewall": action}
+                self._write({"record_type": "detection", **payload})
+                self._enqueue_api("event:" + event.event_id, "/api/alerts/ingest", payload)
                 self.processed += 1
                 self.would_block += int(action is not None and action["status"] == "would_block")
+                if self._sender and self._sender._error:
+                    raise RuntimeError("API sender failed; pending messages remain in the outbox") from self._sender._error
         except Exception as exc:
             self._error = exc
             self.publisher.close()
@@ -107,17 +146,26 @@ class ResponseDispatcher:
             self._thread.join(timeout=10)
             if self._thread.is_alive():
                 raise RuntimeError("Response worker did not stop within 10 seconds")
-        if self._log is not None:
-            self._log.close()
-        if self._error is not None:
+        try:
+            if self._sender:
+                self._sender.close()
+        finally:
+            if self._outbox:
+                self._outbox.close()
+            if self._log:
+                self._log.close()
+        if self._error:
             raise RuntimeError("Response worker failed; accepted events may be unlogged") from self._error
 
     def stats(self):
         queue_stats = self.publisher.stats()
+        delivery = self._outbox.stats() if self._outbox else {"pending": 0, "failed": 0}
         return {"mode": "dry_run", **queue_stats, "processed": self.processed,
                 "unlogged": queue_stats["accepted"] - self.processed,
                 "would_block": self.would_block, "would_unblock": self.would_unblock,
-                "api_forwarded": self.api_forwarded, "api_failed": self.api_failed,
+                "api_forwarded": self._sender.forwarded if self._sender else 0,
+                "api_failed": self._sender.failed if self._sender else 0,
+                "api_pending": delivery["pending"], "api_dead_letters": delivery["failed"],
                 "active_simulated_blocks": len(self.firewall.list_active_blocks()),
                 "worker_failed": self._error is not None, "log_path": str(self.log_path)}
 
