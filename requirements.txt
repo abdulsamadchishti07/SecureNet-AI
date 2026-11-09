@@ -7,4 +7,15 @@ joblib
 matplotlib
 seaborn
 scapy
-
+fastapi
+uvicorn
+sqlalchemy
+psycopg[binary]
+psycopg2-binary
+redis
+python-dotenv
+pyjwt
+bcrypt
+email-validator
+python-multipart
+httpx
