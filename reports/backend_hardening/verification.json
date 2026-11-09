@@ -1,0 +1,109 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Karachi",
+  "pytest": {
+    "passed": 308,
+    "failures": 0,
+    "errors": 0,
+    "known_warnings": [
+      "joblib/NumPy array shape deprecation",
+      "Starlette/httpx TestClient deprecation"
+    ]
+  },
+  "loopback_runtime": {
+    "actual_loopback_http": true,
+    "actual_websocket_anonymous_status": 403,
+    "actual_websocket_bearer_handshake": true,
+    "actual_browser_ticket_delivery": true,
+    "actual_ticket_replay_rejected": true,
+    "websockets_version": "17.4",
+    "private_temporary_database": true,
+    "anonymous_alert_read_status": 401,
+    "cli_predictions": 3,
+    "cli_labels": [
+      "PORTSCAN",
+      "PORTSCAN",
+      "PORTSCAN"
+    ],
+    "persisted_events": 4,
+    "unblock_requests_return_202_pending": true,
+    "acknowledged_unblocks": 2,
+    "newer_block_identity_preserved": true,
+    "final_stats": {
+      "total_events": 4,
+      "total_attacks": 4,
+      "active_blocked_ips": 0,
+      "active_simulated_blocks": 0,
+      "pending_unblocks": 0,
+      "threat_distribution": {
+        "PORTSCAN": 4
+      },
+      "response_mode": "dry_run"
+    },
+    "model_provenance_verified": true,
+    "live_capture_performed": false,
+    "actual_firewall_rules_applied": false
+  },
+  "postgresql_runtime": {
+    "private_unix_socket_cluster": true,
+    "tcp_listener_enabled": false,
+    "server_version": "18.6",
+    "concurrent_identical_ingest": "one created, one existing",
+    "authenticated_api_and_sensor_paths": true,
+    "unblock_request_and_duplicate_ack": true,
+    "legacy_migration_preserved_rows": true,
+    "migration_repeatable": true,
+    "configured_database_contacted": false
+  },
+  "preservation": {
+    "historical_files_unchanged": 89,
+    "unified_bundle_and_splits_unchanged": true,
+    "unified_hashes": {
+      "bundle": "5e8fcee635593d6917cf573284ac137797768f37db33bc3ae6501d7f9fe1f3d6",
+      "splits": "1ef6d42ae08f9d4f5f939ed94c27f162fe2c9d74d42b5bb8271bee9ac8f2d9be"
+    },
+    "configured_database_migrated": false,
+    "existing_environment_file_replaced": false
+  },
+  "source_sha256_at_completion": {
+    "backend/__init__.py": "6ac7ddbf026e9e7598fdda53913ce5e897f51326df5edfe98cbb70f7b7262f0f",
+    "backend/auth.py": "b85af71ba21562db14725abe64361741b843e94c28ac92c80dcaaba82e114690",
+    "backend/config.py": "33988ef98dea445ff18ce5ac13d0dc0ee53e457edd7b12e389d559d67b5d5fe3",
+    "backend/database.py": "78e17b357ecca6e216c408064e4be736e6bab3078c578b7916eeb4ce0845f966",
+    "backend/firewall.py": "ae8f4a8d7a0b5d0559e7865d3391d4de798f83a5a01289fa7df5cd9a36418770",
+    "backend/main.py": "e766ea5bd2abd15db022aae19ce30211728e7aa9ac34baee3ae7074d24fc002f",
+    "backend/manage.py": "9a4e80e6d9324de66d4f04d3a333bb66493ba023f515ff1d47ef48566239d627",
+    "backend/models.py": "3d74d08ec0f8c5b3cf53cad839f857bb80b0cacfdfa577f0f8a00e1a0af786a3",
+    "backend/outbox.py": "3302f48b61561ad879ec331cf59a000e77d8c36a024de74bc72490c511fa3151",
+    "backend/realtime.py": "5729bfcf4a2b31b96fd5fcd18484fad75a6d6673a479c0399e094707db60ab5e",
+    "backend/schemas.py": "8bd51308ae10eded3d3b74089406b97f6ca5a43f145725e67e01b1736e451ae0",
+    "backend/service.py": "53bdf3a43834dc39935ba14b2398bde76cab187094b0872a8142a05e21678b39",
+    "backend/worker.py": "4e6e6da6c7a78b5cd574b1469b2005a656610e5012554a2c1e6b0995df3fb448",
+    "sniffer/main.py": "13ce74880d9eaee1f060e1db5415e206883dfc63967797304a3346c8cfeb511d",
+    "requirements.txt": "dd4431c13e776b0241ddaf871a8d83a614668ccb6b8fba9f6dae3383358b4f2c"
+  },
+  "scope": {
+    "actual_firewall_execution": false,
+    "live_capture": false,
+    "model_retraining": false,
+    "production_deployment": false,
+    "redis_or_multiple_api_workers": false
+  },
+  "websocket_specific_regressions_after_install": {
+    "passed": 4,
+    "failures": 0
+  },
+  "dependency_versions": {
+    "fastapi": "0.162.2",
+    "starlette": "1.10.0",
+    "sqlalchemy": "2.1.8",
+    "bcrypt": "5.0.0",
+    "PyJWT": "2.15.1",
+    "pydantic": "2.14.3",
+    "websockets": "17.4",
+    "uvicorn": "0.54.0",
+    "psycopg": "3.3.8"
+  },
+  "python": "3.14.9",
+  "pip_check": "No broken requirements found"
+}
