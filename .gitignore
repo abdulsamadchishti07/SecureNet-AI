@@ -4,6 +4,7 @@ venv/
 env/
 .env
 .env.*
+!backend/.env.example
 
 # Python bytecode & cache
 __pycache__/
@@ -44,6 +45,12 @@ ml_engine/models/unified_v1/
 *.db
 *.sqlite*
 runtime/
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
 
 # OS & Editor files
 .DS_Store
