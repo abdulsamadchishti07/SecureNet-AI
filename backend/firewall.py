@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from ipaddress import IPv4Address, IPv4Network
 import time
+from uuid import uuid4
 
 from sniffer.events import finite_number
 
@@ -44,17 +45,22 @@ class FirewallController:
         if len(self._blocks) >= self.max_blocks:
             return {**action, "status": "capacity_reached"}
         created = datetime.now(timezone.utc)
-        block = {"ip": ip, "threat": threat, "mode": self.mode,
+        block = {"block_id": str(uuid4()), "ip": ip, "threat": threat, "mode": self.mode,
                  "blocked_at": created.isoformat(),
                  "unblock_at": (created + timedelta(seconds=self.duration)).isoformat()}
         self._blocks[ip] = (block, self.clock() + self.duration)
         return {**action, "status": "would_block", "block": dict(block),
                 "command": self._command(ip, "-A")}
 
-    def unblock_ip(self, ip, reason="manual"):
+    def unblock_ip(self, ip, reason="manual", block_id=None):
         ip = str(IPv4Address(ip))
+        current = self._blocks.get(ip)
+        if current and block_id is not None and current[0]["block_id"] != block_id:
+            return {"mode": self.mode, "ip": ip, "block_id": block_id,
+                    "status": "stale_block", "reason": reason, "command": None}
         previous = self._blocks.pop(ip, None)
         return {"mode": self.mode, "ip": ip,
+                "block_id": previous[0]["block_id"] if previous else block_id,
                 "status": "would_unblock" if previous else "not_simulated",
                 "reason": reason, "command": self._command(ip, "-D") if previous else None}
 
