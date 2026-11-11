@@ -38,6 +38,10 @@ class UserOut(WireModel):
     is_admin: bool
 
 
+class RefreshRequest(WireModel):
+    refresh_token: str = Field(min_length=1, max_length=4096)
+
+
 class EventIn(WireModel):
     schema_version: Literal[1] = 1
     event_id: UUID
