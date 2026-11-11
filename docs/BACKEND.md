@@ -79,6 +79,7 @@ Current account activation/admin status is read from the database.
 | `GET /api/auth/me` | Active user JWT |
 | `POST /api/auth/register` | Administrator JWT; provisions another operator/admin |
 | `GET /api/alerts`, `/api/stats` | Active user JWT |
+| `GET /api/analytics?minutes=60` | Active user JWT; 20 UTC flow-count bins, protocols and top sources; 15..10080 minute window |
 | `GET /api/firewall/blocked`, `/api/firewall/whitelist` | Active user JWT |
 | `POST /api/firewall/unblock/{ip}` | Administrator JWT; returns 202 and pending command ID |
 | `POST /api/alerts/ingest` | Sensor token and matching sensor ID; user JWTs are insufficient |
@@ -107,6 +108,14 @@ ingestion/other clients. Maximum connections are 256, with at most 1,024 outstan
 tickets. Tickets and broadcasts are process-local: use one Uvicorn worker until a
 shared broker/ticket store is introduced. Configure explicit dashboard origins in
 `CORS_ORIGINS`; the default allows no browser cross-origin access.
+
+Sprint 3 serves the compiled React/Vite dashboard at `/`, with local assets under
+`/static/`. Build with `npm --prefix frontend ci` then `npm --prefix frontend run build`;
+the API remains usable if the root dashboard returns 503 for a missing build.
+Detection messages include HTTP alert fields (timestamps, ports, protocol,
+sensor/model provenance and policy), `type: detection` and existing `action`/`mode`
+fields. The UI deduplicates event IDs and refreshes filtered queries; lifecycle
+changes are polled every five seconds. See the [dashboard guide](SPRINT_3.md).
 
 ## Sensor setup and persistent delivery
 
@@ -165,6 +174,11 @@ All proposals are `dry_run`. Ingestion rejects active/real-firewall claims. New
 simulated blocks have UUIDs. An unblock targets both IP and block UUID, so an old
 command cannot remove a newer block for the same IP.
 
+The dashboard requests `POST /api/firewall/unblock/{ip}?block_id=<UUID>` for the
+exact displayed record; the 202 response includes `block_id`. This optional query
+preserves IP-only callers while preventing UI targeting of a newer record. Offline
+demos can use `--linger-seconds 300` to keep the same sensor polling after PCAP EOF.
+
 Manual unblock records the requesting administrator and returns `PENDING` while
 the database block is `UNBLOCK_REQUESTED`. The running sensor polls, updates its
 own simulator and durably acknowledges the result. Only then does the backend
@@ -185,7 +199,7 @@ reports built-in defaults; custom `--protect` values belong to the sensor's audi
 
 ## Verification and remaining scope
 
-The full regression suite passes 308 cases. Additional checks used an actual
+The original backend-hardening regression suite passed 308 cases. Additional checks used an actual
 loopback Uvicorn API with the real saved model/offline synthetic PCAP, and a
 private Unix-socket-only PostgreSQL cluster for concurrent ingestion, acknowledgements
 and repeatable legacy migration. See [saved evidence](../reports/backend_hardening/README.md).
@@ -194,7 +208,11 @@ initialized by test lifespan.
 
 Live capture parity, campaign-independent detection, calibrated response policy,
 privileged firewall execution, Redis/multiple API workers, login rate limiting,
-dashboard and production deployment validation remain separate work. The existing
+and production deployment validation remain separate work. Sprint 3 subsequently
+completed the dashboard, configured PostgreSQL migration and browser/PCAP control
+demo, subsequently corrected to React/TypeScript with 327 default tests plus nine
+browser workflows; see its guide/evidence.
+The existing
 ML score/capture limitations in the [validity review](<ML Engine/VALIDITY_REVIEW.md>)
 remain unchanged. No model was retrained, no live packets captured and no host
 firewall rules applied during this hardening.
