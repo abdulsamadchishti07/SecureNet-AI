@@ -157,3 +157,34 @@ def test_cli_rejects_invalid_response_options(options, capsys):
         sniffer_main.main(["-r", "synthetic.pcap", "--respond", *options])
     assert caught.value.code == 2
     assert "error:" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("options", [
+    ["-r", "unused.pcap", "--linger-seconds", "1"],
+    ["-i", "unused", "--predict", "--respond", "--linger-seconds", "1"],
+    ["-r", "unused.pcap", "--predict", "--respond", "--linger-seconds", "nan"],
+    ["-r", "unused.pcap", "--predict", "--respond", "--linger-seconds", "-1"],
+    ["-r", "unused.pcap", "--predict", "--respond", "--linger-seconds", "3601"],
+])
+def test_cli_rejects_invalid_linger_before_starting_capture(options, capsys):
+    with pytest.raises(SystemExit) as caught:
+        sniffer_main.main(options)
+    assert caught.value.code == 2
+    assert "--linger-seconds" in capsys.readouterr().err
+
+
+def test_linger_keeps_polling_worker_health_until_deadline(monkeypatch, manual_clock):
+    from types import SimpleNamespace
+    checked = []
+    monkeypatch.setattr(sniffer_main.time, "monotonic", manual_clock)
+    monkeypatch.setattr(sniffer_main.time, "sleep", manual_clock.advance)
+    sniffer_main.linger(SimpleNamespace(check_health=lambda: checked.append(True)), 1)
+    assert len(checked) >= 10
+
+
+def test_linger_surfaces_worker_failure():
+    class FailedWorker:
+        def check_health(self):
+            raise RuntimeError("sender stopped")
+    with pytest.raises(RuntimeError, match="sender stopped"):
+        sniffer_main.linger(FailedWorker(), 1)
