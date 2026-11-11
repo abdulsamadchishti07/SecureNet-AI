@@ -5,8 +5,9 @@
 """
 
 import argparse
-from contextlib import nullcontext
+from contextlib import nullcontext, suppress
 import json
+import math
 from pathlib import Path
 import sys
 import time
@@ -39,6 +40,14 @@ def run(packets, on_flow, termination_grace=5.0):
         on_flow(features)
 
 
+def linger(dispatcher, seconds):
+    deadline = time.monotonic() + seconds
+    with suppress(KeyboardInterrupt):
+        while time.monotonic() < deadline:
+            dispatcher.check_health()
+            time.sleep(0.1)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     source = parser.add_mutually_exclusive_group(required=True)
@@ -64,6 +73,8 @@ def main(argv=None):
                           help="optional backend API URL to ingest alerts (e.g. http://localhost:8000)")
     response.add_argument("--sensor-id", default=None, help="sensor identity; defaults to SENSOR_ID or sensor-local")
     response.add_argument("--outbox", type=Path, default=None, help="durable API outbox path")
+    response.add_argument("--linger-seconds", type=float, default=0,
+                          help="keep response simulation/API polling alive after PCAP EOF (0–3600 seconds)")
     response.add_argument("--protect", action="append", default=[], metavar="IPv4/CIDR",
                           help="protect an admin/gateway/DNS address or CIDR; repeat as needed")
     args = parser.parse_args(argv)
@@ -71,6 +82,10 @@ def main(argv=None):
         parser.error("--respond requires --predict")
     if args.api_url and not args.respond:
         parser.error("--api-url requires --respond")
+    if not math.isfinite(args.linger_seconds) or not 0 <= args.linger_seconds <= 3600:
+        parser.error("--linger-seconds must be between 0 and 3600")
+    if args.linger_seconds and (not args.pcap or not args.respond):
+        parser.error("--linger-seconds requires offline --pcap and --respond")
 
     dispatcher = None
     if args.respond:
@@ -115,6 +130,10 @@ def main(argv=None):
     response_context = dispatcher if dispatcher is not None else nullcontext()
     with response_context:
         run(start_capture(args.iface, args.pcap, args.filter), on_flow, args.termination_grace)
+        if args.linger_seconds:
+            print(f"Replay complete; sensor stays available for {args.linger_seconds:g} seconds. Ctrl+C to stop.",
+                  file=sys.stderr, flush=True)
+            linger(dispatcher, args.linger_seconds)
     if dispatcher is not None:
         print("Response summary: " + json.dumps(dispatcher.stats()), file=sys.stderr)
 
