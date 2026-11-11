@@ -25,6 +25,7 @@ Adding a policy requires one set of expected labels, rather than another test fi
 | `test_firewall.py` | Simulated rule proposals, protected ranges, duplicate blocks and controlled-clock expiry; real command execution forbidden |
 | `test_backend.py` | Authentication/RBAC, strict ingestion, idempotency, lifecycle acknowledgements, migration preservation and startup isolation |
 | `test_delivery.py` | Durable retries/dead letters, private transport, sensor round trips and slow WebSocket isolation |
+| `test_dashboard.py` | Injected private build/security headers, missing-build response, static isolation and SQL analytics |
 
 Every test receives an isolated temporary project root and inference caches.
 Integration fixtures use small real Random Forest and XGBoost estimators. They
@@ -34,9 +35,21 @@ The verified environment currently emits joblib/NumPy deprecation warnings durin
 model deserialization; these warnings are visible and do not fail the suite.
 Backend fixtures inject private app instances and temporary SQLite engines into
 lifespan itself. They never initialize the configured project database. Current
-verification: 308 passing cases; a Starlette/httpx deprecation warning is also
+verification: 327 passing cases; a Starlette/httpx deprecation warning is also
 visible. Separate runtime evidence includes loopback HTTP and an isolated
 PostgreSQL cluster; those services are not required by the default pytest suite.
+
+Nine verified opt-in React dashboard browser workflows live in `browser_tests/`,
+outside the default test path. Install `requirements-browser.txt` for Playwright
+and provide system Chromium or Playwright's Chromium. They use a private loopback
+server with actual Vite build output: run `npm --prefix frontend ci` and
+`npm --prefix frontend run build` before browser tests. The database is a temporary
+SQLite fixture. Run `.venv/bin/python -m pytest browser_tests -q`,
+or combine both suites with `.venv/bin/python -m pytest tests browser_tests -q`.
+They execute real JavaScript, including pending/acknowledged unblock, offline sensor,
+reconnection, pagination, roles, account validation, safe text rendering and mobile
+layout. Details and actual PostgreSQL CLI evidence are in
+[the Sprint 3 guide](../docs/SPRINT_3.md).
 
 Run one area or request a single combined machine-readable test report:
 
