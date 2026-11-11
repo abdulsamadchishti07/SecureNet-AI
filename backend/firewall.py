@@ -1,3 +1,4 @@
+
 """In-memory firewall simulator. This module never executes host commands."""
 
 from datetime import datetime, timedelta, timezone
