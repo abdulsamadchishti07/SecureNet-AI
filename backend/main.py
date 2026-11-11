@@ -1,32 +1,42 @@
-"""Authenticated REST, sensor ingestion and isolated WebSocket delivery."""
+"""Same-origin SOC dashboard, authenticated REST and isolated sensor delivery."""
 
 import asyncio
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from ipaddress import IPv4Address
+from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from backend.auth import (create_access_token, decode_token, get_current_user, get_settings,
+from backend.auth import (create_access_token, create_refresh_token, decode_token, get_current_user, get_settings,
                           hash_password, oauth2_scheme, require_admin, require_sensor, resolve_user, verify_password)
 from backend.config import settings
 from backend.database import create_database_engine, get_db, init_db, sessions_for
 from backend.firewall import PROTECTED_CIDRS
 from backend.models import User
 from backend.realtime import ConnectionManager, WebSocketTickets
-from backend.schemas import AlertIngest, CommandAck, FirewallActionIn, UserOut, UserRegister
+from backend.schemas import AlertIngest, CommandAck, FirewallActionIn, RefreshRequest, UserOut, UserRegister
 from backend.service import AlertService, ConflictError, MissingRecordError
 
 
-def create_app(configuration=None, engine=None):
+def alert_view(row):
+    return {name: getattr(row, name) for name in ("id", "event_id", "observed_at", "source",
+        "src_ip", "dst_ip", "src_port", "dst_port", "protocol", "label", "confidence",
+        "model_scope", "model_run", "model_sha256", "sensor_id", "decision_action", "decision_reason")}
+
+
+def create_app(configuration=None, engine=None, frontend_dir=None):
     config = configuration or settings
 
     @asynccontextmanager
@@ -46,9 +56,37 @@ def create_app(configuration=None, engine=None):
     application.state.settings = config
     application.state.ws_manager = ConnectionManager()
     application.state.ws_tickets = WebSocketTickets()
+    application.state.revoked_refresh_tokens = OrderedDict()
     application.add_middleware(CORSMiddleware, allow_origins=list(config.CORS_ORIGINS),
         allow_credentials=False, allow_methods=["GET", "POST"],
         allow_headers=["Authorization", "Content-Type", "X-Sensor-Token", "X-Sensor-ID"])
+
+    @application.middleware("http")
+    async def browser_security_headers(request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Cache-Control"] = "no-cache" if request.url.path.startswith("/static/") else "no-store"
+        if request.url.path == "/" or request.url.path.startswith("/static/"):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; "
+                "img-src 'self' data:; connect-src 'self'; base-uri 'none'; "
+                "frame-ancestors 'none'; form-action 'self'; object-src 'none'")
+        return response
+
+    frontend = (Path(frontend_dir) if frontend_dir is not None else
+                Path(__file__).resolve().parent.parent / "frontend" / "dist")
+
+    @application.get("/", include_in_schema=False)
+    def dashboard():
+        if not (frontend / "index.html").is_file():
+            raise HTTPException(503, "React dashboard is not built. Run npm ci and npm run build in frontend/.")
+        return FileResponse(frontend / "index.html")
+
+    if (frontend / "static").is_dir():
+        application.mount("/static", StaticFiles(directory=frontend / "static"), name="dashboard-static")
 
     @application.exception_handler(ConflictError)
     async def conflict_handler(request, exc):
@@ -74,14 +112,47 @@ def create_app(configuration=None, engine=None):
             raise HTTPException(409, "Username or email already registered") from exc
         return user
 
+    def issue_tokens(user_id, current_config):
+        return {"access_token": create_access_token({"sub": str(user_id)}, configuration=current_config),
+                "refresh_token": create_refresh_token({"sub": str(user_id)}, configuration=current_config),
+                "token_type": "bearer", "expires_in": current_config.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                "refresh_expires_in": current_config.REFRESH_TOKEN_EXPIRE_DAYS * 86400}
+
+    def revoke_jti(jti):
+        revoked = application.state.revoked_refresh_tokens
+        revoked[jti] = True
+        while len(revoked) > 10000:
+            revoked.popitem(last=False)
+
     @application.post("/api/auth/login")
     def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db),
               config=Depends(get_settings)):
         user = db.query(User).filter_by(username=form.username).first()
         if user is None or not user.is_active or not verify_password(form.password, user.hashed_password):
             raise HTTPException(401, "Incorrect username or password", headers={"WWW-Authenticate": "Bearer"})
-        return {"access_token": create_access_token({"sub": str(user.id)}, configuration=config),
-                "token_type": "bearer", "expires_in": config.ACCESS_TOKEN_EXPIRE_MINUTES * 60}
+        return issue_tokens(user.id, config)
+
+    @application.post("/api/auth/refresh")
+    def refresh_token(body: RefreshRequest, db: Session = Depends(get_db), config=Depends(get_settings)):
+        claims = decode_token(body.refresh_token, config, token_type="refresh")
+        if claims["jti"] in application.state.revoked_refresh_tokens:
+            raise HTTPException(401, "Refresh token has already been used or revoked",
+                                headers={"WWW-Authenticate": "Bearer"})
+        user = db.get(User, int(claims["sub"]))
+        if user is None or not user.is_active:
+            raise HTTPException(401, "User not found or deactivated", headers={"WWW-Authenticate": "Bearer"})
+        revoke_jti(claims["jti"])
+        return issue_tokens(user.id, config)
+
+    @application.post("/api/auth/logout")
+    def logout(body: RefreshRequest | None = None, config=Depends(get_settings)):
+        if body and body.refresh_token:
+            try:
+                claims = decode_token(body.refresh_token, config, token_type="refresh")
+                revoke_jti(claims["jti"])
+            except HTTPException:
+                pass
+        return {"status": "logged_out"}
 
     @application.get("/api/auth/me", response_model=UserOut)
     def me(user=Depends(get_current_user)):
@@ -101,14 +172,16 @@ def create_app(configuration=None, engine=None):
                min_confidence: float | None = Query(None, ge=0, le=1),
                db: Session = Depends(get_db), user=Depends(get_current_user)):
         rows = AlertService.list_alerts(db, skip, limit, label, min_confidence)
-        return [{name: getattr(row, name) for name in ("id", "event_id", "observed_at", "source",
-            "src_ip", "dst_ip", "src_port", "dst_port", "protocol", "label", "confidence",
-            "model_scope", "model_run", "model_sha256", "sensor_id", "decision_action", "decision_reason")}
-            for row in rows]
+        return [alert_view(row) for row in rows]
 
     @application.get("/api/stats")
     def stats(db: Session = Depends(get_db), user=Depends(get_current_user)):
         return AlertService.get_summary_stats(db)
+
+    @application.get("/api/analytics")
+    def analytics(minutes: int = Query(60, ge=15, le=10080),
+                  db: Session = Depends(get_db), user=Depends(get_current_user)):
+        return AlertService.get_analytics(db, minutes)
 
     @application.post("/api/alerts/ingest", status_code=201)
     async def ingest(payload: AlertIngest, response: Response,
@@ -118,9 +191,8 @@ def create_app(configuration=None, engine=None):
         if not result.created:
             response.status_code = 200
         else:
-            application.state.ws_manager.broadcast({"event_id": alert.event_id, "label": alert.label,
-                "src_ip": alert.src_ip, "dst_ip": alert.dst_ip, "confidence": alert.confidence,
-                "action": alert.decision_action, "mode": "dry_run"})
+            application.state.ws_manager.broadcast(jsonable_encoder({**alert_view(alert),
+                "type": "detection", "action": alert.decision_action, "mode": "dry_run"}))
         return {"status": "ingested" if result.created else "already_ingested",
                 "event_id": alert.event_id, "alert_id": alert.id}
 
@@ -133,10 +205,11 @@ def create_app(configuration=None, engine=None):
             "mode", "status", "blocked_at", "unblock_at", "unblocked_at", "command")} for row in rows]
 
     @application.post("/api/firewall/unblock/{ip}", status_code=202)
-    def unblock(ip: IPv4Address, db: Session = Depends(get_db), admin=Depends(require_admin)):
-        command = AlertService.request_unblock(db, ip, requested_by=admin.id)
+    def unblock(ip: IPv4Address, block_id: UUID | None = None,
+                db: Session = Depends(get_db), admin=Depends(require_admin)):
+        command = AlertService.request_unblock(db, ip, requested_by=admin.id, block_id=block_id)
         return {"status": command.status, "command_id": command.command_id, "ip": command.ip,
-                "mode": "dry_run"}
+                "block_id": command.block_id, "mode": "dry_run"}
 
     @application.get("/api/firewall/whitelist")
     def whitelist(user=Depends(get_current_user)):
