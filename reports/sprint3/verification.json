@@ -1,0 +1,191 @@
+{
+  "date": "2026-11-09",
+  "status": "sprint3_complete_react_stack_corrected",
+  "framework": "React/TypeScript/Vite",
+  "pytest": {
+    "default_passed": 327,
+    "warnings": 5208,
+    "seconds": 63.34,
+    "browser_passed": 9,
+    "browser_seconds": 36.17,
+    "targeted_backend_dashboard_passed": 62
+  },
+  "frontend": {
+    "versions": {
+      "lucide-react": "1.70.0",
+      "react": "19.3.1",
+      "react-dom": "19.3.1",
+      "@types/react": "19.3.0",
+      "@types/react-dom": "19.3.0",
+      "@vitejs/plugin-react": "6.3.0",
+      "prettier": "3.9.10",
+      "typescript": "7.0.2",
+      "vite": "8.3.7"
+    },
+    "node": "v26.13.0",
+    "npm": "12.2.1",
+    "lockfile_clean_install": "passed_offline",
+    "strict_typecheck": "passed",
+    "production_build": "passed",
+    "format_check": "passed",
+    "npm_audit_known_vulnerabilities": 0,
+    "compiled_files_sha256": {
+      "frontend/dist/index.html": "ed04576e732b1cc388e723c300cc27134ae31d2dddbc5f1ec2a20aba3bb732f9",
+      "frontend/dist/static/mark.svg": "256537a3b3ee5746e2409315710b2ba172ed1a92d9c21ea4eab2ebedf21dc753",
+      "frontend/dist/static/index-CFGqrnMG.js": "8743a292ed548b7d364567ee682be47857d45007dc82a258afac83b12223c56a",
+      "frontend/dist/static/index-Bm9O0mSH.css": "18162b44bf7ce3fdd1ea0479d5a331a89adba0ddb711ed88252e584042acf95f",
+      "frontend/dist/static/fonts/jetbrains-mono-OFL.txt": "b2fe5e8987594e9ffd1d2ca52a2f5d73eb8335243893c5d6254b5ad69269591d",
+      "frontend/dist/static/fonts/jetbrains-mono.woff2": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be",
+      "frontend/dist/static/fonts/plus-jakarta-sans-OFL.txt": "995c7199cab65954f545996326755daee7b63cc6b42b06c13da1f9502ab08a99",
+      "frontend/dist/static/fonts/plus-jakarta-sans.woff2": "153fc85b70298beeb1d61a5f723331649e7f23bb77302a66e61cb3e2fbdb5e79"
+    }
+  },
+  "historical_files_unchanged": 89,
+  "unified_bundle_and_splits_unchanged": true,
+  "postgres_setup": {
+    "database": "SecureNet_AI",
+    "backup": "runtime/backups/sprint3-20261109T155112Z",
+    "backup_bytes": 10494,
+    "backup_archive_readable": true,
+    "before_counts": {
+      "users": 0,
+      "alerts": 0,
+      "blocked_ips": 0
+    },
+    "migration_counts": {
+      "users": 0,
+      "alerts": 0,
+      "blocked_ips": 0,
+      "bootstrap_state": 0,
+      "firewall_events": 0,
+      "response_commands": 0
+    },
+    "original_rows_preserved": true,
+    "admin_created": true,
+    "admin_credentials_file": "runtime/admin-login.txt",
+    "env_mode": "0o600",
+    "sensor_env_mode": "0o600",
+    "database_url_unchanged": true,
+    "jwt_key_unchanged": true
+  },
+  "backup_restore": {
+    "backup_restored": true,
+    "private_unix_socket_cluster": true,
+    "tcp_disabled": true,
+    "restored_original_counts": {
+      "users": 0,
+      "alerts": 0,
+      "blocked_ips": 0
+    },
+    "cluster_stopped_and_removed_on_exit": true
+  },
+  "dashboard_runtime": {
+    "database": "configured_postgresql",
+    "framework": "React/TypeScript",
+    "react_root_detected": true,
+    "browser": "156.0.8078.79",
+    "cli_predictions": 3,
+    "new_persisted_events": 3,
+    "live_api_ticket_stream": true,
+    "model_run_and_hash_visible": true,
+    "offline_dispatcher_alive_for_unblock": true,
+    "manual_unblock_acknowledged": true,
+    "verified_block_id": "c5fc6dba-5944-428b-9202-8f6a582296e2",
+    "postgres_analytics_verified": true,
+    "analytics_window_flows": 12,
+    "desktop_viewport": [
+      1920,
+      1080
+    ],
+    "mobile_viewport": [
+      390,
+      844
+    ],
+    "mobile_no_page_overflow": true,
+    "browser_errors": [],
+    "external_runtime_requests": 0,
+    "browser_storage_empty": true,
+    "final_stats": {
+      "total_events": 12,
+      "total_attacks": 12,
+      "active_blocked_ips": 0,
+      "active_simulated_blocks": 0,
+      "pending_unblocks": 0,
+      "threat_distribution": {
+        "PORTSCAN": 12
+      },
+      "response_mode": "dry_run"
+    },
+    "kernel_firewall_actions": 0,
+    "screenshots": [
+      "reports/sprint3/dashboard-desktop.png",
+      "reports/sprint3/dashboard-mobile.png"
+    ]
+  },
+  "development_proxy": {
+    "react_root": true,
+    "development_url": "http://127.0.0.1:5173",
+    "api_proxy_login": true,
+    "websocket_ticket_proxy": true,
+    "browser_errors": []
+  },
+  "layout_and_export": {
+    "framework": "React/TypeScript",
+    "viewports": [
+      360,
+      390,
+      768,
+      1024,
+      1440,
+      1920
+    ],
+    "views_checked_per_viewport": 8,
+    "checks_passed": 48,
+    "no_page_overflow": true,
+    "metadata_export_checked": true,
+    "exported_events": 12,
+    "browser_errors": [],
+    "csp_violations": []
+  },
+  "demo_history": {
+    "initial_native_probe_events": 9,
+    "react_verification_events": 3,
+    "total_persisted_synthetic_events": 12,
+    "history_preserved": true
+  },
+  "reference": {
+    "path": "securenet_ai_threat_detection_response_platform.tsx",
+    "sha256": "285fd8cddec4a0201c514277d74cf132948e175678b2865393c053643b136a18",
+    "preserved": true
+  },
+  "local_doc_links_checked": 65,
+  "firewall_execution": false,
+  "model_retraining": false,
+  "database_or_credential_reset": false,
+  "development_url_at_completion": "http://127.0.0.1:5173",
+  "compiled_app_url_at_completion": "http://127.0.0.1:8010",
+  "source_sha256_at_completion": {
+    "backend/main.py": "1d265a5598c2634de52cbd46e0ee8d3712a3d07f9fc7779b36f68ffe0f8368b3",
+    "tests/conftest.py": "f8741867ff8941eb1f541962cbd369e14901c1db1026a640dce8894617f86737",
+    "tests/test_dashboard.py": "90798c1eb55c697292684f5292ff815b61d4cdc7f6c573c88894e21af54eb32a",
+    "frontend/package.json": "e25d81d9aa5579b9724169fcb3f6c13fe7538c9e2753cf3beaf89d72865d39ea",
+    "frontend/package-lock.json": "c24ee9ff8e9da4bdc3de861ea86178b5d3e78e2c18fabc709e0519e0cb033754",
+    "frontend/index.html": "b22393497f6c249e57c6809c324a8f402ce12419745d5ff43feb1754d62bc7b9",
+    "frontend/tsconfig.json": "8f527057e00ecff899afc37ecb73f51037a975e5833d6d8cbb8727f033dc8546",
+    "frontend/vite.config.ts": "d82a74df39823050dfc525223374807e435f0c534b9a0fdcf259f41bc1f4951a",
+    "frontend/README.md": "4f3ab291b44f4c1a76f279380092f1e8d6832b38b3c5c43a2af04194c1d3faa7",
+    "DESIGN.md": "3323bde18ec814b0c4de77927b32ad064d503c93e3ca2496f0640fa429d84d56",
+    "frontend/src/types.ts": "30a810cde65e6995489113b3dd7ad4b90fc217d6dba392bbafcde59e5f5af238",
+    "frontend/src/api.ts": "8bbe705049080f98aad8709036a8e84e562725df880c16d887ec9b7831d2db48",
+    "frontend/src/usePlatform.ts": "6b824697ec6518df0b168fc5334aa03d476e6a33977b8ff5ab8a69a950b53b3b",
+    "frontend/src/main.tsx": "b52ef18d16fd7762dc2f33f1a5408aed0544e20efc0b9383f534aac2da31af0e",
+    "frontend/src/styles.css": "248394865cd2e5fc7a53b38ae47a5632124f66afffe600ef964da7dd06432c95",
+    "frontend/src/vite-env.d.ts": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+    "frontend/public/static/mark.svg": "256537a3b3ee5746e2409315710b2ba172ed1a92d9c21ea4eab2ebedf21dc753",
+    "frontend/public/static/fonts/plus-jakarta-sans.woff2": "153fc85b70298beeb1d61a5f723331649e7f23bb77302a66e61cb3e2fbdb5e79",
+    "frontend/public/static/fonts/plus-jakarta-sans-OFL.txt": "995c7199cab65954f545996326755daee7b63cc6b42b06c13da1f9502ab08a99",
+    "frontend/public/static/fonts/jetbrains-mono.woff2": "83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be",
+    "frontend/public/static/fonts/jetbrains-mono-OFL.txt": "b2fe5e8987594e9ffd1d2ca52a2f5d73eb8335243893c5d6254b5ad69269591d",
+    "frontend/src/App.tsx": "cba2ab190eb461575575d974d2103b6053578bdf9356c81e09549970ef5c1d01"
+  }
+}
