@@ -133,11 +133,16 @@ class ResponseDispatcher:
             self._error = exc
             self.publisher.close()
 
+    def check_health(self):
+        if self._error is not None:
+            raise RuntimeError("Response worker failed; check the audit log") from self._error
+        if self._sender and self._sender._error:
+            raise RuntimeError("API sender failed; pending messages remain in the outbox") from self._sender._error
+
     def publish(self, event):
         if self._thread is None:
             raise RuntimeError("Start the dispatcher before publishing")
-        if self._error is not None:
-            raise RuntimeError("Response worker failed; check the audit log") from self._error
+        self.check_health()
         return self.publisher.publish(event)
 
     def close(self):
