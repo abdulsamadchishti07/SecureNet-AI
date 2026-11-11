@@ -76,6 +76,26 @@ Existing databases require the explicit migration and credential setup in the
 tickets, retry/dead-letter handling and remaining limits. Firewall actions remain
 simulated.
 
+## SOC dashboard
+
+The React/TypeScript dashboard adapts the supplied TSX component, builds with Vite
+and is served by FastAPI with PostgreSQL as the main database. It includes live
+alerts, real chart aggregates, filters/provenance and acknowledged dry-run controls.
+
+```bash
+npm --prefix frontend ci
+npm --prefix frontend run build
+.venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8010 --workers 1 --no-access-log --log-level warning
+```
+
+Open `http://127.0.0.1:8010`. The existing installation's initial login is stored
+privately in `runtime/admin-login.txt`; use the backend guide for fresh setup.
+Reloading the page requires login again because JWTs stay in memory. See the
+[Sprint 3 guide](docs/SPRINT_3.md) for demo commands, browser tests and verified limits.
+For development, run `npm --prefix frontend run dev` and open
+`http://127.0.0.1:5173`; Vite proxies the API and alert WebSocket. See
+[frontend/README.md](frontend/README.md) for the source map and build requirements.
+
 ## Monday normal-reference evaluation
 
 Monday is BENIGN-only, so it has no standalone trained attack classifier. It is
