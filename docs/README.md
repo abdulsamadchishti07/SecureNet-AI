@@ -5,6 +5,8 @@
 - [Completed unified experiment and verification](../reports/unified/README.md)
 - [Local response engine, offline demo and revised sprint plan](RESPONSE_ENGINE.md)
 - [Backend authentication, explicit migration and durable sensor delivery](BACKEND.md)
+- [Reviewed Sprints 3–5 execution plan and acceptance gates](SPRINT_3_TO_5_PLAN.md)
+- [Completed Sprint 3 dashboard, PostgreSQL setup and browser verification](SPRINT_3.md)
 - [Unified pytest suite and commands](../tests/README.md)
 - [Test reports and historical experiment index](../reports/README.md)
 
