@@ -52,13 +52,24 @@ def create_access_token(data, expires_delta=None, configuration=None):
     return jwt.encode(claims, config.SECRET_KEY, algorithm=config.ALGORITHM)
 
 
-def decode_token(token, configuration=None):
+def create_refresh_token(data, expires_delta=None, configuration=None):
     config = configuration or settings
+    config.validate()
+    now = datetime.now(timezone.utc)
+    lifetime = expires_delta if expires_delta is not None else timedelta(days=config.REFRESH_TOKEN_EXPIRE_DAYS)
+    claims = {**data, "sub": str(data["sub"]), "jti": secrets.token_hex(16), "exp": now + lifetime,
+              "iat": now, "type": "refresh", "iss": "securenet-ai", "aud": "securenet-dashboard"}
+    return jwt.encode(claims, config.SECRET_KEY, algorithm=config.ALGORITHM)
+
+
+def decode_token(token, configuration=None, token_type="access"):
+    config = configuration or settings
+    required = ["exp", "iat", "sub", "type", "jti"] if token_type == "refresh" else ["exp", "iat", "sub", "type"]
     try:
         claims = jwt.decode(token, config.SECRET_KEY, algorithms=["HS256"],
                             issuer="securenet-ai", audience="securenet-dashboard",
-                            options={"require": ["exp", "iat", "sub", "type"]})
-        if claims["type"] != "access" or not claims["sub"].isdigit():
+                            options={"require": required})
+        if claims["type"] != token_type or not claims["sub"].isdigit():
             raise jwt.InvalidTokenError("Invalid token purpose or subject")
         return claims
     except (jwt.PyJWTError, ValueError, AttributeError) as exc:
