@@ -23,7 +23,8 @@ class Settings:
     SENSOR_API_TOKEN: str = field(default_factory=lambda: os.getenv("SENSOR_API_TOKEN", ""), repr=False)
     SENSOR_ID: str = field(default_factory=lambda: os.getenv("SENSOR_ID", "sensor-local"))
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = field(default_factory=lambda: int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = field(default_factory=lambda: int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "5")))
+    REFRESH_TOKEN_EXPIRE_DAYS: int = field(default_factory=lambda: int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "15")))
     CORS_ORIGINS: tuple = field(default_factory=lambda: tuple(
         origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()))
 
@@ -38,7 +39,8 @@ class Settings:
                 raise ValueError(f"{name} must be an independently generated secret of at least 32 bytes")
         if self.SECRET_KEY == self.SENSOR_API_TOKEN:
             raise ValueError("User JWT and sensor credentials must differ")
-        if self.ALGORITHM != "HS256" or not 1 <= self.ACCESS_TOKEN_EXPIRE_MINUTES <= 1440:
+        if (self.ALGORITHM != "HS256" or not 1 <= self.ACCESS_TOKEN_EXPIRE_MINUTES <= 1440
+                or not 1 <= self.REFRESH_TOKEN_EXPIRE_DAYS <= 365):
             raise ValueError("Invalid JWT algorithm or token lifetime")
         if not re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", self.SENSOR_ID):
             raise ValueError("SENSOR_ID must contain 1 to 64 letters, digits, dots, dashes or underscores")
