@@ -11,7 +11,7 @@ import jwt
 import pytest
 from sqlalchemy import Column, MetaData, Table, create_engine, inspect, select
 
-from backend.auth import create_access_token, hash_password, verify_password
+from backend.auth import create_access_token, create_refresh_token, hash_password, verify_password
 from backend.config import Settings
 from backend.database import Base, init_db, sessions_for
 from backend.firewall import FirewallController
@@ -211,6 +211,22 @@ def test_expiry_and_manual_unblock_need_sensor_ack(backend_runtime, sensor_heade
     assert client.get("/api/stats", headers=admin_headers).json()["active_blocked_ips"] == 0
 
 
+def test_explicit_unblock_targets_the_selected_block_not_a_newer_ip_record(
+        backend_runtime, sensor_headers, admin_headers, payload_factory):
+    client = backend_runtime.client
+    old, new = payload_factory(with_block=True), payload_factory(with_block=True)
+    for body in (old, new):
+        assert client.post("/api/alerts/ingest", json=body, headers=sensor_headers).status_code == 201
+    old_id, new_id = (body["firewall"]["block"]["block_id"] for body in (old, new))
+    path = "/api/firewall/unblock/" + old["event"]["src_ip"]
+    response = client.post(path, params={"block_id": old_id}, headers=admin_headers)
+    assert response.status_code == 202 and response.json()["block_id"] == old_id
+    active = client.get("/api/firewall/blocked", headers=admin_headers).json()
+    assert [row["block_id"] for row in active] == [new_id]
+    unknown = client.post(path, params={"block_id": str(uuid4())}, headers=admin_headers)
+    assert unknown.status_code == 404
+
+
 def test_overdue_block_not_reported_active_until_expiry_ack(backend_runtime, sensor_headers, admin_headers, payload_factory):
     body = payload_factory(with_block=True)
     now = datetime.now(timezone.utc)
@@ -249,7 +265,14 @@ def test_websocket_rejects_anonymous_and_delivers_authenticated_events(backend_r
     with client.websocket_connect("/ws/alerts", headers=admin_headers) as socket:
         body = payload_factory()
         assert client.post("/api/alerts/ingest", json=body, headers=sensor_headers).status_code == 201
-        assert socket.receive_json()["event_id"] == body["event"]["event_id"]
+        message = socket.receive_json()
+        event = body["event"]
+        assert message["event_id"] == event["event_id"]
+        assert message["type"] == "detection"
+        for name in ("src_port", "dst_port", "protocol", "observed_at", "model_run", "model_sha256"):
+            assert message[name] == event[name]
+        assert message["sensor_id"] == sensor_headers["X-Sensor-ID"]
+        assert message["decision_action"] == body["decision"]["action"]
 
 
 def test_browser_websocket_ticket_is_authenticated_and_single_use(backend_runtime, admin_headers):
@@ -310,3 +333,28 @@ def test_migration_preserves_legacy_rows_and_is_repeatable(tmp_path):
         assert connection.execute(select(Alert.event_id)).scalars().all() == ["historical-id"]
     assert "model_sha256" in {column["name"] for column in inspect(engine).get_columns("alerts")}
     engine.dispose()
+
+
+def test_access_and_sliding_refresh_token_rotation_and_expiry(backend_runtime, admin_headers):
+    client, config = backend_runtime.client, backend_runtime.config
+    login = client.post("/api/auth/login", data={"username": "review_admin", "password": PASSWORD})
+    assert login.status_code == 200
+    body = login.json()
+    assert body["expires_in"] == 300 and body["refresh_expires_in"] == 15 * 86400
+    access_one, refresh_one = body["access_token"], body["refresh_token"]
+    assert client.post("/api/auth/refresh", json={"refresh_token": access_one}).status_code == 401
+
+    rotated = client.post("/api/auth/refresh", json={"refresh_token": refresh_one})
+    assert rotated.status_code == 200
+    rotated_body = rotated.json()
+    assert rotated_body["expires_in"] == 300 and rotated_body["refresh_expires_in"] == 15 * 86400
+    refresh_two = rotated_body["refresh_token"]
+    assert refresh_two != refresh_one
+    assert client.get("/api/auth/me", headers={"Authorization": "Bearer " + rotated_body["access_token"]}).status_code == 200
+    assert client.post("/api/auth/refresh", json={"refresh_token": refresh_one}).status_code == 401
+
+    expired_refresh = create_refresh_token({"sub": "1"}, timedelta(days=-15, seconds=-1), config)
+    assert client.post("/api/auth/refresh", json={"refresh_token": expired_refresh}).status_code == 401
+
+    assert client.post("/api/auth/logout", json={"refresh_token": refresh_two}).status_code == 200
+    assert client.post("/api/auth/refresh", json={"refresh_token": refresh_two}).status_code == 401
