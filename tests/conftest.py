@@ -247,7 +247,14 @@ def backend_runtime(tmp_path):
     config = Settings(DATABASE_URL="sqlite:///" + str(tmp_path / "backend.sqlite"),
                       SECRET_KEY="u" * 40, SENSOR_API_TOKEN="s" * 40)
     engine = create_engine(config.DATABASE_URL, connect_args={"check_same_thread": False})
-    application = create_app(config, engine=engine)
+    # Static-boundary tests inject a tiny private build; browser tests use real Vite output.
+    frontend = tmp_path / "dashboard-dist"
+    static = frontend / "static"
+    static.mkdir(parents=True)
+    (frontend / "index.html").write_text('<!doctype html><div id="root"></div><script type="module" src="/static/test.js"></script>')
+    (static / "test.js").write_text('export const fixture = true;')
+    (static / "test.css").write_text('body { margin: 0; }')
+    application = create_app(config, engine=engine, frontend_dir=frontend)
     with TestClient(application, raise_server_exceptions=False) as client:
         yield SimpleNamespace(config=config, engine=engine, app=application, client=client,
                               sessions=sessions_for(engine))
