@@ -1,6 +1,145 @@
 # SecureNet AI — Agent Handoff
 
-Last updated: 2026-11-09 (Asia/Karachi).
+Last updated: 2026-11-11 (Asia/Karachi).
+
+## Workspace cleanup & naming standardization — 2026-11-11
+
+- Renamed `frontend/src/securenet_ai_threat_detection_response_platform.tsx` to
+  idiomatic `frontend/src/App.tsx` and updated `frontend/src/main.tsx` and docs.
+- Removed obsolete root `.env` (0-byte leftover), root `securenet.db` (stale empty
+  SQLite DB), empty `docs/Network/`, `reports/tests/`, superseded
+  `reports/sprint3/initial-vanilla-verification.json`, and 31 temporary probe/demo
+  files in `runtime/`. Kept private `runtime/admin-login.txt`, `runtime/sensor.env`,
+  `runtime/backups/` and `runtime/response_demo_offline.pcap`.
+- Removed obsolete `runtime/sprint3-vanilla-backup/` and generated project Python /
+  pytest caches. Kept active React source/build/dependencies, datasets/models,
+  database state, credentials and reports.
+- No files staged, committed or pushed.
+
+## Current frontend: React/TypeScript correction — 2026-11-09
+
+- User clarified the TSX must be implemented in React. The initial native-HTML /
+  imperative-JS adaptation was the wrong stack and is superseded by actual React,
+  TypeScript, Vite and Lucide components. The working TSX is under frontend/src/.
+- Actual component: `frontend/src/App.tsx` (renamed from
+  `securenet_ai_threat_detection_response_platform.tsx`).
+  ReactDOM createRoot is in `src/main.tsx`; typed API/session/polling/WebSocket
+  hooks are in `src/{api,usePlatform,types}.ts`. UI uses declarative JSX, not the
+  old DOM controller. The obsolete native dashboard backup was removed during cleanup.
+- Exact packages/lockfile: React/ReactDOM 19.3.1, TypeScript 7.0.2, Vite 8.3.7,
+  plugin-react 6.3.0, lucide-react 1.70.0 and Prettier 3.9.10. Clean offline npm ci,
+  strict typecheck/build/format passed; npm audit reported zero known advisories.
+- `npm --prefix frontend run dev`: 5173 proxies HTTP `/api` and `/ws/alerts` to
+  backend 8010. Development login/stream proxy verified. Production build writes
+  ignored dist/; FastAPI serves only dist/index.html and dist/static. Missing build
+  returns 503 at `/` without disabling API. Never serve frontend source directly.
+- `create_app` accepts injected frontend_dir. Python static/security fixtures use
+  tiny private builds and need no npm; browser tests require actual Vite output.
+  Current verification: 327 default tests passed (5208 known warnings, 63.34s),
+  nine React browser workflows passed (36.17s). Guide: frontend/README.md.
+- Configured PostgreSQL + saved-model offline CLI + Chromium verified a real React
+  root, three new predictions/events, provenance and exact-block acknowledgement.
+  No browser exceptions, external requests or browser-stored credentials. Final
+  actual/simulated blocks and pending unblocks are zero; sensor stopped cleanly.
+- Main DB retains 12 synthetic PORTSCAN events: nine earlier native-probe records
+  plus three React-verification records. No credential/config reset or retraining.
+- React dev (5173) and compiled dashboard/API (8010) left running. Uvicorn now uses
+  both --no-access-log and --log-level warning: accepted WebSocket URLs are still
+  logged at INFO with only no-access-log. Keep tickets/passwords out of logs.
+- Current guide/evidence: docs/SPRINT_3.md and reports/sprint3/. Initial native
+  checkpoint is preserved separately. No staging, commits or pushes. PostgreSQL
+  remains main DB; independent-data/capture-parity/enforcement gates are unchanged.
+
+## Initial Sprint 3 implementation — frontend superseded above
+
+- User selected `securenet_ai_threat_detection_response_platform.tsx` as the design,
+  resolving confirmation. Reference preserved; `DESIGN.md` records the selection.
+- Implemented `frontend/{index.html,styles.css,app.js,mark.svg}` and local licensed
+  fonts. Reference slate/emerald sidebar, five metric cards, chart panels and
+  crimson feed are served by FastAPI without a Node build. Main DB is PostgreSQL.
+- In-memory JWT clears on logout/expiry; reload requires login. Stream uses a new
+  single-use ticket for every reconnect with bounded backoff/retries. Filters,
+  25-row pagination, eight-event feed, provenance dialog, JSON export, admin account
+  provisioning and operator monitoring are functional. No mock traffic is used.
+- Authenticated `/api/analytics` accepts 15..10080 minutes: SQL groups 20 UTC
+  observation-time bins, protocol counts and five non-benign source counts. Native
+  timestamp comparisons work on PostgreSQL and SQLite. No packet-rate, email/SMS,
+  payload/SHAP, eBPF, alternate-model or fabricated resource metrics are claimed.
+- UI distinguishes simulated/actual blocks, sends exact block UUID on unblock and
+  polls lifecycle/stats every five seconds. Offline sensor leaves pending requests.
+  Protected ranges are labelled built-in defaults. Kernel actions remain absent.
+- Default suite: 326 passed, 5208 known warnings (66.54 seconds). Browser suite:
+  nine passed (33.98 seconds) after final mobile/error-state refinements. A combined
+  19-case dashboard API/browser run passed. Browser fixtures use private temporary
+  SQLite/loopback servers; configured PostgreSQL is not used by these tests.
+- Configured PostgreSQL + actual saved model/offline CLI + Chromium verified three
+  new predictions/events, live metadata/hash and the exact new simulated block UUID
+  through 202 request and sensor acknowledgement. No browser exceptions, external
+  asset requests or browser-stored credentials; sensor shutdown was clean.
+- Three probe attempts left nine synthetic PORTSCAN events and response history in
+  the application DB. Earlier assertions were corrected for polling delay and old
+  same-IP rows; records were preserved. Final actual/simulated blocks and pending
+  unblocks are zero. No model retraining, real capture or firewall execution.
+- Screenshots/evidence: `reports/sprint3/`; guide: `docs/SPRINT_3.md`. Dashboard/API
+  left on loopback 8010 with access logs off to avoid recording tickets. Port 8000's
+  unrelated service was preserved. Initial login remains in private
+  `runtime/admin-login.txt`; sensor env is `runtime/sensor.env`. Never print secrets.
+- SHA-256 verified 89 historical files plus unified bundle/splits unchanged. All
+  eight views passed overflow checks at 360/390/768/1024/1440/1920px, and actual
+  metadata JSON export passed. No staging, commits or pushes.
+  Sprints 4/5 remain future work with independent-data, capture-parity and lab gates.
+
+## Earlier Sprint 3 checkpoint — superseded by completion above
+
+- User explicitly said to start Sprint 3 and confirmed PostgreSQL as the main DB.
+  Completed local configuration/migration; dashboard implementation is pending
+  confirmation of `DESIGN.md` required by the applied web-design skill. The async
+  question offers dark-slate/teal L1 design or a light theme. Do not silently treat
+  elapsed time as that design approval. Guide: `docs/SPRINT_3.md`.
+- Configured `SecureNet_AI` had three empty tables/no users. Created a private
+  pg_dump/environment backup under `runtime/backups/`, restored it in a disposable
+  Unix-socket-only PostgreSQL cluster and removed that cluster. Added sensor
+  credentials, preserved DATABASE_URL/JWT key, migrated and verified original rows.
+  `backend/.env` and `runtime/sensor.env` are 0600. Initial admin login is in private
+  `runtime/admin-login.txt`; never print its password or commit runtime files.
+  Sanitized setup/restore/API outcomes are `runtime/sprint3-*.json`.
+- API verified on loopback 8010; 8000 is occupied by another service. Keep that
+  unrelated service intact. Browser shell assets do not exist at this checkpoint;
+  conditional static serving/security headers are ready, not a completed UI.
+- WebSocket detection messages now include full HTTP alert fields/provenance with
+  `type: detection`, preserving action/mode. Unblock optionally accepts `block_id`
+  and returns it, targeting the chosen record even if another exists for that IP.
+- `--linger-seconds 0..3600` keeps the original offline response dispatcher alive
+  after EOF, checks worker/sender health and supports Ctrl+C. Requires pcap/respond;
+  default behavior is unchanged. Policy still uses processing time, not capture time.
+- All 316 default tests pass; existing warnings remain. Browser tests and private
+  fixtures are prepared under opt-in `browser_tests/`, not yet run against UI.
+  `requirements-browser.txt` adds Playwright; current install is 1.64.1, Chromium
+  156.0.8078.79 launched successfully, and pip check passes. No model retraining,
+  real capture/firewall operation, commit or push.
+
+## Sprint 3–5 planning review — 2026-11-09
+
+- User supplied the detailed Sprint 3–5 plan. Reviewed it against current code;
+  the corrected, repository-local plan is `docs/SPRINT_3_TO_5_PLAN.md`.
+- User confirmed PostgreSQL is the main application database for Sprint 3;
+  SQLite is for isolated automated tests, with no application database switch.
+  Proposed dashboard default is a FastAPI-served same-origin application. No
+  configuration changes, database migration or dashboard implementation occurred
+  during this review. Existing `.env` lacks sensor settings and is mode 0644;
+  harden permissions as part of the configuration chunk without printing secrets.
+- Current WebSocket detection messages lack full flow/provenance fields; block
+  acknowledgements do not broadcast lifecycle updates. Dashboard must refresh
+  authenticated queries or gain tested notification contracts. Offline replay
+  closes the sensor at EOF; a later UI unblock needs a documented running sensor.
+- `observed_at` currently means processing time. Replay calibration requires
+  capture timing to be carried explicitly. Old-split port ablations cannot establish
+  campaign independence; matching source captures and independent lab data remain
+  evidence gates. Real enforcement also requires schema/statistics integration and
+  a lab topology where the chosen firewall hook can actually affect traffic.
+- Checkout was clean on `main`; backend hardening is now committed, superseding
+  the historical uncommitted status below. Saved evidence records 308 passing tests;
+  tests were not rerun for this documentation-only review. No commit or push here.
 
 ## Current backend hardening — completed 2026-11-09
 
