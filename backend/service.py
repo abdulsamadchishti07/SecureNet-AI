@@ -1,12 +1,12 @@
 """Transactional event persistence and acknowledged simulated response state."""
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 from uuid import uuid4
 
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.exc import IntegrityError
 
 from backend.models import Alert, BlockedIP, FirewallEvent, ResponseCommand
@@ -100,6 +100,34 @@ class AlertService:
             "threat_distribution": counts, "response_mode": "dry_run"}
 
     @staticmethod
+    def get_analytics(db, minutes=60):
+        """Bounded-size SQL aggregates over persisted flows, never invented packets."""
+        end = datetime.now(timezone.utc)
+        start = end - timedelta(minutes=minutes)
+        seconds = minutes * 60 // 20
+        # Compare native UTC timestamps so subsecond boundaries agree on both DBs.
+        index = case(*[(Alert.observed_at < start + timedelta(seconds=(i + 1) * seconds), i)
+                       for i in range(19)], else_=19)
+        window = (Alert.observed_at >= start, Alert.observed_at < end)
+        grouped = db.query(index, func.count(Alert.id),
+            func.sum(case((Alert.label != "BENIGN", 1), else_=0))).filter(*window).group_by(index).all()
+        counts = {int(slot): (int(total), int(attacks)) for slot, total, attacks in grouped}
+        buckets = [{"start": start + timedelta(seconds=i * seconds),
+                    "end": start + timedelta(seconds=(i + 1) * seconds),
+                    "total": counts.get(i, (0, 0))[0], "attacks": counts.get(i, (0, 0))[1]}
+                   for i in range(20)]
+        protocols = db.query(Alert.protocol, func.count(Alert.id)).filter(*window).group_by(Alert.protocol).all()
+        sources = db.query(Alert.src_ip, func.count(Alert.id).label("count")).filter(
+            *window, Alert.label != "BENIGN").group_by(Alert.src_ip).order_by(
+                func.count(Alert.id).desc(), Alert.src_ip).limit(5).all()
+        return {"window_minutes": minutes, "window_start": start, "window_end": end,
+                "time_basis": "observed_at", "buckets": buckets,
+                "total_flows": sum(row["total"] for row in buckets),
+                "attack_flows": sum(row["attacks"] for row in buckets),
+                "protocols": [{"protocol": int(protocol), "count": int(count)} for protocol, count in protocols],
+                "top_sources": [{"ip": ip, "count": int(count)} for ip, count in sources]}
+
+    @staticmethod
     def list_blocked_ips(db, status="ACTIVE", skip=0, limit=50):
         AlertService.expire_due(db)
         query = db.query(BlockedIP)
@@ -108,10 +136,13 @@ class AlertService:
         return query.order_by(BlockedIP.blocked_at.desc(), BlockedIP.id.desc()).offset(skip).limit(limit).all()
 
     @staticmethod
-    def request_unblock(db, ip, requested_by):
+    def request_unblock(db, ip, requested_by, block_id=None):
         AlertService.expire_due(db)
-        record = db.query(BlockedIP).filter(BlockedIP.ip == str(ip), BlockedIP.status.in_(
-            ["ACTIVE", "EXPIRY_PENDING", "UNBLOCK_REQUESTED"])).order_by(BlockedIP.id.desc()).first()
+        query = db.query(BlockedIP).filter(BlockedIP.ip == str(ip), BlockedIP.status.in_(
+            ["ACTIVE", "EXPIRY_PENDING", "UNBLOCK_REQUESTED"]))
+        if block_id is not None:
+            query = query.filter(BlockedIP.block_id == str(block_id))
+        record = query.order_by(BlockedIP.id.desc()).first()
         if record is None:
             raise MissingRecordError("No pending or active simulated block for this IP")
         if not record.block_id or not record.sensor_id:
