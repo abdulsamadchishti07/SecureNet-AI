@@ -1,4 +1,4 @@
-"""Group IPv4 packets into bidirectional flows and compute the 20 Friday model features.
+"""Group IPv4 packets into bidirectional flows and compute the shared 20 model features.
 
 Implements a CICFlowMeter-style interpretation of the local CSV fields. The exact
 generating exporter and source-capture parity remain unverified. Current rules:
@@ -77,6 +77,7 @@ class Flow:
         return {
             "Src IP": self.src, "Dst IP": self.dst,
             "Src Port": self.sport, "Dst Port": self.dport, "Protocol": self.proto,
+            "flow_start_usec": self.start, "flow_end_usec": self.last,
             "Flow Duration": duration,
             "Total Fwd Packet": self.fwd, "Total Bwd packets": self.bwd,
             "Flow Bytes/s": self.bytes / seconds, "Flow Packets/s": packets / seconds,
@@ -103,12 +104,21 @@ class FlowTable:
         # timeout. Emitting after this idle grace gives timely alerts; late packets are not reported.
         self.grace = int(termination_grace * 1_000_000)
         self.flows = {}
+        self.stats = {"flows_emitted": 0, "single_packet_flows_excluded": 0,
+                      "nonpositive_duration_flows_excluded": 0, "packets_after_emission": 0}
 
-    def _emit(self, flow):
+    def _emit(self, flow, now=None):
         if flow.emitted:
             return []
         flow.emitted = True
         features = flow.features()
+        if features:
+            features["flow_emitted_usec"] = max(flow.last, now if now is not None else flow.last)
+            self.stats["flows_emitted"] += 1
+        elif flow.fwd + flow.bwd < 2:
+            self.stats["single_packet_flows_excluded"] += 1
+        else:
+            self.stats["nonpositive_duration_flows_excluded"] += 1
         return [features] if features else []
 
     def add(self, p):
@@ -120,7 +130,7 @@ class FlowTable:
             return []
         syn_after_teardown = flow.state == READY and p.flags & SYN
         if p.ts - flow.start > FLOW_TIMEOUT or syn_after_teardown:
-            done = self._emit(flow)
+            done = self._emit(flow, p.ts)
             new_dialogue = (syn_after_teardown or p.proto not in (6, 17)
                             or (p.proto == 17 and p.ts - flow.last > FLOW_TIMEOUT))
             self.flows[key] = (_new_flow(p) if new_dialogue
@@ -128,9 +138,11 @@ class FlowTable:
             return done
         # Reference splits ICMP only when BOTH code and type change.
         if p.proto == 1 and flow.icmp[0] != p.icmp[0] and flow.icmp[1] != p.icmp[1]:
-            done = self._emit(flow)
+            done = self._emit(flow, p.ts)
             self.flows[key] = Flow(p.src, p.sport, p.dst, p.dport, p)
             return done
+        if flow.emitted:
+            self.stats["packets_after_emission"] += 1
         flow.add(p)
         if p.flags & FIN:
             if flow.state is None:
@@ -148,14 +160,14 @@ class FlowTable:
         done = []
         for key, flow in list(self.flows.items()):
             if now - flow.start > FLOW_TIMEOUT or (flow.state == READY and now - flow.last > self.grace):
-                done += self._emit(flow)
+                done += self._emit(flow, now)
             if now - flow.last > FLOW_TIMEOUT:
                 # ponytail: a TCP connection silent >120 s loses its direction; reference keeps it.
                 del self.flows[key]
         return done
 
-    def flush(self):
+    def flush(self, now=None):
         """Emit everything still open (end of capture)."""
-        done = [f for flow in self.flows.values() for f in self._emit(flow)]
+        done = [f for flow in self.flows.values() for f in self._emit(flow, now)]
         self.flows.clear()
         return done
