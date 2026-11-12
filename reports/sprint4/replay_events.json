@@ -1,0 +1,267 @@
+[
+  {
+    "schema_version": 1,
+    "mode": "dry_run",
+    "recorded_at": "2026-11-12T07:51:32.882272+00:00",
+    "policy": {
+      "confidence_threshold": 0.9,
+      "min_flows": 3,
+      "window_seconds": 60.0,
+      "clock_mode": "event_time"
+    },
+    "firewall_config": {
+      "duration_seconds": 900.0,
+      "clock_mode": "monotonic",
+      "protected_cidrs": [
+        "0.0.0.0/8",
+        "127.0.0.0/8",
+        "169.254.0.0/16",
+        "224.0.0.0/4",
+        "240.0.0.0/4"
+      ]
+    },
+    "record_type": "detection",
+    "event": {
+      "schema_version": 1,
+      "event_id": "14819909-4746-4283-9a7d-b5a539795984",
+      "observed_at": "2026-11-12T07:51:32.881938+00:00",
+      "source": "pcap",
+      "src_ip": "10.10.0.9",
+      "dst_ip": "10.10.0.2",
+      "src_port": 40000,
+      "dst_port": 80,
+      "protocol": 6,
+      "label": "PORTSCAN",
+      "confidence": 0.9966566177859643,
+      "probabilities": {
+        "BENIGN": 0.0033433822140357065,
+        "BOTNET": 0.0,
+        "BRUTE_FORCE": 0.0,
+        "DDOS": 0.0,
+        "DOS": 0.0,
+        "PORTSCAN": 0.9966566177859643,
+        "WEB_ATTACK": 0.0
+      },
+      "features": {
+        "Src Port": 40000.0,
+        "Dst Port": 80.0,
+        "Protocol": 6.0,
+        "Flow Duration": 44.0,
+        "Total Fwd Packet": 1.0,
+        "Total Bwd packets": 1.0,
+        "Flow Bytes/s": 0.0,
+        "Flow Packets/s": 45454.545454545456,
+        "Flow IAT Mean": 44.0,
+        "Fwd Packets/s": 22727.272727272728,
+        "Bwd Packets/s": 22727.272727272728,
+        "Packet Length Min": 0.0,
+        "Packet Length Max": 0.0,
+        "Packet Length Mean": 0.0,
+        "FIN Flag Count": 0.0,
+        "SYN Flag Count": 1.0,
+        "RST Flag Count": 1.0,
+        "PSH Flag Count": 0.0,
+        "ACK Flag Count": 1.0,
+        "Average Packet Size": 0.0
+      },
+      "model_scope": "unified",
+      "model_run": "unified_v1",
+      "model_sha256": "5e8fcee635593d6917cf573284ac137797768f37db33bc3ae6501d7f9fe1f3d6",
+      "capture_time": "2023-11-14T22:13:20.000044+00:00",
+      "capture_start": "2023-11-14T22:13:20+00:00",
+      "capture_available_at": "2023-11-14T22:13:22.000044+00:00"
+    },
+    "decision": {
+      "action": "alert",
+      "reason": "insufficient_repeated_flows",
+      "evidence_count": 1
+    },
+    "firewall": null
+  },
+  {
+    "schema_version": 1,
+    "mode": "dry_run",
+    "recorded_at": "2026-11-12T07:51:32.962004+00:00",
+    "policy": {
+      "confidence_threshold": 0.9,
+      "min_flows": 3,
+      "window_seconds": 60.0,
+      "clock_mode": "event_time"
+    },
+    "firewall_config": {
+      "duration_seconds": 900.0,
+      "clock_mode": "monotonic",
+      "protected_cidrs": [
+        "0.0.0.0/8",
+        "127.0.0.0/8",
+        "169.254.0.0/16",
+        "224.0.0.0/4",
+        "240.0.0.0/4"
+      ]
+    },
+    "record_type": "detection",
+    "event": {
+      "schema_version": 1,
+      "event_id": "19b7ba3e-0fcb-432e-8f0c-0690e4c644b3",
+      "observed_at": "2026-11-12T07:51:32.961710+00:00",
+      "source": "pcap",
+      "src_ip": "10.10.0.9",
+      "dst_ip": "10.10.0.2",
+      "src_port": 40001,
+      "dst_port": 80,
+      "protocol": 6,
+      "label": "PORTSCAN",
+      "confidence": 0.9966566177859643,
+      "probabilities": {
+        "BENIGN": 0.0033433822140357065,
+        "BOTNET": 0.0,
+        "BRUTE_FORCE": 0.0,
+        "DDOS": 0.0,
+        "DOS": 0.0,
+        "PORTSCAN": 0.9966566177859643,
+        "WEB_ATTACK": 0.0
+      },
+      "features": {
+        "Src Port": 40001.0,
+        "Dst Port": 80.0,
+        "Protocol": 6.0,
+        "Flow Duration": 44.0,
+        "Total Fwd Packet": 1.0,
+        "Total Bwd packets": 1.0,
+        "Flow Bytes/s": 0.0,
+        "Flow Packets/s": 45454.545454545456,
+        "Flow IAT Mean": 44.0,
+        "Fwd Packets/s": 22727.272727272728,
+        "Bwd Packets/s": 22727.272727272728,
+        "Packet Length Min": 0.0,
+        "Packet Length Max": 0.0,
+        "Packet Length Mean": 0.0,
+        "FIN Flag Count": 0.0,
+        "SYN Flag Count": 1.0,
+        "RST Flag Count": 1.0,
+        "PSH Flag Count": 0.0,
+        "ACK Flag Count": 1.0,
+        "Average Packet Size": 0.0
+      },
+      "model_scope": "unified",
+      "model_run": "unified_v1",
+      "model_sha256": "5e8fcee635593d6917cf573284ac137797768f37db33bc3ae6501d7f9fe1f3d6",
+      "capture_time": "2023-11-14T22:13:21.000044+00:00",
+      "capture_start": "2023-11-14T22:13:21+00:00",
+      "capture_available_at": "2023-11-14T22:13:22.000044+00:00"
+    },
+    "decision": {
+      "action": "alert",
+      "reason": "insufficient_repeated_flows",
+      "evidence_count": 2
+    },
+    "firewall": null
+  },
+  {
+    "schema_version": 1,
+    "mode": "dry_run",
+    "recorded_at": "2026-11-12T07:51:33.051933+00:00",
+    "policy": {
+      "confidence_threshold": 0.9,
+      "min_flows": 3,
+      "window_seconds": 60.0,
+      "clock_mode": "event_time"
+    },
+    "firewall_config": {
+      "duration_seconds": 900.0,
+      "clock_mode": "monotonic",
+      "protected_cidrs": [
+        "0.0.0.0/8",
+        "127.0.0.0/8",
+        "169.254.0.0/16",
+        "224.0.0.0/4",
+        "240.0.0.0/4"
+      ]
+    },
+    "record_type": "detection",
+    "event": {
+      "schema_version": 1,
+      "event_id": "ae3508c8-d4ea-4243-9c83-e97c3473e7bd",
+      "observed_at": "2026-11-12T07:51:33.051552+00:00",
+      "source": "pcap",
+      "src_ip": "10.10.0.9",
+      "dst_ip": "10.10.0.2",
+      "src_port": 40002,
+      "dst_port": 80,
+      "protocol": 6,
+      "label": "PORTSCAN",
+      "confidence": 0.9966566177859643,
+      "probabilities": {
+        "BENIGN": 0.0033433822140357065,
+        "BOTNET": 0.0,
+        "BRUTE_FORCE": 0.0,
+        "DDOS": 0.0,
+        "DOS": 0.0,
+        "PORTSCAN": 0.9966566177859643,
+        "WEB_ATTACK": 0.0
+      },
+      "features": {
+        "Src Port": 40002.0,
+        "Dst Port": 80.0,
+        "Protocol": 6.0,
+        "Flow Duration": 44.0,
+        "Total Fwd Packet": 1.0,
+        "Total Bwd packets": 1.0,
+        "Flow Bytes/s": 0.0,
+        "Flow Packets/s": 45454.545454545456,
+        "Flow IAT Mean": 44.0,
+        "Fwd Packets/s": 22727.272727272728,
+        "Bwd Packets/s": 22727.272727272728,
+        "Packet Length Min": 0.0,
+        "Packet Length Max": 0.0,
+        "Packet Length Mean": 0.0,
+        "FIN Flag Count": 0.0,
+        "SYN Flag Count": 1.0,
+        "RST Flag Count": 1.0,
+        "PSH Flag Count": 0.0,
+        "ACK Flag Count": 1.0,
+        "Average Packet Size": 0.0
+      },
+      "model_scope": "unified",
+      "model_run": "unified_v1",
+      "model_sha256": "5e8fcee635593d6917cf573284ac137797768f37db33bc3ae6501d7f9fe1f3d6",
+      "capture_time": "2023-11-14T22:13:22.000044+00:00",
+      "capture_start": "2023-11-14T22:13:22+00:00",
+      "capture_available_at": "2023-11-14T22:13:22.000044+00:00"
+    },
+    "decision": {
+      "action": "candidate",
+      "reason": "repeated_high_score_flows",
+      "evidence_count": 3
+    },
+    "firewall": {
+      "mode": "dry_run",
+      "ip": "10.10.0.9",
+      "threat": "PORTSCAN",
+      "status": "would_block",
+      "block": {
+        "block_id": "c24b5af7-f6c3-4b1d-bd5c-8b5fd72bc298",
+        "ip": "10.10.0.9",
+        "threat": "PORTSCAN",
+        "mode": "dry_run",
+        "blocked_at": "2026-11-12T07:51:33.051844+00:00",
+        "unblock_at": "2026-11-12T08:06:33.051844+00:00"
+      },
+      "command": [
+        "iptables",
+        "-w",
+        "2",
+        "-A",
+        "INPUT",
+        "-s",
+        "10.10.0.9",
+        "-m",
+        "comment",
+        "--comment",
+        "securenet-ai",
+        "-j",
+        "DROP"
+      ]
+    }
+  }
+]
