@@ -17,27 +17,38 @@ from sniffer.extractor import FlowTable, parse
 from ml_engine.datasets import DATASETS, DEFAULT_INFERENCE_DATASET
 
 
-def run(packets, on_flow, termination_grace=5.0):
+def run(packets, on_flow, termination_grace=5.0, diagnostics=None):
     """Feed packets (None = idle tick) through a FlowTable, calling on_flow per completed flow."""
-    table, last_sweep = FlowTable(termination_grace), 0
+    table, last_sweep, watermark = FlowTable(termination_grace), 0, 0
+    counters = {"packets_read": 0, "packets_parsed": 0, "non_ipv4_or_fragmented_packets_excluded": 0,
+                "out_of_order_packets": 0}
     try:
         for pkt in packets:
             if pkt is None:  # live capture idle: use the wall clock
                 now, done = round(time.time() * 1_000_000), []
             else:
+                counters["packets_read"] += 1
                 p = parse(pkt)
                 if p is None:
-                    continue
-                now, done = p.ts, table.add(p)
+                    counters["non_ipv4_or_fragmented_packets_excluded"] += 1
+                    now, done = round(pkt.time * 1_000_000), []
+                else:
+                    counters["packets_parsed"] += 1
+                    now, done = p.ts, table.add(p)
+                counters["out_of_order_packets"] += now < watermark
+            watermark = max(watermark, now)
             if now - last_sweep >= 1_000_000:
                 done += table.expire(now)
                 last_sweep = now
             for features in done:
+                features["flow_emitted_usec"] = max(features["flow_emitted_usec"], watermark)
                 on_flow(features)
     except KeyboardInterrupt:
         pass
-    for features in table.flush():
+    for features in table.flush(watermark):
         on_flow(features)
+    if diagnostics is not None:
+        diagnostics.update(counters, **table.stats)
 
 
 def linger(dispatcher, seconds):
@@ -68,6 +79,8 @@ def main(argv=None):
     response.add_argument("--response-confidence", type=float, default=0.90)
     response.add_argument("--response-min-flows", type=int, default=3)
     response.add_argument("--response-window", type=float, default=60)
+    response.add_argument("--clock-mode", choices=("monotonic", "event_time"), default="monotonic",
+                          help="policy window clock; event_time requires offline --pcap and --respond")
     response.add_argument("--block-seconds", type=float, default=900)
     response.add_argument("--api-url", type=str, default=None,
                           help="optional backend API URL to ingest alerts (e.g. http://localhost:8000)")
@@ -80,6 +93,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.respond and not args.predict:
         parser.error("--respond requires --predict")
+    if args.clock_mode == "event_time" and (not args.pcap or not args.respond):
+        parser.error("--clock-mode event_time requires offline --pcap and --respond")
+    if not math.isfinite(args.termination_grace) or args.termination_grace < 0:
+        parser.error("--termination-grace must be finite and nonnegative")
     if args.api_url and not args.respond:
         parser.error("--api-url requires --respond")
     if not math.isfinite(args.linger_seconds) or not 0 <= args.linger_seconds <= 3600:
@@ -94,7 +111,8 @@ def main(argv=None):
         from sniffer.events import DetectionEvent, EventValidationError
         from sniffer.rules import ResponsePolicy
         try:
-            policy = ResponsePolicy(args.response_confidence, args.response_min_flows, args.response_window)
+            policy = ResponsePolicy(args.response_confidence, args.response_min_flows, args.response_window,
+                                    clock_mode=args.clock_mode)
             firewall = FirewallController(protected=args.protect, duration_seconds=args.block_seconds)
             dispatcher = ResponseDispatcher(args.alert_log, capacity=args.queue_size,
                                             policy=policy, firewall=firewall, api_url=args.api_url,
