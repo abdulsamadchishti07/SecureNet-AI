@@ -1,0 +1,277 @@
+{
+  "scope": "exploratory policy eligibility, no firewall execution or calibrated deployment claim",
+  "truth_basis": "model predictions; not independent truth",
+  "event_count": 3,
+  "time_basis": "capture_available_at in original delivery order",
+  "latency_basis": "first attack-labelled flow start to first candidate; incomplete EOF flows may finalize early",
+  "firewall_lifetime": "not simulated here; runtime firewall remains processing-monotonic",
+  "limitations": [
+    "No source-level false-block rate without labelled source/time exposure intervals",
+    "No independent calibration/evaluation separation established by this tool",
+    "Earliest captured labelled flow is not necessarily actual attack onset"
+  ],
+  "runs": [
+    {
+      "confidence": 0.9,
+      "min_flows": 2,
+      "window_seconds": 10,
+      "candidate_events": 2,
+      "first_candidate_sources": 1,
+      "decision_counts": {
+        "alert": 1,
+        "ignore": 0,
+        "candidate": 2
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [
+        {
+          "source": "10.10.0.9",
+          "delay_seconds": 2.000044,
+          "trigger_event_id": "19b7ba3e-0fcb-432e-8f0c-0690e4c644b3"
+        }
+      ],
+      "sources_without_candidate": [],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.9,
+      "min_flows": 2,
+      "window_seconds": 60,
+      "candidate_events": 2,
+      "first_candidate_sources": 1,
+      "decision_counts": {
+        "alert": 1,
+        "ignore": 0,
+        "candidate": 2
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [
+        {
+          "source": "10.10.0.9",
+          "delay_seconds": 2.000044,
+          "trigger_event_id": "19b7ba3e-0fcb-432e-8f0c-0690e4c644b3"
+        }
+      ],
+      "sources_without_candidate": [],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.9,
+      "min_flows": 3,
+      "window_seconds": 10,
+      "candidate_events": 1,
+      "first_candidate_sources": 1,
+      "decision_counts": {
+        "alert": 2,
+        "ignore": 0,
+        "candidate": 1
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [
+        {
+          "source": "10.10.0.9",
+          "delay_seconds": 2.000044,
+          "trigger_event_id": "ae3508c8-d4ea-4243-9c83-e97c3473e7bd"
+        }
+      ],
+      "sources_without_candidate": [],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.9,
+      "min_flows": 3,
+      "window_seconds": 60,
+      "candidate_events": 1,
+      "first_candidate_sources": 1,
+      "decision_counts": {
+        "alert": 2,
+        "ignore": 0,
+        "candidate": 1
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [
+        {
+          "source": "10.10.0.9",
+          "delay_seconds": 2.000044,
+          "trigger_event_id": "ae3508c8-d4ea-4243-9c83-e97c3473e7bd"
+        }
+      ],
+      "sources_without_candidate": [],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.9,
+      "min_flows": 4,
+      "window_seconds": 10,
+      "candidate_events": 0,
+      "first_candidate_sources": 0,
+      "decision_counts": {
+        "alert": 3,
+        "ignore": 0,
+        "candidate": 0
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [],
+      "sources_without_candidate": [
+        "10.10.0.9"
+      ],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.9,
+      "min_flows": 4,
+      "window_seconds": 60,
+      "candidate_events": 0,
+      "first_candidate_sources": 0,
+      "decision_counts": {
+        "alert": 3,
+        "ignore": 0,
+        "candidate": 0
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [],
+      "sources_without_candidate": [
+        "10.10.0.9"
+      ],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.99,
+      "min_flows": 2,
+      "window_seconds": 10,
+      "candidate_events": 2,
+      "first_candidate_sources": 1,
+      "decision_counts": {
+        "alert": 1,
+        "ignore": 0,
+        "candidate": 2
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [
+        {
+          "source": "10.10.0.9",
+          "delay_seconds": 2.000044,
+          "trigger_event_id": "19b7ba3e-0fcb-432e-8f0c-0690e4c644b3"
+        }
+      ],
+      "sources_without_candidate": [],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.99,
+      "min_flows": 2,
+      "window_seconds": 60,
+      "candidate_events": 2,
+      "first_candidate_sources": 1,
+      "decision_counts": {
+        "alert": 1,
+        "ignore": 0,
+        "candidate": 2
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [
+        {
+          "source": "10.10.0.9",
+          "delay_seconds": 2.000044,
+          "trigger_event_id": "19b7ba3e-0fcb-432e-8f0c-0690e4c644b3"
+        }
+      ],
+      "sources_without_candidate": [],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.99,
+      "min_flows": 3,
+      "window_seconds": 10,
+      "candidate_events": 1,
+      "first_candidate_sources": 1,
+      "decision_counts": {
+        "alert": 2,
+        "ignore": 0,
+        "candidate": 1
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [
+        {
+          "source": "10.10.0.9",
+          "delay_seconds": 2.000044,
+          "trigger_event_id": "ae3508c8-d4ea-4243-9c83-e97c3473e7bd"
+        }
+      ],
+      "sources_without_candidate": [],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.99,
+      "min_flows": 3,
+      "window_seconds": 60,
+      "candidate_events": 1,
+      "first_candidate_sources": 1,
+      "decision_counts": {
+        "alert": 2,
+        "ignore": 0,
+        "candidate": 1
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [
+        {
+          "source": "10.10.0.9",
+          "delay_seconds": 2.000044,
+          "trigger_event_id": "ae3508c8-d4ea-4243-9c83-e97c3473e7bd"
+        }
+      ],
+      "sources_without_candidate": [],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.99,
+      "min_flows": 4,
+      "window_seconds": 10,
+      "candidate_events": 0,
+      "first_candidate_sources": 0,
+      "decision_counts": {
+        "alert": 3,
+        "ignore": 0,
+        "candidate": 0
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [],
+      "sources_without_candidate": [
+        "10.10.0.9"
+      ],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    },
+    {
+      "confidence": 0.99,
+      "min_flows": 4,
+      "window_seconds": 60,
+      "candidate_events": 0,
+      "first_candidate_sources": 0,
+      "decision_counts": {
+        "alert": 3,
+        "ignore": 0,
+        "candidate": 0
+      },
+      "late_events_rejected": 0,
+      "first_candidate_delays": [],
+      "sources_without_candidate": [
+        "10.10.0.9"
+      ],
+      "pre_onset_candidate_events": 0,
+      "benign_triggered_candidates": null
+    }
+  ],
+  "events_sha256": "f3e636a8c71cce315bffefe0dd77d6606c8e9121a7a4acdc2e617bb6b0759626",
+  "truth_sha256": null
+}
