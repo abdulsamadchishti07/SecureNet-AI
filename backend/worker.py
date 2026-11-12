@@ -61,8 +61,10 @@ class ResponseDispatcher:
         self._log.write(json.dumps({"schema_version": 1, "mode": "dry_run",
             "recorded_at": datetime.now(timezone.utc).isoformat(),
             "policy": {"confidence_threshold": self.policy.confidence,
-                       "min_flows": self.policy.min_flows, "window_seconds": self.policy.window},
+                       "min_flows": self.policy.min_flows, "window_seconds": self.policy.window,
+                       "clock_mode": self.policy.clock_mode},
             "firewall_config": {"duration_seconds": self.firewall.duration,
+                                "clock_mode": "monotonic",
                                 "protected_cidrs": [str(cidr) for cidr in self.firewall.protected]}, **record},
                                    allow_nan=False) + "\n")
 
