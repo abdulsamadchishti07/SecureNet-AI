@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-12",
+  "timezone": "Asia/Karachi",
+  "implementation": "Sprint 4 tooling and exploratory evidence",
+  "regression": {
+    "command": ".venv/bin/python -m pytest tests/ -q",
+    "passed": 376,
+    "warnings": 5262,
+    "seconds": 66.43,
+    "warning_classes": [
+      "Starlette/httpx deprecation",
+      "joblib/NumPy array-shape deprecation"
+    ]
+  },
+  "other_checks": {
+    "pip_check": "No broken requirements found",
+    "compileall": "passed",
+    "git_diff_check": "passed"
+  },
+  "parity": {
+    "scope": "independent arithmetic synthetic fixture only",
+    "status": "agreement",
+    "flows": 3,
+    "features_compared": 20,
+    "original_capture_evidence": false,
+    "report": "reports/parity/extraction_parity.json"
+  },
+  "ablation": {
+    "training_rows": 50000,
+    "validation_rows": 416291,
+    "test_rows": 416290,
+    "fit_conditions": 6,
+    "seconds": 80.4159421899999,
+    "model_artifacts_saved": false,
+    "report": "reports/ablation/port_ablation.json",
+    "scope": "one-seed existing correlated splits; exploratory"
+  },
+  "replay": {
+    "mode": "dry_run",
+    "accepted": 3,
+    "dropped": 0,
+    "pending": 0,
+    "capacity": 1024,
+    "processed": 3,
+    "unlogged": 0,
+    "would_block": 1,
+    "would_unblock": 0,
+    "api_forwarded": 0,
+    "api_failed": 0,
+    "api_pending": 0,
+    "api_dead_letters": 0,
+    "active_simulated_blocks": 1,
+    "worker_failed": false,
+    "log_path": "runtime/sprint4/events.jsonl"
+  },
+  "calibration": {
+    "conditions": 12,
+    "truth_basis": "model predictions; not independent truth",
+    "report": "reports/response/calibration.json"
+  },
+  "preservation": {
+    "files_checked": 115,
+    "changed_or_missing": [],
+    "manifest": "reports/sprint4/preserved_original_files.json",
+    "pre_existing_requirements_edit": "preserved"
+  },
+  "gates": {
+    "matching_original_capture_and_exporter": "not supplied",
+    "independent_campaign_evaluation": "not established",
+    "independent_policy_calibration": "not established",
+    "enforcement": "not activated"
+  },
+  "actions": {
+    "configured_database_writes": false,
+    "api_forwarding": false,
+    "live_capture": false,
+    "packet_transmission": false,
+    "host_firewall_commands": false,
+    "services_restarted": false,
+    "staging_commit_push": false
+  },
+  "implementation_sha256": {
+    "AGENTS.md": "34024ff10393a66aeb2c6c2470f2c91613ff7d45367399da4f284e332d58a008",
+    "backend/main.py": "afaca3dae0d56a235d959cfd44f70bd691db34fef575ac4ea3ff9342e0626cb9",
+    "backend/schemas.py": "a9229940b297008efd3075e8633e500a86ed32dec9c8db2b967b8abc538c4503",
+    "backend/service.py": "e639dcdda1a9bf951a20cdb4928ba3c4b6f85ae420d151667d1c0c2d56fd7ca4",
+    "backend/worker.py": "5de8372b62557b115b5e91679ca0ee842440f5966ffedb74ff306f185a27a66c",
+    "docs/SPRINT_3_TO_5_PLAN.md": "e6dc96e8b4267b3bc86a2f3d8e86cd9ed1c661fdf0787cf478cce98396c3aa48",
+    "docs/SPRINT_4.md": "d46eb8b3ad963ff8f8c52665c3c9de3e30b9b8a356e0d800364dc5c8664aaac3",
+    "docs/RESPONSE_CALIBRATION.md": "d434de1ff43b0fc2a455c59e22e8e2765abba5114000892955a2014a88351866",
+    "ml_engine/ablation.py": "07f0eb3305a61a07f6b60f2737c54be1b3fb2b50ad750234c79d9ceede0d63d8",
+    "scripts/evaluate_pcap_parity.py": "232b92187e5ac09781e040e82cfa125bc408fdc0516ef77478985d4e64b1e3d1",
+    "sniffer/calibration.py": "ea05f28ea3d59419ed866c72f3740d8a907459a9e740240981e9c83876070f89",
+    "sniffer/events.py": "d13561eaa0934eec6a9df658e3ff3650f726e2622dd26d3f642b253213b02ab1",
+    "sniffer/extractor.py": "ad49dd5737864d7de1204987731b23c46b1ffeb2080fbdc8fa7a2493e9b10d8d",
+    "sniffer/main.py": "3f46a2c7f793da4c4c4f15764b41c4ecb704198be7e3ff7e87619a10361ac287",
+    "sniffer/rules.py": "76d3e03f6a0df35c42ecfa0d2831868b2e83ae54e8dca908fd1d366777a55280",
+    "tests/test_ablation.py": "279634a1e0b46c9768571e0843e58119d71c2bbeaf97f3e9870e5510eb52f815",
+    "tests/test_capture_delivery.py": "1f969c742f5bc0a202e81894e74b726b879b4802692ec7c0902a8eebac8d9eb2",
+    "tests/test_parity.py": "5f2e3c9d331bd130829b5e4fd02fdbf8d4a476b7ba1ceb99f30ee10fbac0e21e",
+    "tests/test_rules_calibration.py": "30c9b4a54a62aed1e9b433f68818a91c9771cca44fe387b23e2dcbc5f45c8ff4",
+    "tests/test_sniffer.py": "fd9a21337a86b99a8378702b3a20b82baa781df6a259254e8f983369de3dbc8b",
+    "tests/README.md": "98acbce2c150b1c7f7a18302eb703b682388828492e14485c8b0ff626ca1bbdb"
+  }
+}
