@@ -46,6 +46,9 @@ class EventIn(WireModel):
     schema_version: Literal[1] = 1
     event_id: UUID
     observed_at: AwareDatetime
+    capture_time: AwareDatetime | None = None
+    capture_start: AwareDatetime | None = None
+    capture_available_at: AwareDatetime | None = None
     source: Literal["live", "pcap"]
     src_ip: IPv4Address
     dst_ip: IPv4Address
@@ -68,11 +71,16 @@ class EventIn(WireModel):
         event = DetectionEvent(src_ip=str(self.src_ip), dst_ip=str(self.dst_ip), features=self.features,
             label=self.label, confidence=self.confidence, probabilities=self.probabilities,
             model_scope=self.model_scope, model_sha256=self.model_sha256, source=self.source,
-            event_id=str(self.event_id), observed_at=self.observed_at)
+            event_id=str(self.event_id), observed_at=self.observed_at,
+            capture_time=self.capture_time, capture_start=self.capture_start,
+            capture_available_at=self.capture_available_at)
         for name, value in (("Src Port", self.src_port), ("Dst Port", self.dst_port), ("Protocol", self.protocol)):
             if event.features[name] != value:
                 raise ValueError("Endpoint metadata disagrees with model features")
         self.observed_at = self.observed_at.astimezone(timezone.utc)
+        for name in ("capture_time", "capture_start", "capture_available_at"):
+            if (value := getattr(self, name)) is not None:
+                setattr(self, name, value.astimezone(timezone.utc))
         return self
 
 
