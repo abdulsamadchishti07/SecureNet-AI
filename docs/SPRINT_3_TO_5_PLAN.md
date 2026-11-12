@@ -7,7 +7,9 @@ API, sensor lifecycle and evaluation limitations.
 Sprint 3 is complete: PostgreSQL setup/migration, the user-selected TSX design
 adaptation, dashboard/API integration and browser/CLI verification are implemented.
 See [the completed Sprint 3 guide](SPRINT_3.md) for exact outcomes and commands.
-Sprints 4 and 5 below remain planned work with unresolved evidence gates.
+Sprint 4 tooling and exploratory checks are now implemented; see [Sprint 4](SPRINT_4.md).
+Original-capture parity, independent calibration/data and Sprint 5 enforcement
+remain gated. The detailed acceptance criteria below still apply.
 
 The checkout is on `main`, with a clean working tree before this planning update.
 The backend hardening is now committed, superseding the historical uncommitted
