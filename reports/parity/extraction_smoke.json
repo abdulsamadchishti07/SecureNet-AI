@@ -1,0 +1,28 @@
+{
+  "status": "extraction_only",
+  "extracted_count": 3,
+  "limitation": "No independent reference supplied; no parity conclusion",
+  "pcap_sha256": "926da1d2521621459a00f445364504d08bf840c498fb011902f308001d1e5670",
+  "reference_sha256": null,
+  "extraction_diagnostics": {
+    "packets_read": 6,
+    "packets_parsed": 6,
+    "non_ipv4_or_fragmented_packets_excluded": 0,
+    "out_of_order_packets": 0,
+    "flows_emitted": 3,
+    "single_packet_flows_excluded": 0,
+    "nonpositive_duration_flows_excluded": 0,
+    "packets_after_emission": 0
+  },
+  "tool_sha256": "232b92187e5ac09781e040e82cfa125bc408fdc0516ef77478985d4e64b1e3d1",
+  "extractor_sha256": "ad49dd5737864d7de1204987731b23c46b1ffeb2080fbdc8fa7a2493e9b10d8d",
+  "reference_exporter_user_supplied": null,
+  "reference_timestamp": {
+    "column": null,
+    "format": null,
+    "timezone": null
+  },
+  "termination_grace_seconds": 5,
+  "scope": "Supplied capture/reference only; synthetic agreement is not original-capture parity",
+  "feature_units": "ports/protocol/counts dimensionless; duration/IAT microseconds; lengths payload bytes; rates per second"
+}
