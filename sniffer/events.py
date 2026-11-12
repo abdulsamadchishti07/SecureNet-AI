@@ -41,6 +41,9 @@ class DetectionEvent:
     source: str
     event_id: str = field(default_factory=lambda: str(uuid4()))
     observed_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    capture_time: datetime | None = None
+    capture_start: datetime | None = None
+    capture_available_at: datetime | None = None
 
     def __post_init__(self):
         try:
@@ -58,6 +61,16 @@ class DetectionEvent:
                 raise ValueError("model_sha256 must identify the loaded artifact")
             if not isinstance(self.observed_at, datetime) or self.observed_at.utcoffset() is None:
                 raise ValueError("observed_at must have a timezone")
+            for name in ("capture_time", "capture_start", "capture_available_at"):
+                value = getattr(self, name)
+                if value is not None and (not isinstance(value, datetime) or value.utcoffset() is None):
+                    raise ValueError(f"{name} must have a timezone")
+            if self.capture_time is None and (self.capture_start is not None or self.capture_available_at is not None):
+                raise ValueError("Capture bounds require capture_time")
+            if self.capture_start is not None and self.capture_start > self.capture_time:
+                raise ValueError("Capture start must not follow capture_time")
+            if self.capture_available_at is not None and self.capture_available_at < self.capture_time:
+                raise ValueError("Capture availability must not precede capture_time")
             if self.label not in config.classes or set(self.probabilities) != set(config.classes):
                 raise ValueError("Prediction labels must match the configured model")
             features = {name: finite_number(self.features[name], name) for name in SELECTED_COLUMNS}
@@ -80,14 +93,19 @@ class DetectionEvent:
     @classmethod
     def from_flow(cls, flow, prediction, **metadata):
         try:
+            for key, name in (("flow_start_usec", "capture_start"), ("flow_end_usec", "capture_time"),
+                              ("flow_emitted_usec", "capture_available_at")):
+                if key in flow:
+                    timestamp = finite_number(flow[key], key)
+                    metadata.setdefault(name, datetime.fromtimestamp(timestamp / 1_000_000, timezone.utc))
             return cls(src_ip=flow["Src IP"], dst_ip=flow["Dst IP"], features=flow,
                        label=prediction["label"], confidence=prediction["confidence"],
                        probabilities=prediction["probabilities"], **metadata)
-        except (KeyError, TypeError) as exc:
+        except (KeyError, TypeError, ValueError, OverflowError, OSError) as exc:
             raise EventValidationError(f"Missing or invalid event metadata: {exc}") from exc
 
     def to_dict(self):
-        return {
+        record = {
             "schema_version": 1, "event_id": self.event_id,
             # Observation time is processing time, not an invented packet timestamp.
             "observed_at": self.observed_at.astimezone(timezone.utc).isoformat(),
@@ -99,3 +117,7 @@ class DetectionEvent:
             "model_scope": self.model_scope, "model_run": get_dataset(self.model_scope).run_directory,
             "model_sha256": self.model_sha256,
         }
+        for name in ("capture_time", "capture_start", "capture_available_at"):
+            if (value := getattr(self, name)) is not None:
+                record[name] = value.astimezone(timezone.utc).isoformat()
+        return record
