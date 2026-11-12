@@ -1,0 +1,18 @@
+{
+  "mode": "dry_run",
+  "accepted": 3,
+  "dropped": 0,
+  "pending": 0,
+  "capacity": 1024,
+  "processed": 3,
+  "unlogged": 0,
+  "would_block": 1,
+  "would_unblock": 0,
+  "api_forwarded": 0,
+  "api_failed": 0,
+  "api_pending": 0,
+  "api_dead_letters": 0,
+  "active_simulated_blocks": 1,
+  "worker_failed": false,
+  "log_path": "runtime/sprint4/events.jsonl"
+}
