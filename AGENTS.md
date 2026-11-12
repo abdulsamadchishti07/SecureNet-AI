@@ -1,6 +1,33 @@
 # SecureNet AI — Agent Handoff
 
-Last updated: 2026-11-11 (Asia/Karachi).
+Last updated: 2026-11-12 (Asia/Karachi).
+
+
+## Sprint 4 tooling and exploratory evidence — 2026-11-12
+
+- Implemented `scripts/evaluate_pcap_parity.py`: endpoint/time matching, conservative
+  ambiguity reporting, orientation flags, 20-feature errors/tolerances, input/code
+  hashes and extraction diagnostics. No reference means extraction-only. Three
+  independent arithmetic synthetic flows agree; original-capture parity remains open.
+- `ml_engine/ablation.py` compares RF and XGBoost across 20/19/18 features using the
+  same seeded 50,000 training rows and complete frozen validation/test partitions.
+  Source-port removal slightly improves macro F1 on this sample; both-port removal
+  lowers it. This is exploratory within-split sensitivity, not campaign independence.
+  Only new reports and sampled provenance are saved; serving artifacts are preserved.
+- Flows/events carry capture start/end/availability separately from processing time.
+  `--clock-mode event_time` requires offline response replay and complete timing;
+  uses availability with a nondecreasing watermark and rejects late events.
+  Runtime firewall lifetimes stay monotonic and simulated. Both clocks are audited.
+- Strict API validation/payload JSON/HTTP/WebSocket preserve optional capture fields
+  without database migration; legacy delivery fingerprints remain compatible.
+  `python -m sniffer.calibration` reports policy sensitivity, labels its truth basis
+  and distinguishes pre-onset proposals from valid post-onset latency/misses.
+- Guides: `docs/SPRINT_4.md`, `docs/RESPONSE_CALIBRATION.md`. Evidence:
+  `reports/{parity,ablation,sprint4}/` and `reports/response/calibration.json`.
+  No original PCAP or independent calibration cohort was supplied; Sprint 5 stays gated.
+- Verification: see `reports/sprint4/verification.json` for final regression/CLI/hash
+  results. Existing `requirements.txt` edit was preserved. No configured DB writes,
+  model replacement, live capture, host firewall action, staging, commit or push.
 
 ## Workspace cleanup & naming standardization — 2026-11-11
 
