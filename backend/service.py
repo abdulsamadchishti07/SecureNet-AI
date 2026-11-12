@@ -38,6 +38,10 @@ class AlertService:
     def record_detection(db, payload, sensor_id):
         envelope = payload if isinstance(payload, AlertIngest) else AlertIngest.model_validate(payload)
         body = envelope.model_dump(mode="json")
+        # Preserve schema-v1 fingerprints for deliveries made before optional capture timing.
+        for name in ("capture_time", "capture_start", "capture_available_at"):
+            if body["event"][name] is None:
+                del body["event"][name]
         digest = fingerprint(body, sensor_id)
         event = envelope.event
         existing = db.query(Alert).filter_by(event_id=str(event.event_id)).first()
