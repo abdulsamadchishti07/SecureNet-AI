@@ -25,6 +25,10 @@ Adding a policy requires one set of expected labels, rather than another test fi
 | `test_firewall.py` | Simulated rule proposals, protected ranges, duplicate blocks and controlled-clock expiry; real command execution forbidden |
 | `test_backend.py` | Authentication/RBAC, strict ingestion, idempotency, lifecycle acknowledgements, migration preservation and startup isolation |
 | `test_delivery.py` | Durable retries/dead letters, private transport, sensor round trips and slow WebSocket isolation |
+| `test_parity.py` | Independent synthetic reference arithmetic, temporal alignment/ambiguity, orientation, CSV validation and extraction exclusions |
+| `test_ablation.py` | Paired frozen-row sampling, isolated feature subsets, training-only transforms, overwrite guards and small real RF/XGB fits |
+| `test_rules_calibration.py` | Capture availability, replay watermarks, late events, threshold sensitivity, pre-onset proposals and independent firewall clocks |
+| `test_capture_delivery.py` | Optional capture metadata validation, payload persistence, HTTP/WebSocket transport and legacy fingerprints |
 | `test_dashboard.py` | Injected private build/security headers, missing-build response, static isolation and SQL analytics |
 
 Every test receives an isolated temporary project root and inference caches.
@@ -35,7 +39,7 @@ The verified environment currently emits joblib/NumPy deprecation warnings durin
 model deserialization; these warnings are visible and do not fail the suite.
 Backend fixtures inject private app instances and temporary SQLite engines into
 lifespan itself. They never initialize the configured project database. Current
-verification: 327 passing cases; a Starlette/httpx deprecation warning is also
+verification: 376 passing cases; a Starlette/httpx deprecation warning is also
 visible. Separate runtime evidence includes loopback HTTP and an isolated
 PostgreSQL cluster; those services are not required by the default pytest suite.
 
