@@ -44,7 +44,8 @@ def collect_flows(packets):
 
 def test_port_scan_probe_feature_shape(tcp_packet):
     (flow,) = collect_flows([tcp_packet(0, True, "S", pad=6), tcp_packet(44, False, "RA", pad=6)])
-    assert set(flow) == set(SELECTED_COLUMNS) | {"Src IP", "Dst IP"}
+    assert set(flow) == set(SELECTED_COLUMNS) | {
+        "Src IP", "Dst IP", "flow_start_usec", "flow_end_usec", "flow_emitted_usec"}
     expected = {
         "Src Port": 40000, "Dst Port": 80, "Protocol": 6, "Flow Duration": 44,
         "Total Fwd Packet": 1, "Total Bwd packets": 1, "Packet Length Max": 0,
