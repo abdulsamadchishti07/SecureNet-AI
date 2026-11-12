@@ -31,9 +31,13 @@ from backend.service import AlertService, ConflictError, MissingRecordError
 
 
 def alert_view(row):
-    return {name: getattr(row, name) for name in ("id", "event_id", "observed_at", "source",
+    result = {name: getattr(row, name) for name in ("id", "event_id", "observed_at", "source",
         "src_ip", "dst_ip", "src_port", "dst_port", "protocol", "label", "confidence",
         "model_scope", "model_run", "model_sha256", "sensor_id", "decision_action", "decision_reason")}
+    timing = (row.payload or {}).get("event", {})
+    result.update({name: timing[name] for name in ("capture_time", "capture_start", "capture_available_at")
+                   if timing.get(name) is not None})
+    return result
 
 
 def create_app(configuration=None, engine=None, frontend_dir=None):
