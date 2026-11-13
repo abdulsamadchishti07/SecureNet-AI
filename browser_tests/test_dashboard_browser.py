@@ -151,3 +151,48 @@ def test_provisioning_rejects_byte_limit_and_duplicate_user(page, login):
     dialog.get_by_role("button", name="Create account").click()
     expect(page.locator("#user-error")).to_contain_text("already registered")
     expect(dialog).to_be_visible()
+
+
+def test_enforced_block_and_rolled_back_tab(page, login, dashboard_server, detection):
+    from datetime import datetime, timedelta, timezone
+    from uuid import uuid4
+    from backend.fw_client import nft_block_command
+    event = detection().to_dict()
+    block_id = str(uuid4())
+    now = datetime.now(timezone.utc)
+    body = {
+        "event": event,
+        "decision": {"action": "candidate", "reason": "repeated_high_score_flows", "evidence_count": 3},
+        "firewall": {
+            "mode": "enforced",
+            "ip": event["src_ip"],
+            "threat": event["label"],
+            "status": "blocked",
+            "block": {
+                "block_id": block_id,
+                "ip": event["src_ip"],
+                "threat": event["label"],
+                "mode": "enforced",
+                "blocked_at": now.isoformat(),
+                "unblock_at": (now + timedelta(minutes=15)).isoformat(),
+            },
+            "command": nft_block_command(event["src_ip"], 900),
+        },
+    }
+    config = dashboard_server.config
+    headers = {"X-Sensor-Token": config.SENSOR_API_TOKEN, "X-Sensor-ID": config.SENSOR_ID}
+    assert dashboard_server.client.post("/api/alerts/ingest", json=body, headers=headers).status_code == 201
+    login()
+    expect(page.locator("#actual-blocks")).to_have_text("1", timeout=10000)
+    expect(page.locator(".page-heading .badge")).to_have_text("ENFORCED · NFTABLES")
+    page.get_by_role("button", name="Response", exact=True).click()
+    expect(page.locator("#block-rows")).to_contain_text("enforced")
+    assert dashboard_server.client.post(
+        "/api/sensor/reconcile",
+        json={"mode": "enforced", "active_block_ids": [], "reason": "shutdown_rollback"},
+        headers=headers,
+    ).status_code == 200
+    page.get_by_role("tab", name="Rolled back", exact=True).click()
+    expect(page.locator("#block-rows")).to_contain_text("ROLLED_BACK", timeout=10000)
+    expect(page.locator("#actual-blocks")).to_have_text("0")
+
