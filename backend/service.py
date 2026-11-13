@@ -10,7 +10,7 @@ from sqlalchemy import case, func
 from sqlalchemy.exc import IntegrityError
 
 from backend.models import Alert, BlockedIP, FirewallEvent, ResponseCommand
-from backend.schemas import AlertIngest, FirewallActionIn
+from backend.schemas import AlertIngest, FirewallActionIn, ReconcileIn
 
 
 class ConflictError(ValueError):
@@ -58,10 +58,10 @@ class AlertService:
             payload=body, decision_action=envelope.decision.action, decision_reason=envelope.decision.reason)
         db.add(alert)
         proposal = envelope.firewall
-        if proposal and proposal.status == "would_block":
+        if proposal and proposal.status in ("would_block", "blocked"):
             block = proposal.block
             db.add(BlockedIP(block_id=str(block.block_id), sensor_id=sensor_id,
-                ip=str(proposal.ip), threat=proposal.threat, mode="dry_run", command=proposal.command,
+                ip=str(proposal.ip), threat=proposal.threat, mode=proposal.mode, command=proposal.command,
                 status="ACTIVE", blocked_at=block.blocked_at, unblock_at=block.unblock_at))
         try:
             db.commit()
@@ -97,11 +97,14 @@ class AlertService:
         counts = dict(db.query(Alert.label, func.count(Alert.id)).group_by(Alert.label).all())
         simulated = db.query(func.count(BlockedIP.id)).filter(
             BlockedIP.status == "ACTIVE", BlockedIP.mode == "dry_run").scalar() or 0
+        enforced = db.query(func.count(BlockedIP.id)).filter(
+            BlockedIP.status == "ACTIVE", BlockedIP.mode == "enforced").scalar() or 0
+        response_mode = "enforced" if enforced and not simulated else ("mixed" if enforced and simulated else "dry_run")
         return {"total_events": sum(counts.values()), "total_attacks": sum(
             count for label, count in counts.items() if label != "BENIGN"),
-            "active_blocked_ips": 0, "active_simulated_blocks": simulated,
+            "active_blocked_ips": enforced, "active_simulated_blocks": simulated,
             "pending_unblocks": db.query(func.count(ResponseCommand.command_id)).filter_by(status="PENDING").scalar() or 0,
-            "threat_distribution": counts, "response_mode": "dry_run"}
+            "threat_distribution": counts, "response_mode": response_mode}
 
     @staticmethod
     def get_analytics(db, minutes=60):
@@ -189,8 +192,13 @@ class AlertService:
         record = FirewallEvent(action_id=str(action.action_id), sensor_id=sensor_id,
                                block_id=block.block_id, payload_sha256=digest, payload=body)
         db.add(record)
-        if block.status not in ("EXPIRED", "UNBLOCKED"):
-            block.status = "EXPIRED" if action.reason == "expired" else "UNBLOCKED"
+        if block.status not in ("EXPIRED", "UNBLOCKED", "ROLLED_BACK"):
+            if action.reason == "rollback":
+                block.status = "ROLLED_BACK"
+            elif action.reason == "expired":
+                block.status = "EXPIRED"
+            else:
+                block.status = "UNBLOCKED"
             block.unblocked_at = datetime.now(timezone.utc)
         if commit:
             try:
@@ -202,6 +210,40 @@ class AlertService:
                     return existing
                 raise ConflictError("Conflicting action identity") from exc
         return record
+
+    @staticmethod
+    def reconcile_sensor_blocks(db, payload, sensor_id):
+        envelope = payload if isinstance(payload, ReconcileIn) else ReconcileIn.model_validate(payload)
+        keep_ids = {str(item) for item in envelope.active_block_ids}
+        now = datetime.now(timezone.utc)
+        rows = db.query(BlockedIP).filter(
+            BlockedIP.sensor_id == sensor_id,
+            BlockedIP.mode == "enforced",
+            BlockedIP.status.in_(["ACTIVE", "EXPIRY_PENDING", "UNBLOCK_REQUESTED"]),
+        ).all()
+        rolled_back_ids = []
+        for row in rows:
+            if row.block_id not in keep_ids:
+                row.status = "ROLLED_BACK"
+                row.unblocked_at = now
+                if row.block_id:
+                    rolled_back_ids.append(row.block_id)
+        if rolled_back_ids:
+            db.query(ResponseCommand).filter(
+                ResponseCommand.sensor_id == sensor_id,
+                ResponseCommand.block_id.in_(rolled_back_ids),
+                ResponseCommand.status == "PENDING",
+            ).update(
+                {
+                    ResponseCommand.status: "CANCELLED",
+                    ResponseCommand.acknowledged_at: now,
+                    ResponseCommand.result: {"reason": envelope.reason},
+                },
+                synchronize_session=False,
+            )
+        if rows:
+            db.commit()
+        return {"status": "reconciled", "rolled_back": len(rolled_back_ids), "reason": envelope.reason}
 
     @staticmethod
     def acknowledge_command(db, command_id, action, sensor_id):
