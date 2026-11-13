@@ -7,6 +7,9 @@
 - [Backend authentication, explicit migration and durable sensor delivery](BACKEND.md)
 - [Reviewed Sprints 3–5 execution plan and acceptance gates](SPRINT_3_TO_5_PLAN.md)
 - [Completed Sprint 3 dashboard, PostgreSQL setup and browser verification](SPRINT_3.md)
+- [Sprint 4 parity harness, feature ablation and event-time calibration](SPRINT_4.md)
+- [Sprint 5 privilege-separated nftables enforcement and reconciliation](SPRINT_5.md)
+- [Demonstration runbook (dry-run SOC demo and isolated netns lab)](DEMO_RUNBOOK.md)
 - [Unified pytest suite and commands](../tests/README.md)
 - [Test reports and historical experiment index](../reports/README.md)
 
