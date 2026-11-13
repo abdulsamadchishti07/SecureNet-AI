@@ -24,9 +24,9 @@ from backend.auth import (create_access_token, create_refresh_token, decode_toke
 from backend.config import settings
 from backend.database import create_database_engine, get_db, init_db, sessions_for
 from backend.firewall import PROTECTED_CIDRS
-from backend.models import User
+from backend.models import BlockedIP, User
 from backend.realtime import ConnectionManager, WebSocketTickets
-from backend.schemas import AlertIngest, CommandAck, FirewallActionIn, RefreshRequest, UserOut, UserRegister
+from backend.schemas import AlertIngest, CommandAck, FirewallActionIn, ReconcileIn, RefreshRequest, UserOut, UserRegister
 from backend.service import AlertService, ConflictError, MissingRecordError
 
 
@@ -195,13 +195,14 @@ def create_app(configuration=None, engine=None, frontend_dir=None):
         if not result.created:
             response.status_code = 200
         else:
+            mode = payload.firewall.mode if payload.firewall else "dry_run"
             application.state.ws_manager.broadcast(jsonable_encoder({**alert_view(alert),
-                "type": "detection", "action": alert.decision_action, "mode": "dry_run"}))
+                "type": "detection", "action": alert.decision_action, "mode": mode}))
         return {"status": "ingested" if result.created else "already_ingested",
                 "event_id": alert.event_id, "alert_id": alert.id}
 
     @application.get("/api/firewall/blocked")
-    def blocked(status: Literal["ACTIVE", "EXPIRY_PENDING", "UNBLOCK_REQUESTED", "EXPIRED", "UNBLOCKED"] = "ACTIVE",
+    def blocked(status: Literal["ACTIVE", "EXPIRY_PENDING", "UNBLOCK_REQUESTED", "EXPIRED", "UNBLOCKED", "ROLLED_BACK"] = "ACTIVE",
                 skip: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=500),
                 db: Session = Depends(get_db), user=Depends(get_current_user)):
         rows = AlertService.list_blocked_ips(db, status, skip, limit)
@@ -212,8 +213,9 @@ def create_app(configuration=None, engine=None, frontend_dir=None):
     def unblock(ip: IPv4Address, block_id: UUID | None = None,
                 db: Session = Depends(get_db), admin=Depends(require_admin)):
         command = AlertService.request_unblock(db, ip, requested_by=admin.id, block_id=block_id)
+        block = db.query(BlockedIP).filter_by(block_id=command.block_id).first()
         return {"status": command.status, "command_id": command.command_id, "ip": command.ip,
-                "block_id": command.block_id, "mode": "dry_run"}
+                "block_id": command.block_id, "mode": block.mode if block else "dry_run"}
 
     @application.get("/api/firewall/whitelist")
     def whitelist(user=Depends(get_current_user)):
@@ -224,11 +226,18 @@ def create_app(configuration=None, engine=None, frontend_dir=None):
         record = AlertService.record_firewall_event(db, action, sensor_id)
         return {"status": "recorded", "action_id": record.action_id}
 
+    @application.post("/api/sensor/reconcile")
+    def reconcile(payload: ReconcileIn, db: Session = Depends(get_db), sensor_id=Depends(require_sensor)):
+        return AlertService.reconcile_sensor_blocks(db, payload, sensor_id)
+
     @application.get("/api/sensor/commands")
     def commands(db: Session = Depends(get_db), sensor_id=Depends(require_sensor)):
+        pending = AlertService.pending_commands(db, sensor_id)
+        modes = dict(db.query(BlockedIP.block_id, BlockedIP.mode).filter(
+            BlockedIP.block_id.in_([row.block_id for row in pending])).all()) if pending else {}
         return [{"command_id": row.command_id, "block_id": row.block_id, "ip": row.ip,
-                 "operation": "unblock", "mode": "dry_run"}
-                for row in AlertService.pending_commands(db, sensor_id)]
+                 "operation": "unblock", "mode": modes.get(row.block_id, "dry_run")}
+                for row in pending]
 
     @application.post("/api/sensor/commands/{command_id}/ack")
     def acknowledge(command_id: UUID, body: CommandAck, db: Session = Depends(get_db), sensor_id=Depends(require_sensor)):
