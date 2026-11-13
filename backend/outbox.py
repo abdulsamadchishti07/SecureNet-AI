@@ -182,6 +182,8 @@ class ApiSender:
                      and response.get("status") in ("ingested", "already_ingested"))
         elif path == "/api/sensor/firewall-events":
             valid = response.get("action_id") == payload["action_id"] and response.get("status") == "recorded"
+        elif path == "/api/sensor/reconcile":
+            valid = response.get("status") == "reconciled"
         else:
             valid = (response.get("command_id") == path.split("/")[-2]
                      and response.get("status") == "ACKNOWLEDGED")
