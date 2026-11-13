@@ -90,8 +90,11 @@ npm --prefix frontend run build
 
 Open `http://127.0.0.1:8010`. The existing installation's initial login is stored
 privately in `runtime/admin-login.txt`; use the backend guide for fresh setup.
-Reloading the page requires login again because JWTs stay in memory. See the
-[Sprint 3 guide](docs/SPRINT_3.md) for demo commands, browser tests and verified limits.
+Sessions use a 5-minute access token and 15-day sliding refresh token so reloads stay
+authenticated until sign-out or expiry. See the [Sprint 3 guide](docs/SPRINT_3.md),
+[Sprint 5 guide](docs/SPRINT_5.md), and [Demonstration Runbook](docs/DEMO_RUNBOOK.md)
+for `./scripts/demo_up.sh`, `./scripts/demo_down.sh`, and isolated `netns` enforcement
+(`./scripts/netns_lab_demo.sh`).
 For development, run `npm --prefix frontend run dev` and open
 `http://127.0.0.1:5173`; Vite proxies the API and alert WebSocket. See
 [frontend/README.md](frontend/README.md) for the source map and build requirements.
