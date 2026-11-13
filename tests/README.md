@@ -30,6 +30,7 @@ Adding a policy requires one set of expected labels, rather than another test fi
 | `test_rules_calibration.py` | Capture availability, replay watermarks, late events, threshold sensitivity, pre-onset proposals and independent firewall clocks |
 | `test_capture_delivery.py` | Optional capture metadata validation, payload persistence, HTTP/WebSocket transport and legacy fingerprints |
 | `test_dashboard.py` | Injected private build/security headers, missing-build response, static isolation and SQL analytics |
+| `test_enforcement.py` | Privilege-separated `nftables` Unix-socket helper (`SO_PEERCRED`, protected CIDRs, lease watchdog, `op_id` idempotency), enforced controller/worker lifecycle, and `ROLLED_BACK` / `CANCELLED` DB reconciliation |
 
 Every test receives an isolated temporary project root and inference caches.
 Integration fixtures use small real Random Forest and XGBoost estimators. They
@@ -39,11 +40,11 @@ The verified environment currently emits joblib/NumPy deprecation warnings durin
 model deserialization; these warnings are visible and do not fail the suite.
 Backend fixtures inject private app instances and temporary SQLite engines into
 lifespan itself. They never initialize the configured project database. Current
-verification: 376 passing cases; a Starlette/httpx deprecation warning is also
+verification: 386 passing cases; a Starlette/httpx deprecation warning is also
 visible. Separate runtime evidence includes loopback HTTP and an isolated
 PostgreSQL cluster; those services are not required by the default pytest suite.
 
-Nine verified opt-in React dashboard browser workflows live in `browser_tests/`,
+Ten verified opt-in React dashboard browser workflows live in `browser_tests/`,
 outside the default test path. Install `requirements-browser.txt` for Playwright
 and provide system Chromium or Playwright's Chromium. They use a private loopback
 server with actual Vite build output: run `npm --prefix frontend ci` and
