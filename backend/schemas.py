@@ -10,6 +10,7 @@ from pydantic import (AwareDatetime, BaseModel, ConfigDict, EmailStr, Field,
 
 from backend.auth import validate_password
 from backend.firewall import FirewallController
+from backend.fw_client import nft_block_command, nft_unblock_command
 from ml_engine.datasets import get_dataset
 from sniffer.events import DetectionEvent
 
@@ -94,7 +95,7 @@ class BlockIn(WireModel):
     block_id: UUID
     ip: IPv4Address
     threat: str
-    mode: Literal["dry_run"]
+    mode: Literal["dry_run", "enforced"]
     blocked_at: AwareDatetime
     unblock_at: AwareDatetime
 
@@ -108,20 +109,41 @@ class BlockIn(WireModel):
 
 
 class ProposalIn(WireModel):
-    mode: Literal["dry_run"]
+    mode: Literal["dry_run", "enforced"]
     ip: IPv4Address
     threat: str
-    status: Literal["would_block", "already_simulated", "protected", "capacity_reached"]
+    status: Literal[
+        "would_block", "already_simulated", "blocked", "already_blocked", "protected", "capacity_reached"
+    ]
     block: BlockIn | None = None
     command: list[str] | None = None
 
     @model_validator(mode="after")
     def consistent_proposal(self):
-        if self.status in ("would_block", "already_simulated"):
-            if self.block is None or self.block.ip != self.ip:
-                raise ValueError("A block proposal needs matching block metadata")
-        if self.status == "would_block" and self.command != FirewallController._command(str(self.ip), "-A"):
-            raise ValueError("Invalid simulated firewall proposal")
+        if self.mode == "dry_run":
+            if self.status not in ("would_block", "already_simulated", "protected", "capacity_reached"):
+                raise ValueError("Invalid dry-run proposal status")
+            if self.status in ("would_block", "already_simulated"):
+                if self.block is None or self.block.ip != self.ip or self.block.mode != "dry_run":
+                    raise ValueError("A block proposal needs matching block metadata")
+            if self.status == "would_block" and self.command != FirewallController._command(str(self.ip), "-A"):
+                raise ValueError("Invalid simulated firewall proposal")
+            return self
+        if self.status not in ("blocked", "already_blocked", "protected", "capacity_reached"):
+            raise ValueError("Invalid enforced proposal status")
+        if self.status in ("blocked", "already_blocked"):
+            if self.block is None or self.block.ip != self.ip or self.block.mode != "enforced":
+                raise ValueError("An enforced block proposal needs matching block metadata")
+        if self.status == "blocked":
+            if not isinstance(self.command, list) or len(self.command) != 9:
+                raise ValueError("Invalid enforced firewall command")
+            elem = self.command[7]
+            prefix = f"{self.ip} timeout "
+            if not elem.startswith(prefix) or not elem.endswith("s") or not elem[len(prefix):-1].isdigit():
+                raise ValueError("Invalid enforced firewall timeout")
+            ttl = int(elem[len(prefix):-1])
+            if not 1 <= ttl <= 86400 or self.command != nft_block_command(str(self.ip), ttl):
+                raise ValueError("Invalid enforced firewall proposal")
         return self
 
 
@@ -148,21 +170,38 @@ class AlertIngest(WireModel):
 class FirewallActionIn(WireModel):
     action_id: UUID
     block_id: UUID
-    mode: Literal["dry_run"]
+    mode: Literal["dry_run", "enforced"]
     ip: IPv4Address
-    status: Literal["would_unblock", "not_simulated", "stale_block"]
-    reason: Literal["manual", "expired"]
+    status: Literal["would_unblock", "not_simulated", "unblocked", "already_unblocked", "stale_block"]
+    reason: Literal["manual", "expired", "rollback"]
     command: list[str] | None = None
 
     @model_validator(mode="after")
     def valid_command(self):
-        expected = FirewallController._command(str(self.ip), "-D")
-        if self.status == "would_unblock" and self.command != expected:
-            raise ValueError("Invalid simulated unblock proposal")
-        if self.reason == "expired" and self.status != "would_unblock":
-            raise ValueError("Expiry must identify the simulated block removed")
+        if self.mode == "dry_run":
+            if self.status not in ("would_unblock", "not_simulated", "stale_block") or self.reason not in ("manual", "expired"):
+                raise ValueError("Invalid simulated unblock status or reason")
+            expected = FirewallController._command(str(self.ip), "-D")
+            if self.status == "would_unblock" and self.command != expected:
+                raise ValueError("Invalid simulated unblock proposal")
+            if self.reason == "expired" and self.status != "would_unblock":
+                raise ValueError("Expiry must identify the simulated block removed")
+            return self
+        if self.status not in ("unblocked", "already_unblocked", "stale_block"):
+            raise ValueError("Invalid enforced unblock status")
+        expected = nft_unblock_command(str(self.ip))
+        if self.status == "unblocked" and self.command != expected:
+            raise ValueError("Invalid enforced unblock command")
+        if self.reason == "expired" and self.status != "unblocked":
+            raise ValueError("Expiry must identify the enforced block removed")
         return self
 
 
 class CommandAck(WireModel):
     action: FirewallActionIn
+
+
+class ReconcileIn(WireModel):
+    mode: Literal["enforced"]
+    active_block_ids: list[UUID] = Field(default_factory=list, max_length=4096)
+    reason: Literal["startup_rollback", "shutdown_rollback", "lease_loss_rollback"]
