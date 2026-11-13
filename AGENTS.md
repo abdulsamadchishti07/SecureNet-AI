@@ -1,7 +1,32 @@
 # SecureNet AI — Agent Handoff
 
-Last updated: 2026-11-12 (Asia/Karachi).
+Last updated: 2026-11-13 (Asia/Karachi).
 
+
+## Sprint 5 isolated enforcement & demonstration packaging — 2026-11-13
+
+- Implemented privilege-separated host-input enforcement (`backend/fw_helper.py` +
+  `backend/fw_client.py`): pure-stdlib Unix-socket daemon runnable via
+  `/usr/bin/python3 -I`, `SO_PEERCRED` peer UID verification, dedicated `nftables`
+  table (`table ip securenet`, `set blocked_ips` with timeout and `max_blocks` cap
+  defaulting to 256, `chain input`), independent built-in + `--protect` CIDR checks,
+  bounded `op_id` idempotency cache, and lease watchdog automatic table rollback.
+- Updated `backend/firewall.py`, `backend/worker.py`, `backend/outbox.py`, and
+  `sniffer/main.py`: `dry_run` remains the default everywhere unless `--enforce` is
+  explicitly passed. `--enforce` requires `--respond`, rejects `--clock-mode event_time`,
+  and requires at least one `--protect` CIDR (or `--allow-unprotected-lab`). Worker
+  fails loudly on helper error (`EnforcementError`) and emits startup/shutdown/lease-loss
+  reconciliation (`POST /api/sensor/reconcile`).
+- Updated `backend/schemas.py`, `backend/service.py`, `backend/main.py`, and React
+  frontend (`frontend/src/{types.ts,App.tsx}`): added `enforced` mode contracts,
+  explicit `ROLLED_BACK` block status and `CANCELLED` command status on rollback,
+  live `active_blocked_ips` + `response_mode` summary stats, and the `Rolled back`
+  tab in the React `Response` view. Rebuilt `frontend/dist/`.
+- Added Sprint 5.2 packaging: `scripts/demo_up.sh`, `scripts/demo_down.sh`,
+  `scripts/netns_lab_demo.sh`, `docs/DEMO_RUNBOOK.md`, and `docs/SPRINT_5.md`.
+- Verification: 386 default pytest cases passed (`tests/test_enforcement.py` adds 10
+  enforcement/reconciliation/CLI cases) and 10 Playwright browser workflows passed.
+  No unauthorized host firewall modifications, staging, commits, or pushes.
 
 ## Sprint 4 tooling and exploratory evidence — 2026-11-12
 
