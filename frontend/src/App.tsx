@@ -73,6 +73,7 @@ const statuses: { value: BlockStatus; label: string }[] = [
   { value: "EXPIRY_PENDING", label: "Expiry pending" },
   { value: "EXPIRED", label: "Expired" },
   { value: "UNBLOCKED", label: "Unblocked" },
+  { value: "ROLLED_BACK", label: "Rolled back" },
 ];
 function Badge({
   children,
@@ -734,11 +735,20 @@ function Response({ platform }: { platform: Platform }) {
         <div>
           <h2>Response Lifecycle</h2>
           <p className="panel-caption">
-            All actions are simulated. Status changes require sensor
+            Default mode is dry-run simulation; isolated enforcement uses the
+            privileged nftables helper. Status changes require sensor
             acknowledgement.
           </p>
         </div>
-        <Badge tone="warning">DRY-RUN</Badge>
+        <Badge
+          tone={data.stats?.response_mode === "enforced" ? "danger" : "warning"}
+        >
+          {data.stats?.response_mode === "enforced"
+            ? "ENFORCED"
+            : data.stats?.response_mode === "mixed"
+              ? "MIXED"
+              : "DRY-RUN"}
+        </Badge>
       </div>
       <div
         id="block-tabs"
@@ -764,8 +774,8 @@ function Response({ platform }: { platform: Platform }) {
         ))}
       </div>
       <p className="panel-caption">
-        A disconnected sensor leaves commands pending. “Active” means active in
-        the simulator.
+        A disconnected sensor leaves commands pending. Enforced blocks roll back
+        on sensor shutdown or helper lease loss.
       </p>
       <div
         className="table-wrap"
@@ -797,15 +807,20 @@ function Response({ platform }: { platform: Platform }) {
                   <td className="mono">
                     {block.threat}
                     <span className="subline">
-                      {block.sensor_id || "Ownership unavailable"}
+                      {block.sensor_id || "Ownership unavailable"} ·{" "}
+                      {block.mode}
                     </span>
                   </td>
                   <td>
                     <Badge
                       tone={
-                        ["EXPIRED", "UNBLOCKED"].includes(block.status)
+                        ["EXPIRED", "UNBLOCKED", "ROLLED_BACK"].includes(
+                          block.status,
+                        )
                           ? "success"
-                          : "warning"
+                          : block.mode === "enforced"
+                            ? "danger"
+                            : "warning"
                       }
                     >
                       {block.status}
@@ -1206,9 +1221,10 @@ function SettingsPanel({
       <div className="settings-note">
         <h3>Response controls</h3>
         <p>
-          Response policy runs in the sensor process. Kernel enforcement,
-          email/SMS delivery, payload inspection and host resource telemetry are
-          not enabled in this sprint.
+          Response policy runs in the sensor process (dry-run by default;
+          optional nftables enforcement via the privilege-separated helper).
+          Email/SMS delivery, payload inspection and host resource telemetry are
+          not enabled.
         </p>
         <p>
           Dashboard connection status describes the API alert stream. It does
@@ -1286,7 +1302,10 @@ export default function SecureNetPlatform() {
                   {number(
                     id === "alerts"
                       ? data.stats?.total_attacks
-                      : data.stats?.active_simulated_blocks,
+                      : data.stats
+                        ? data.stats.active_simulated_blocks +
+                          data.stats.active_blocked_ips
+                        : undefined,
                   )}
                 </span>
               )}
@@ -1320,10 +1339,16 @@ export default function SecureNetPlatform() {
         <header className="topbar">
           <div className="page-heading">
             <h1 id="page-title">{titles[view]}</h1>
-            <Badge tone="warning">
-              {data.stats && data.stats.response_mode !== "dry_run"
-                ? "MODE UNAVAILABLE"
-                : "DRY-RUN · SIMULATED"}
+            <Badge
+              tone={
+                data.stats?.response_mode === "enforced" ? "danger" : "warning"
+              }
+            >
+              {data.stats?.response_mode === "enforced"
+                ? "ENFORCED · NFTABLES"
+                : data.stats?.response_mode === "mixed"
+                  ? "MIXED · SIMULATED + ENFORCED"
+                  : "DRY-RUN · SIMULATED"}
             </Badge>
           </div>
           <div className="header-controls">
