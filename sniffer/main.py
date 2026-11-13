@@ -90,9 +90,25 @@ def main(argv=None):
                           help="keep response simulation/API polling alive after PCAP EOF (0–3600 seconds)")
     response.add_argument("--protect", action="append", default=[], metavar="IPv4/CIDR",
                           help="protect an admin/gateway/DNS address or CIDR; repeat as needed")
+    response.add_argument("--enforce", action="store_true",
+                          help="execute nftables rules through the privileged helper; requires --respond")
+    response.add_argument("--helper-socket", type=Path, default=Path("runtime/fw_helper.sock"),
+                          help="Unix socket path for backend.fw_helper (default runtime/fw_helper.sock)")
+    response.add_argument("--max-blocks", type=int, default=None,
+                          help="maximum concurrent blocks (default 4096 in dry_run, 256 in enforced)")
+    response.add_argument("--allow-unprotected-lab", action="store_true",
+                          help="permit --enforce in an isolated netns lab without explicit --protect")
     args = parser.parse_args(argv)
     if args.respond and not args.predict:
         parser.error("--respond requires --predict")
+    if args.enforce and not args.respond:
+        parser.error("--enforce requires --respond")
+    if args.enforce and args.clock_mode == "event_time":
+        parser.error("--enforce cannot be combined with --clock-mode event_time")
+    if args.allow_unprotected_lab and not args.enforce:
+        parser.error("--allow-unprotected-lab requires --enforce")
+    if args.enforce and not args.protect and not args.allow_unprotected_lab:
+        parser.error("--enforce requires at least one --protect <IPv4/CIDR> or --allow-unprotected-lab")
     if args.clock_mode == "event_time" and (not args.pcap or not args.respond):
         parser.error("--clock-mode event_time requires offline --pcap and --respond")
     if not math.isfinite(args.termination_grace) or args.termination_grace < 0:
@@ -113,7 +129,19 @@ def main(argv=None):
         try:
             policy = ResponsePolicy(args.response_confidence, args.response_min_flows, args.response_window,
                                     clock_mode=args.clock_mode)
-            firewall = FirewallController(protected=args.protect, duration_seconds=args.block_seconds)
+            if args.enforce:
+                from backend.fw_client import FwHelperClient
+                firewall = FirewallController(
+                    protected=args.protect, duration_seconds=args.block_seconds,
+                    max_blocks=args.max_blocks, mode="enforced",
+                    helper_client=FwHelperClient(args.helper_socket),
+                    allow_unprotected=args.allow_unprotected_lab,
+                )
+            else:
+                firewall = FirewallController(
+                    protected=args.protect, duration_seconds=args.block_seconds,
+                    max_blocks=args.max_blocks,
+                )
             dispatcher = ResponseDispatcher(args.alert_log, capacity=args.queue_size,
                                             policy=policy, firewall=firewall, api_url=args.api_url,
                                             sensor_id=args.sensor_id, outbox_path=args.outbox)
