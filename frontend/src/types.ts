@@ -17,7 +17,12 @@ export type View =
   | "analytics"
   | "settings";
 export type BlockStatus =
-  "ACTIVE" | "UNBLOCK_REQUESTED" | "EXPIRY_PENDING" | "EXPIRED" | "UNBLOCKED";
+  | "ACTIVE"
+  | "UNBLOCK_REQUESTED"
+  | "EXPIRY_PENDING"
+  | "EXPIRED"
+  | "UNBLOCKED"
+  | "ROLLED_BACK";
 export interface User {
   id: number;
   username: string;
