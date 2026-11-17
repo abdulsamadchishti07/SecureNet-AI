@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
@@ -19,8 +19,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from backend.auth import (create_access_token, create_refresh_token, decode_token, get_current_user, get_settings,
-                          hash_password, oauth2_scheme, require_admin, require_sensor, resolve_user, verify_password)
+from backend.auth import (LoginRateLimiter, create_access_token, create_refresh_token, decode_token,
+                          get_current_user, get_settings, hash_password, oauth2_scheme, require_admin,
+                          require_sensor, resolve_user, verify_password)
 from backend.config import settings
 from backend.database import create_database_engine, get_db, init_db, sessions_for
 from backend.firewall import PROTECTED_CIDRS
@@ -61,6 +62,7 @@ def create_app(configuration=None, engine=None, frontend_dir=None):
     application.state.ws_manager = ConnectionManager()
     application.state.ws_tickets = WebSocketTickets()
     application.state.revoked_refresh_tokens = OrderedDict()
+    application.state.login_limiter = LoginRateLimiter()
     application.add_middleware(CORSMiddleware, allow_origins=list(config.CORS_ORIGINS),
         allow_credentials=False, allow_methods=["GET", "POST"],
         allow_headers=["Authorization", "Content-Type", "X-Sensor-Token", "X-Sensor-ID"])
@@ -129,12 +131,27 @@ def create_app(configuration=None, engine=None, frontend_dir=None):
             revoked.popitem(last=False)
 
     @application.post("/api/auth/login")
-    def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db),
+    def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db),
               config=Depends(get_settings)):
-        user = db.query(User).filter_by(username=form.username).first()
-        if user is None or not user.is_active or not verify_password(form.password, user.hashed_password):
-            raise HTTPException(401, "Incorrect username or password", headers={"WWW-Authenticate": "Bearer"})
-        return issue_tokens(user.id, config)
+        client_ip = request.client.host if request.client else "unknown"
+        limiter = application.state.login_limiter
+        reservation, retry_after = limiter.reserve(client_ip, form.username)
+        if retry_after > 0:
+            raise HTTPException(
+                429,
+                "Too many failed login attempts. Try again later.",
+                headers={"Retry-After": str(retry_after)},
+            )
+        success = None
+        try:
+            user = db.query(User).filter_by(username=form.username).first()
+            if user is None or not user.is_active or not verify_password(form.password, user.hashed_password):
+                success = False
+                raise HTTPException(401, "Incorrect username or password", headers={"WWW-Authenticate": "Bearer"})
+            success = True
+            return issue_tokens(user.id, config)
+        finally:
+            limiter.complete(reservation, success=success)
 
     @application.post("/api/auth/refresh")
     def refresh_token(body: RefreshRequest, db: Session = Depends(get_db), config=Depends(get_settings)):
