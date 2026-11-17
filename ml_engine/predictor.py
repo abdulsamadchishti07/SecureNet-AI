@@ -1,9 +1,12 @@
 """Classify flows with the validation-selected model and its matching transforms."""
 
+import hmac
+import json
 import os
+from collections.abc import Mapping
 from hashlib import sha256
 from io import BytesIO
-from collections.abc import Mapping
+from pathlib import Path
 
 import joblib
 import numpy as np
@@ -13,6 +16,8 @@ from ml_engine.preprocess import SELECTED_COLUMNS, SCHEMA_VERSION
 
 MODELS_DIR = get_dataset("friday").models_dir
 BUNDLE_PATH = os.path.join(MODELS_DIR, "inference_bundle.pkl")
+_REPO_MODELS_DIR = Path(__file__).resolve().parent / "models"
+_HEX_CHARS = frozenset("0123456789abcdefABCDEF")
 _bundle = None
 _weekday_bundles = {}
 
@@ -21,21 +26,65 @@ class FeatureValidationError(ValueError):
     """Invalid flow input; separate from model/scaler/artifact failures."""
 
 
-def _load_model(dataset=DEFAULT_INFERENCE_DATASET):
-    """Publish cached state only after all bundle components are validated."""
+def _validate_sha256(value, source):
+    if not isinstance(value, str) or len(value) != 64 or not all(ch in _HEX_CHARS for ch in value):
+        raise ValueError(f"Invalid SHA-256 digest in {source}")
+    return value.lower()
+
+
+def _pinned_bundle_sha256(expected_sha256=None):
+    if expected_sha256 is not None:
+        return _validate_sha256(expected_sha256, "expected_sha256")
+    env_hash = os.environ.get("SECURENET_MODEL_SHA256", "").strip()
+    if env_hash:
+        return _validate_sha256(env_hash, "SECURENET_MODEL_SHA256")
+    return None
+
+
+def _expected_bundle_sha256(dataset, bundle_path, expected_sha256=None):
+    pinned = _pinned_bundle_sha256(expected_sha256)
+    if pinned is not None:
+        return pinned
+    # Select trust from the configured path, before following file/directory
+    # symlinks. An external target must not supply its own manifest or opt out.
+    models_root = Path(os.path.abspath(bundle_path)).parent.parent
+    manifest_path = models_root / "manifest.json"
+    if not manifest_path.is_file():
+        if models_root == _REPO_MODELS_DIR:
+            raise ValueError(f"Missing model integrity manifest: {manifest_path}")
+        return None
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        entry = manifest["bundles"][dataset]["sha256"]
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise ValueError(f"Invalid model integrity manifest for {dataset}: {exc}") from exc
+    return _validate_sha256(entry, str(manifest_path))
+
+
+def _load_model(dataset=DEFAULT_INFERENCE_DATASET, *, expected_sha256=None):
+    """Publish cached state only after checksum verification and schema validation."""
     global _bundle
     config = get_dataset(dataset)
     cached = _bundle if dataset == "friday" else _weekday_bundles.get(dataset)
+    if cached is not None:
+        expected = _pinned_bundle_sha256(expected_sha256)
+        if expected is not None and not hmac.compare_digest(cached["_artifact_sha256"], expected):
+            raise ValueError(f"Model bundle integrity check failed for {dataset}")
+        return cached
     if cached is None:
         bundle_path = BUNDLE_PATH if dataset == "friday" else config.models_dir / "inference_bundle.pkl"
         if not os.path.exists(bundle_path):
             raise FileNotFoundError(
                 f"{dataset.title()} model missing. Run preprocessing and training first."
             )
-        # Hash exactly the bytes deserialized, including when this bundle is later
-        # served from cache. This is provenance, not authentication of pickle files.
+        # Verify the exact serialized bytes against the trusted manifest or pinned hash
+        # before pickle deserialization; also retain the digest for event provenance.
         with open(bundle_path, "rb") as artifact:
             serialized = artifact.read()
+        actual_sha256 = sha256(serialized).hexdigest()
+        expected = _expected_bundle_sha256(dataset, bundle_path, expected_sha256)
+        if expected is not None and not hmac.compare_digest(actual_sha256, expected):
+            raise ValueError(f"Model bundle integrity check failed for {dataset}")
         bundle = joblib.load(BytesIO(serialized))
         metadata = bundle["metadata"]
         if metadata.get("dataset", "friday") != dataset:
@@ -49,7 +98,7 @@ def _load_model(dataset=DEFAULT_INFERENCE_DATASET):
             raise ValueError("Label encoder does not match bundle metadata")
         if set(metadata["classes"]) != set(config.classes):
             raise ValueError("Bundle classes do not match requested dataset")
-        bundle["_artifact_sha256"] = sha256(serialized).hexdigest()
+        bundle["_artifact_sha256"] = actual_sha256
         if dataset == "friday":
             _bundle = bundle
         else:
