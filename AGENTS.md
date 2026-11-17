@@ -3,6 +3,44 @@
 Last updated: 2026-11-13 (Asia/Karachi).
 
 
+## Sprint 5 hardening & bugfix verification — 2026-11-13
+
+- Fixed duplicate-worker startup clearing an active lease: `ResponseDispatcher.__enter__`
+  now acquires the exclusive `Outbox` lock before starting `FirewallController`, and
+  `backend/fw_helper.py` rejects `hello` with `"active_lease_exists"` while an
+  unexpired lease is active and requires a matching `lease_id` for `rollback`.
+- Added signal-safe shutdown in `sniffer/main.py`: `SIGTERM` (sent by `scripts/demo_down.sh`)
+  and `SIGINT` exit cleanly (`0`) through `KeyboardInterrupt` drain/rollback without
+  entering `linger()` or changing `run()`'s 3-argument signature.
+- Fixed rollback & unblock failure recovery & DB consistency (`backend/fw_helper.py`,
+  `backend/fw_client.py`, `backend/firewall.py`, `backend/worker.py`): helper clears
+  block/lease/table state only after `nft` deletion succeeds (`unblock` and `rollback`),
+  normalizes `(subprocess.SubprocessError, OSError)` in `_default_runner` and `_run_nft`
+  and catches them in `_loop` to retry on subsequent ticks, marks failed explicit
+  rollbacks due for watchdog retry, and `ResponseDispatcher.close()` confirms `table_active`
+  is false before logging/enqueuing `/api/sensor/reconcile`.
+- Fixed helper Unix socket accessibility under `sudo` (`backend/fw_helper.py`): added
+  `--socket-uid`, `--socket-gid`, `--socket-mode` (`0660`), and `--dir-mode` (`0750`),
+  defaulting non-root ownership from a single non-root `--allowed-uid` or `SUDO_UID`/
+  `SUDO_GID`, while only adjusting newly created or dedicated app directories (`runtime`,
+  `securenet`, etc.) and never modifying shared system directories (`/run`, `/var/run`,
+  `/tmp`, etc.) or symlinks.
+- Fixed enforcement stats visibility (`backend/service.py`): `get_summary_stats`,
+  `request_unblock`, and `reconcile_sensor_blocks` treat `ACTIVE`, `EXPIRY_PENDING`,
+  and `UNBLOCK_REQUESTED` as unresolved until sensor acknowledgement/reconciliation.
+- Upgraded `scripts/demo_up.sh`, `scripts/netns_lab_demo.sh`, and `browser_tests/conftest.py`:
+  implemented CLI option parsing (`--mode`, `-r/--pcap`, `-i/--iface`, `--protect`,
+  `--helper-socket`, `--allow-unprotected-lab`, `--linger-seconds`), prerequisite checks,
+  10s sensor readiness verification with backend cleanup on failure, `tempfile.gettempdir()`
+  `TMPDIR` fallback for Playwright when `/tmp` is at quota, and a dual-namespace (`sensor`
+  + `attacker` `netns`) test proving real TCP+ICMP drops, manual unblock recovery,
+  `SIGKILL` watchdog rollback, startup DB reconciliation, and `SIGTERM` clean exit (`0`).
+- Verification after final edit: `/usr/bin/python3 -I -m py_compile backend/fw_helper.py`
+  and `sh -n scripts/demo_{up,down}.sh scripts/netns_lab_demo.sh` passed; `./scripts/netns_lab_demo.sh`
+  exited `0` with `status: ok`; `.venv/bin/python -m pytest tests/ -q` passed (`393 passed`,
+  adding 7 regression cases in `tests/test_enforcement.py`); `.venv/bin/python -m pytest browser_tests/ -q`
+  passed (`10 passed`). No host firewall changes, configured DB writes, staging, commits, or pushes.
+
 ## Sprint 5 isolated enforcement & demonstration packaging — 2026-11-13
 
 - Implemented privilege-separated host-input enforcement (`backend/fw_helper.py` +
@@ -1074,3 +1112,37 @@ complete. Integration into training is a different, still-unimplemented mileston
   and updated handoff. Existing DB/env were preserved, no real rules/capture,
   retraining, commits or push. Existing deployments need documented configuration,
   backup/migration and restart; independent detector validation remains open.
+- 2026-11-17: Added `Dockerfile`, `compose.yaml`, an allowlisted `.dockerignore`,
+  pinned API dependencies in `requirements-docker.txt`, and `docs/DOCKER.md` with
+  a README startup link. Multi-stage Node/Python builds compile the React UI;
+  Compose runs one non-root API worker with a read-only filesystem, no Linux
+  capabilities, a read-only runtime config mount and Linux host networking for
+  existing localhost PostgreSQL. Default URL remains `http://127.0.0.1:8010`.
+  Verified actual image builds, pip dependency consistency, Compose validation,
+  clean build context and final image contents. Disposable PostgreSQL plus the
+  real container passed migration/bootstrap, readiness, dashboard/assets,
+  anonymous API rejection, admin login/API and authenticated WebSocket checks.
+  Temporary test containers/configuration were removed. The image remains built;
+  the application container is not left running. No configured DB writes, sensor
+  startup, model changes, staging, commits or pushes. Start with
+  `docker compose up -d --build --wait`; PostgreSQL and existing credentials are
+  prerequisites. Fresh/legacy databases still require explicit setup/migration.
+- 2026-11-17: Fixed the four Chunk 6.1 review findings. Manifest lookup now uses
+  the configured model path before resolving symlinks; cached bundles revalidate
+  explicit/environment checksum pins. Login admission atomically reserves both
+  account/IP quotas, retains in-flight capacity until completion and releases it
+  on internal errors. Active quotas are preserved when the key cap is reached.
+  Added file/directory symlink, cached-pin and concurrent-login regressions. Saved
+  bundle verification is opt-in with `SECURENET_VERIFY_INSTALLED_MODELS=1`; the
+  default manifest test checks source metadata without installed models. Also
+  removed an existing installed-model dependency from the SIGTERM subprocess test
+  by providing a small temporary trained bundle and explicit hash pin.
+  Verification: full default suite in a source-only checkout without pickle files
+  or private configuration passed (431 passed, 1 intentional skip); the installed
+  bundle check passed separately; 10 browser workflows and the dual-netns packet
+  drop/unblock/watchdog/SIGTERM lab passed. All 42 saved-artifact and Docker file
+  hashes matched the pre-edit baseline. Rebuilt/restarted the existing local
+  Docker API; it is healthy on `127.0.0.1:8010`, its auth/route source hashes match
+  the fixed workspace, dashboard/health return 200 and anonymous stats return 401.
+  No credentials, installed models, Docker configuration, host firewall rules,
+  staging, commits or pushes changed. Scientific validation gates remain open.

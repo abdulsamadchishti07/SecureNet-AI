@@ -38,9 +38,17 @@ write only temporary synthetic datasets, artifacts and reports; installed models
 and the original CSVs are unnecessary. No live interface or external service is used.
 The verified environment currently emits joblib/NumPy deprecation warnings during
 model deserialization; these warnings are visible and do not fail the suite.
+The source-controlled model manifest is checked without loading installed model
+files. To opt into checking the five saved bundles against it, run:
+
+```bash
+SECURENET_VERIFY_INSTALLED_MODELS=1 .venv/bin/python -m pytest tests/test_inference.py::test_installed_inference_bundles_match_manifest -q
+```
+
 Backend fixtures inject private app instances and temporary SQLite engines into
 lifespan itself. They never initialize the configured project database. Current
-verification: 386 passing cases; a Starlette/httpx deprecation warning is also
+verification: 431 passing cases and one opt-in installed-model check skipped;
+a Starlette/httpx deprecation warning is also
 visible. Separate runtime evidence includes loopback HTTP and an isolated
 PostgreSQL cluster; those services are not required by the default pytest suite.
 

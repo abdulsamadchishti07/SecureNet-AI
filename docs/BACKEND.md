@@ -93,6 +93,13 @@ inserts. Login handles overlong/invalid passwords with 401 rather than a bcrypt
 exception. Existing short nonempty passwords can still log in; newly provisioned
 passwords follow the new policy.
 
+Login allows five failed or in-flight attempts per `(client IP, username)` and
+twenty per client IP in a 60-second failure window. Excess attempts receive 429
+with `Retry-After` before password verification. Successful authentication clears
+completed account failures while retaining other pending attempts and IP failure
+counts. Internal errors release reservations. State is process-local and capped
+at 4,096 keys; when full, new keys wait until existing entries expire or complete.
+
 ## WebSocket access
 
 HTTP-capable clients may connect to `/ws/alerts` using an Authorization Bearer

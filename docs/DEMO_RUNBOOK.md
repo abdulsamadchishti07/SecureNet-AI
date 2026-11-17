@@ -39,15 +39,17 @@ npm --prefix frontend run build
 Start the FastAPI backend (if not already running on `127.0.0.1:8010`) and replay the synthetic portscan PCAP with a 300-second sensor linger window so manual unblock requests from the React UI are acknowledged live:
 
 ```bash
-./scripts/demo_up.sh
+./scripts/demo_up.sh [OPTIONS]
+# Options: --mode dry-run|live-dry-run|enforced, -r/--pcap PATH, -i/--iface IFACE,
+#          --protect CIDR, --helper-socket PATH, --allow-unprotected-lab, --linger-seconds N
 ```
 
 What `./scripts/demo_up.sh` does:
-1. Verifies `backend/.env`, `frontend/dist/index.html`, and `runtime/sensor.env` (`0600`).
-2. Runs `.venv/bin/python -m backend.manage migrate`.
+1. Parses and validates demo mode/capture arguments up front (failing with exit status `2` on invalid combinations).
+2. Verifies `backend/.env`, `frontend/dist/index.html`, and `runtime/sensor.env` (`0600`), then runs `.venv/bin/python -m backend.manage migrate`.
 3. Starts or reuses `uvicorn backend.main:app` on `http://127.0.0.1:8010` (`--no-access-log --log-level warning`).
-4. Generates `runtime/response_demo_offline.pcap` (if missing) via [`scripts/create_response_demo.py`](../scripts/create_response_demo.py).
-5. Runs `sniffer.main` in `dry_run` mode with `--linger-seconds 300`, forwarding 3 `PORTSCAN` detections and 1 `would_block` proposal to the API.
+4. Generates `runtime/response_demo_offline.pcap` (if using the default offline replay and missing) via [`scripts/create_response_demo.py`](../scripts/create_response_demo.py).
+5. Launches `sniffer.main` with `--linger-seconds 300` (default) and verifies sensor readiness; if startup fails, prints the trailing sensor log, stops any backend it started, removes PID files, and exits `1`.
 
 ### Interactive UI Walkthrough
 1. Open `http://127.0.0.1:8010` and sign in with your administrator account.
@@ -60,24 +62,23 @@ What `./scripts/demo_up.sh` does:
 ```bash
 ./scripts/demo_down.sh
 ```
-`./scripts/demo_down.sh` sends `SIGTERM` to the lingering sensor, prints the durable outbox status (`{"pending": 0, "failed": 0}`), and stops the demo API process if `demo_up.sh` started it.
+`./scripts/demo_down.sh` sends `SIGTERM` to the lingering sensor (triggering orderly `sniffer.main` shutdown drain/reconciliation with exit status `0`), prints the durable outbox status (`{"pending": 0, "failed": 0}`), and stops the demo API process if `demo_up.sh` started it.
 
 ---
 
 ## 4. Workflow B — Isolated Network-Namespace (`netns`) Enforcement Demo
 
-To verify real kernel `nftables` blocking and automatic teardown rollback without touching the host's default network namespace:
+To verify real kernel `nftables` packet drops, manual unblock recovery, and crash lease-rollback recovery without touching the host's default network namespace:
 
 ```bash
 ./scripts/netns_lab_demo.sh
 ```
 
 What [`scripts/netns_lab_demo.sh`](../scripts/netns_lab_demo.sh) does:
-1. Enters an isolated Linux network namespace (`unshare --net`) and creates a `veth` pair (`veth-sensor` `10.200.0.1/24` ↔ `veth-attk` `10.200.0.2/24`).
-2. Launches `/usr/bin/python3 -I backend/fw_helper.py` bound to a temporary Unix socket with `--protect 10.200.0.1/32` and a 10-second lease watchdog.
-3. Starts `ResponseDispatcher` with `FirewallController(mode="enforced", ...)` and publishes repeated high-confidence `PORTSCAN` events from `10.200.0.2`.
-4. Verifies that `nft list table ip securenet` contains `10.200.0.2` in `set blocked_ips` with a kernel timeout.
-5. Closes `ResponseDispatcher` and verifies that `table ip securenet` is deleted on shutdown and that `startup_rollback` / `shutdown_rollback` audit records are written.
+1. Creates two separate Linux network namespaces (`sensor` and `attacker`) linked by a `veth` pair (`veth-sensor` `10.200.0.1/24` in the sensor namespace ↔ `veth-attk` `10.200.0.2/24` in the attacker namespace).
+2. Starts an isolated SQLite FastAPI backend, `/usr/bin/python3 -I backend/fw_helper.py` (`--protect 10.200.0.1/32 --lease-seconds 5`), and live `.venv/bin/python -m sniffer.main -i veth-sensor --predict --respond --enforce`.
+3. Verifies baseline TCP and ICMP reachability from attacker (`10.200.0.2`) to sensor (`10.200.0.1`), then sends a live TCP SYN portscan (`8081..8083`), confirms `PORTSCAN` classification and kernel packet drops (`TCP` and `ICMP` blocked), and proves `POST /api/firewall/unblock/10.200.0.2` restores connectivity.
+4. Triggers a second live block, sends `SIGKILL` to the sensor process, proves the helper lease watchdog deletes `table ip securenet` and restores connectivity, then restarts the sensor briefly and sends `SIGTERM` to verify startup database reconciliation (`ROLLED_BACK`) and clean exit (`0`).
 
 ---
 

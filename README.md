@@ -78,6 +78,11 @@ simulated.
 
 ## SOC dashboard
 
+To build and start the API and compiled dashboard in Docker using the existing
+PostgreSQL configuration, run `docker compose up -d --build --wait` and open
+`http://127.0.0.1:8010`. See the [Docker guide](docs/DOCKER.md) for prerequisites,
+configuration, logs and shutdown commands.
+
 The React/TypeScript dashboard adapts the supplied TSX component, builds with Vite
 and is served by FastAPI with PostgreSQL as the main database. It includes live
 alerts, real chart aggregates, filters/provenance and acknowledged dry-run controls.
