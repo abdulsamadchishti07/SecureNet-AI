@@ -49,9 +49,11 @@ class FirewallController:
         return None
 
     def rollback(self, reason="shutdown"):
-        self._blocks.clear()
         if self.mode == "enforced":
-            return self.helper_client.rollback(reason)
+            result = self.helper_client.rollback(reason)
+            self._blocks.clear()
+            return result
+        self._blocks.clear()
         return None
 
     def is_whitelisted(self, ip):
@@ -100,18 +102,20 @@ class FirewallController:
         if current and block_id is not None and current[0]["block_id"] != block_id:
             return {"mode": self.mode, "ip": ip, "block_id": block_id,
                     "status": "stale_block", "reason": reason, "command": None}
-        previous = self._blocks.pop(ip, None)
+        previous = self._blocks.get(ip)
         target_block_id = previous[0]["block_id"] if previous else block_id
         if self.mode == "enforced":
             reply = self.helper_client.unblock(ip, block_id=target_block_id)
             if reply["status"] == "stale_block":
                 return {"mode": "enforced", "ip": ip, "block_id": block_id,
                         "status": "stale_block", "reason": reason, "command": None}
+            self._blocks.pop(ip, None)
             unblocked = previous is not None and reply["status"] in ("unblocked", "already_unblocked")
             command = (reply.get("command") or nft_unblock_command(ip)) if unblocked else None
             return {"mode": "enforced", "ip": ip, "block_id": target_block_id,
                     "status": "unblocked" if unblocked else "already_unblocked",
                     "reason": reason, "command": command}
+        self._blocks.pop(ip, None)
         return {"mode": self.mode, "ip": ip,
                 "block_id": target_block_id,
                 "status": "would_unblock" if previous else "not_simulated",

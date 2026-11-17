@@ -7,15 +7,24 @@ import json
 import math
 import os
 from pathlib import Path
+import pwd
 import signal
 import socket
+import stat
 import struct
 import subprocess
+import sys
 from threading import Event, Lock, Thread
 import time
 from uuid import UUID, uuid4
 
 DEFAULT_PROTECTED = ("0.0.0.0/8", "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "240.0.0.0/4")
+_SHARED_DIRS = frozenset({
+    ".", "/", "/bin", "/boot", "/dev", "/dev/shm", "/etc", "/home", "/lib", "/lib64",
+    "/media", "/mnt", "/opt", "/proc", "/root", "/run", "/run/lock", "/sbin", "/srv",
+    "/sys", "/tmp", "/usr", "/var", "/var/lock", "/var/log", "/var/run", "/var/tmp",
+})
+_DEDICATED_DIR_NAMES = frozenset({"runtime", "securenet", "securenet-ai", "fw_helper", "fw-helper"})
 
 
 def _nft_block_cmd(ip, ttl):
@@ -40,14 +49,24 @@ class FwHelperServer:
     """Isolated nftables 'ip securenet' controller with SO_PEERCRED and lease watchdog."""
 
     def __init__(self, socket_path="runtime/fw_helper.sock", protected=(), max_blocks=256,
-                 lease_seconds=15.0, allowed_uids=None, nft_bin="nft", runner=None, clock=time.monotonic):
+                 lease_seconds=15.0, allowed_uids=None, nft_bin="nft", runner=None, clock=time.monotonic,
+                 socket_uid=None, socket_gid=None, socket_mode=0o660, dir_mode=0o750):
         self.socket_path = Path(socket_path)
         self.protected = tuple(IPv4Network(cidr, strict=False) for cidr in (*DEFAULT_PROTECTED, *protected))
         if isinstance(max_blocks, bool) or not isinstance(max_blocks, int) or not 1 <= max_blocks <= 4096:
             raise ValueError("max_blocks must be an integer in 1..4096")
         if isinstance(lease_seconds, bool) or not math.isfinite(lease_seconds) or not 0.1 <= lease_seconds <= 3600:
             raise ValueError("lease_seconds must be in 0.1..3600")
+        for label, value in (("socket_uid", socket_uid), ("socket_gid", socket_gid)):
+            if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
+                raise ValueError(f"{label} must be a non-negative integer")
+        for label, value in (("socket_mode", socket_mode), ("dir_mode", dir_mode)):
+            if value is not None and (isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 0o777):
+                raise ValueError(f"{label} must be an integer mode in 0..0777")
         self.max_blocks, self.lease_seconds, self.nft_bin, self.clock = max_blocks, float(lease_seconds), nft_bin, clock
+        self.socket_uid, self.socket_gid = socket_uid, socket_gid
+        self.socket_mode = socket_mode if socket_mode is not None else 0o660
+        self.dir_mode = dir_mode
         default_uids = {os.geteuid()}
         if os.environ.get("SUDO_UID", "").isdigit():
             default_uids.add(int(os.environ["SUDO_UID"]))
@@ -64,15 +83,26 @@ class FwHelperServer:
         self._sock = self._thread = None
 
     def _default_runner(self, args, stdin_text=None):
-        completed = subprocess.run(
-            [self.nft_bin, *args[1:]],
-            input=stdin_text,
-            text=True,
-            capture_output=True,
-            timeout=5,
-            check=False,
-        )
+        try:
+            completed = subprocess.run(
+                [self.nft_bin, *args[1:]],
+                input=stdin_text,
+                text=True,
+                capture_output=True,
+                timeout=5,
+                check=False,
+            )
+        except (subprocess.SubprocessError, OSError) as exc:
+            return 1, f"{type(exc).__name__}: {exc}"
         return completed.returncode, completed.stderr or ""
+
+    def _run_nft(self, args, stdin_text=None):
+        try:
+            if stdin_text is None:
+                return self._runner(args)
+            return self._runner(args, stdin_text=stdin_text)
+        except (subprocess.SubprocessError, OSError) as exc:
+            return 1, f"{type(exc).__name__}: {exc}"
 
     def is_whitelisted(self, ip):
         address = IPv4Address(ip)
@@ -94,20 +124,20 @@ class FwHelperServer:
             "    }\n"
             "}\n"
         )
-        code, err = self._runner(["nft", "-f", "-"], stdin_text=ruleset)
+        code, err = self._run_nft(["nft", "-f", "-"], stdin_text=ruleset)
         if code != 0:
             raise RuntimeError(f"nft table initialization failed: {err.strip()}")
         self._table_active = True
 
     def _rollback_locked(self, reason="rollback"):
         cleared = [entry["block_id"] for entry in self._active.values()]
+        if self._table_active or cleared:
+            code, err = self._run_nft(_nft_rollback_cmd())
+            if code != 0 and "No such file" not in err and "does not exist" not in err:
+                raise RuntimeError(f"nft table rollback failed: {err.strip()}")
         self._active.clear()
         self._lease_id = None
         self._lease_deadline = None
-        if self._table_active or cleared:
-            code, err = self._runner(_nft_rollback_cmd())
-            if code != 0 and "No such file" not in err and "does not exist" not in err:
-                raise RuntimeError(f"nft table rollback failed: {err.strip()}")
         self._table_active = False
         if cleared:
             self._rolled_back.extend(v for v in cleared if v not in self._rolled_back)
@@ -137,13 +167,11 @@ class FwHelperServer:
         op = req["op"]
         with self._lock:
             now = self.clock()
-            if self._lease_id is not None and now >= self._lease_deadline and op != "hello":
-                self._rollback_locked("lease_expired")
-                if op != "status":
-                    return {"ok": False, "error": "lease_expired"}
             try:
                 if op == "hello":
-                    self._rollback_locked("startup_cleanup")
+                    if self._lease_id is not None and now < self._lease_deadline:
+                        return {"ok": False, "error": "active_lease_exists"}
+                    self._rollback_locked("startup_cleanup" if self._lease_id is None else "lease_expired")
                     self._init_table_locked()
                     self._lease_id = str(uuid4())
                     self._lease_deadline = self.clock() + self.lease_seconds
@@ -158,16 +186,33 @@ class FwHelperServer:
                         "rolled_back_block_ids": rolled_back,
                     }
                 if op == "status":
-                    self._prune_expired_locked(now)
-                    return {
+                    rollback_error = None
+                    if self._lease_id is not None and now >= self._lease_deadline:
+                        try:
+                            self._rollback_locked("lease_expired")
+                        except (RuntimeError, subprocess.SubprocessError, OSError) as exc:
+                            rollback_error = str(exc)
+                    if rollback_error is None:
+                        self._prune_expired_locked(now)
+                    reply = {
                         "ok": True,
                         "table_active": self._table_active,
                         "lease_active": self._lease_id is not None,
                         "active_block_ids": [v["block_id"] for v in self._active.values()],
                         "rolled_back_block_ids": list(self._rolled_back),
                     }
+                    if rollback_error is not None:
+                        reply["rollback_error"] = rollback_error
+                    return reply
+                if not self._lease_id or req.get("lease_id") != self._lease_id:
+                    return {"ok": False, "error": "invalid_or_expired_lease"}
                 if op == "rollback":
-                    cleared = self._rollback_locked(str(req.get("reason", "rollback")))
+                    try:
+                        cleared = self._rollback_locked(str(req.get("reason", "rollback")))
+                    except (RuntimeError, subprocess.SubprocessError, OSError):
+                        # Mark the lease expired so the watchdog keeps retrying deletion.
+                        self._lease_deadline = now
+                        raise
                     self._rolled_back.clear()
                     return {
                         "ok": True,
@@ -175,8 +220,9 @@ class FwHelperServer:
                         "cleared_block_ids": cleared,
                         "command": _nft_rollback_cmd(),
                     }
-                if not self._lease_id or req.get("lease_id") != self._lease_id:
-                    return {"ok": False, "error": "invalid_or_expired_lease"}
+                if now >= self._lease_deadline:
+                    self._rollback_locked("lease_expired")
+                    return {"ok": False, "error": "lease_expired"}
                 if op == "heartbeat":
                     self._prune_expired_locked(now)
                     self._lease_deadline = now + self.lease_seconds
@@ -205,7 +251,7 @@ class FwHelperServer:
                     if len(self._active) >= self.max_blocks:
                         return self._remember_op_locked(op_id, {"ok": True, "status": "capacity_reached", "command": None})
                     cmd = _nft_block_cmd(ip, ttl)
-                    code, err = self._runner(cmd)
+                    code, err = self._run_nft(cmd)
                     if code != 0:
                         return {"ok": False, "error": f"nft_add_failed: {err.strip()}"}
                     self._active[ip] = {"block_id": block_id, "expires_at": now + ttl, "ttl": ttl}
@@ -228,11 +274,11 @@ class FwHelperServer:
                             "block_id": block_id,
                             "command": None,
                         })
-                    del self._active[ip]
                     cmd = _nft_unblock_cmd(ip)
-                    code, err = self._runner(cmd)
+                    code, err = self._run_nft(cmd)
                     if code != 0 and "No such file" not in err and "does not exist" not in err:
                         return {"ok": False, "error": f"nft_delete_failed: {err.strip()}"}
+                    del self._active[ip]
                     return self._remember_op_locked(op_id, {
                         "ok": True,
                         "status": "unblocked",
@@ -242,7 +288,7 @@ class FwHelperServer:
                 return {"ok": False, "error": "unsupported_operation"}
             except (KeyError, ValueError, TypeError) as exc:
                 return {"ok": False, "error": f"validation_error: {exc}"}
-            except RuntimeError as exc:
+            except (RuntimeError, subprocess.SubprocessError, OSError) as exc:
                 return {"ok": False, "error": str(exc)}
 
     def _serve_client(self, conn):
@@ -284,17 +330,52 @@ class FwHelperServer:
             except OSError:
                 pass
 
+    def _resolve_socket_ownership(self):
+        uid = self.socket_uid
+        if uid is None and os.geteuid() == 0:
+            non_root = [candidate for candidate in self.allowed_uids if candidate != 0]
+            if len(non_root) == 1:
+                uid = non_root[0]
+            elif os.environ.get("SUDO_UID", "").isdigit():
+                uid = int(os.environ["SUDO_UID"])
+        gid = self.socket_gid
+        if gid is None and os.geteuid() == 0 and uid is not None:
+            if os.environ.get("SUDO_GID", "").isdigit() and str(uid) == os.environ.get("SUDO_UID"):
+                gid = int(os.environ["SUDO_GID"])
+            else:
+                try:
+                    gid = pwd.getpwuid(uid).pw_gid
+                except KeyError:
+                    gid = None
+        return uid, gid
+
     def start(self):
         if self._sock is not None:
             raise RuntimeError("Helper server already started")
-        self.socket_path.parent.mkdir(parents=True, exist_ok=True)
+        parent = self.socket_path.parent
+        norm_parent = os.path.normpath(str(parent))
+        created_parent = not parent.exists()
+        parent.mkdir(parents=True, exist_ok=True)
+        uid, gid = self._resolve_socket_ownership()
+        if self.dir_mode is not None and norm_parent not in _SHARED_DIRS and not parent.is_symlink():
+            st = parent.stat()
+            is_sticky_public = bool(st.st_mode & stat.S_ISVTX)
+            is_dedicated = created_parent or parent.name in _DEDICATED_DIR_NAMES
+            if not is_sticky_public and is_dedicated and (created_parent or (os.geteuid() == 0 and st.st_uid == 0)):
+                if os.geteuid() == 0 and gid is not None:
+                    os.chown(parent, 0, gid)
+                os.chmod(parent, self.dir_mode)
+        if self.socket_path.is_symlink():
+            raise FileExistsError(f"Refusing to bind over symlink: {self.socket_path}")
         if self.socket_path.is_socket():
             self.socket_path.unlink()
         elif self.socket_path.exists():
             raise FileExistsError(f"Refusing to overwrite non-socket file: {self.socket_path}")
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.bind(str(self.socket_path))
-        os.chmod(self.socket_path, 0o660)
+        if uid is not None or gid is not None:
+            os.chown(self.socket_path, -1 if uid is None else uid, -1 if gid is None else gid)
+        os.chmod(self.socket_path, self.socket_mode)
         sock.listen(16)
         sock.settimeout(0.2)
         self._sock = sock
@@ -305,7 +386,10 @@ class FwHelperServer:
 
     def _loop(self):
         while not self._stop.is_set():
-            self.check_lease()
+            try:
+                self.check_lease()
+            except (RuntimeError, subprocess.SubprocessError, OSError) as exc:
+                print(f"Firewall helper lease rollback failed (will retry): {exc}", file=sys.stderr, flush=True)
             try:
                 conn, _ = self._sock.accept()
             except TimeoutError:
@@ -328,7 +412,7 @@ class FwHelperServer:
         with self._lock:
             try:
                 self._rollback_locked("helper_shutdown")
-            except RuntimeError:
+            except (RuntimeError, subprocess.SubprocessError, OSError):
                 pass
         if self.socket_path.is_socket():
             try:
@@ -350,6 +434,10 @@ def main(argv=None):
     parser.add_argument("--max-blocks", type=int, default=256)
     parser.add_argument("--lease-seconds", type=float, default=15.0)
     parser.add_argument("--allowed-uid", action="append", type=int, dest="allowed_uids")
+    parser.add_argument("--socket-uid", type=int, default=None)
+    parser.add_argument("--socket-gid", type=int, default=None)
+    parser.add_argument("--socket-mode", type=lambda v: int(v, 8), default=0o660)
+    parser.add_argument("--dir-mode", type=lambda v: int(v, 8), default=0o750)
     parser.add_argument("--nft-bin", default="nft")
     args = parser.parse_args(argv)
     try:
@@ -360,6 +448,10 @@ def main(argv=None):
             lease_seconds=args.lease_seconds,
             allowed_uids=args.allowed_uids,
             nft_bin=args.nft_bin,
+            socket_uid=args.socket_uid,
+            socket_gid=args.socket_gid,
+            socket_mode=args.socket_mode,
+            dir_mode=args.dir_mode,
         )
     except ValueError as exc:
         parser.error(str(exc))

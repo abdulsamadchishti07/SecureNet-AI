@@ -43,25 +43,25 @@ class ResponseDispatcher:
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         descriptor = os.open(self.log_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
         self._log = os.fdopen(descriptor, "a", encoding="utf-8", buffering=1)
+        firewall_started = False
         try:
-            if self.firewall.mode == "enforced":
-                self.firewall.start()
-                self._next_heartbeat = time.monotonic() + 4.0
             if self.api_url:
                 from backend.outbox import ApiSender, Outbox
                 self._outbox = Outbox(self.outbox_path, self.api_url + "|" + self.sensor_id)
-                if self.firewall.mode == "enforced":
-                    reconcile_payload = {"mode": "enforced", "active_block_ids": [], "reason": "startup_rollback"}
-                    self._write({"record_type": "reconcile", **reconcile_payload})
-                    self._enqueue_api("reconcile:startup:" + str(uuid4()), "/api/sensor/reconcile", reconcile_payload)
+            if self.firewall.mode == "enforced":
+                self.firewall.start()
+                firewall_started = True
+                self._next_heartbeat = time.monotonic() + 4.0
+                reconcile_payload = {"mode": "enforced", "active_block_ids": [], "reason": "startup_rollback"}
+                self._write({"record_type": "reconcile", **reconcile_payload})
+                self._enqueue_api("reconcile:startup:" + str(uuid4()), "/api/sensor/reconcile", reconcile_payload)
+            if self.api_url:
                 self._sender = ApiSender(self._outbox, self._transport, self._receive_commands)
                 self._sender.start()
-            elif self.firewall.mode == "enforced":
-                self._write({"record_type": "reconcile", "mode": "enforced", "active_block_ids": [], "reason": "startup_rollback"})
             self._thread = Thread(target=self._run, name="securenet-response", daemon=True)
             self._thread.start()
         except Exception:
-            if self.firewall.mode == "enforced":
+            if firewall_started:
                 try:
                     self.firewall.rollback("startup_failed")
                 except Exception:
@@ -181,18 +181,32 @@ class ResponseDispatcher:
         rollback_error = None
         if self.firewall.mode == "enforced":
             reason = "lease_loss_rollback" if self._error is not None else "shutdown_rollback"
-            reconcile_payload = {"mode": "enforced", "active_block_ids": [], "reason": reason}
-            try:
-                if self._log and not self._log.closed:
-                    self._write({"record_type": "reconcile", **reconcile_payload})
-                self._enqueue_api("reconcile:shutdown:" + str(uuid4()), "/api/sensor/reconcile", reconcile_payload)
-            except Exception as exc:
-                rollback_error = exc
-            try:
-                self.firewall.rollback("shutdown")
-            except Exception as exc:
-                if rollback_error is None:
+            confirmed_removed = False
+            if getattr(self.firewall.helper_client, "lease_id", None) is not None:
+                try:
+                    self.firewall.rollback("shutdown")
+                    confirmed_removed = True
+                except Exception as exc:
                     rollback_error = exc
+                    # If the helper watchdog already deleted the table after lease expiry,
+                    # status(table_active=False) confirms no rules remain installed.
+                    try:
+                        status = self.firewall.helper_client.status()
+                    except Exception:
+                        status = None
+                    if isinstance(status, dict) and status.get("table_active") is False:
+                        confirmed_removed = True
+                        rollback_error = None
+                        self.firewall._blocks.clear()
+            if confirmed_removed:
+                reconcile_payload = {"mode": "enforced", "active_block_ids": [], "reason": reason}
+                try:
+                    if self._log and not self._log.closed:
+                        self._write({"record_type": "reconcile", **reconcile_payload})
+                    self._enqueue_api("reconcile:shutdown:" + str(uuid4()), "/api/sensor/reconcile", reconcile_payload)
+                except Exception as exc:
+                    if rollback_error is None:
+                        rollback_error = exc
         try:
             if self._sender:
                 self._sender.close()

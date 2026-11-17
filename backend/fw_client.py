@@ -100,10 +100,8 @@ class FwHelperClient:
         })
 
     def rollback(self, reason="shutdown"):
-        try:
-            response = self._call({"op": "rollback", "lease_id": self.lease_id, "reason": str(reason)})
-        finally:
-            self.lease_id = None
+        response = self._call({"op": "rollback", "lease_id": self.lease_id, "reason": str(reason)})
+        self.lease_id = None
         return response
 
     def status(self):

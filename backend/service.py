@@ -21,6 +21,9 @@ class MissingRecordError(ValueError):
     pass
 
 
+UNRESOLVED_BLOCK_STATUSES = ("ACTIVE", "EXPIRY_PENDING", "UNBLOCK_REQUESTED")
+
+
 def fingerprint(payload, sensor_id):
     serialized = json.dumps({"sensor_id": sensor_id, "payload": payload}, sort_keys=True,
                             separators=(",", ":"), allow_nan=False)
@@ -95,10 +98,14 @@ class AlertService:
     def get_summary_stats(db):
         AlertService.expire_due(db)
         counts = dict(db.query(Alert.label, func.count(Alert.id)).group_by(Alert.label).all())
-        simulated = db.query(func.count(BlockedIP.id)).filter(
-            BlockedIP.status == "ACTIVE", BlockedIP.mode == "dry_run").scalar() or 0
-        enforced = db.query(func.count(BlockedIP.id)).filter(
-            BlockedIP.status == "ACTIVE", BlockedIP.mode == "enforced").scalar() or 0
+        mode_counts = dict(
+            db.query(BlockedIP.mode, func.count(BlockedIP.id))
+            .filter(BlockedIP.status.in_(UNRESOLVED_BLOCK_STATUSES))
+            .group_by(BlockedIP.mode)
+            .all()
+        )
+        simulated = mode_counts.get("dry_run", 0)
+        enforced = mode_counts.get("enforced", 0)
         response_mode = "enforced" if enforced and not simulated else ("mixed" if enforced and simulated else "dry_run")
         return {"total_events": sum(counts.values()), "total_attacks": sum(
             count for label, count in counts.items() if label != "BENIGN"),
@@ -145,8 +152,7 @@ class AlertService:
     @staticmethod
     def request_unblock(db, ip, requested_by, block_id=None):
         AlertService.expire_due(db)
-        query = db.query(BlockedIP).filter(BlockedIP.ip == str(ip), BlockedIP.status.in_(
-            ["ACTIVE", "EXPIRY_PENDING", "UNBLOCK_REQUESTED"]))
+        query = db.query(BlockedIP).filter(BlockedIP.ip == str(ip), BlockedIP.status.in_(UNRESOLVED_BLOCK_STATUSES))
         if block_id is not None:
             query = query.filter(BlockedIP.block_id == str(block_id))
         record = query.order_by(BlockedIP.id.desc()).first()
@@ -219,7 +225,7 @@ class AlertService:
         rows = db.query(BlockedIP).filter(
             BlockedIP.sensor_id == sensor_id,
             BlockedIP.mode == "enforced",
-            BlockedIP.status.in_(["ACTIVE", "EXPIRY_PENDING", "UNBLOCK_REQUESTED"]),
+            BlockedIP.status.in_(UNRESOLVED_BLOCK_STATUSES),
         ).all()
         rolled_back_ids = []
         for row in rows:
