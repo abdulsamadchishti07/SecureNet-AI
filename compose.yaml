@@ -1,0 +1,29 @@
+name: securenet-ai
+
+services:
+  server:
+    build: .
+    image: securenet-ai:local
+    # Linux: preserve the existing localhost PostgreSQL connection without
+    # changing database credentials or exposing PostgreSQL on another interface.
+    network_mode: host
+    environment:
+      UVICORN_HOST: 127.0.0.1
+      UVICORN_PORT: "${SECURENET_PORT:-8010}"
+    user: "${SECURENET_UID:-1000}:${SECURENET_GID:-1000}"
+    volumes:
+      - type: bind
+        source: ${SECURENET_ENV_FILE:-./backend/.env}
+        target: /app/backend/.env
+        read_only: true
+        bind:
+          create_host_path: false
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    init: true
+    stop_grace_period: 30s

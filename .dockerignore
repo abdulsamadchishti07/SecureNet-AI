@@ -1,0 +1,31 @@
+# Allow only build inputs; credentials, datasets, models, DBs, reports and local
+# dependency trees must never be sent to the Docker builder.
+**
+!Dockerfile
+!requirements-docker.txt
+!backend/
+backend/**
+!backend/*.py
+!ml_engine/
+ml_engine/**
+!ml_engine/__init__.py
+!ml_engine/datasets.py
+!ml_engine/preprocess.py
+!sniffer/
+sniffer/**
+!sniffer/__init__.py
+!sniffer/events.py
+!frontend/
+frontend/**
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/index.html
+!frontend/tsconfig.json
+!frontend/vite.config.ts
+!frontend/src/
+!frontend/src/**
+!frontend/public/
+!frontend/public/**
+**/.env*
+**/*.pem
+**/*.key
