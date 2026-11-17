@@ -9,7 +9,9 @@ from contextlib import nullcontext, suppress
 import json
 import math
 from pathlib import Path
+import signal
 import sys
+import threading
 import time
 
 from sniffer.capture import start_capture
@@ -22,7 +24,7 @@ def run(packets, on_flow, termination_grace=5.0, diagnostics=None):
     table, last_sweep, watermark = FlowTable(termination_grace), 0, 0
     counters = {"packets_read": 0, "packets_parsed": 0, "non_ipv4_or_fragmented_packets_excluded": 0,
                 "out_of_order_packets": 0}
-    try:
+    with suppress(KeyboardInterrupt):
         for pkt in packets:
             if pkt is None:  # live capture idle: use the wall clock
                 now, done = round(time.time() * 1_000_000), []
@@ -43,8 +45,6 @@ def run(packets, on_flow, termination_grace=5.0, diagnostics=None):
             for features in done:
                 features["flow_emitted_usec"] = max(features["flow_emitted_usec"], watermark)
                 on_flow(features)
-    except KeyboardInterrupt:
-        pass
     for features in table.flush(watermark):
         on_flow(features)
     if diagnostics is not None:
@@ -154,12 +154,20 @@ def main(argv=None):
         if dispatcher is not None:
             model_sha256 = bundle["_artifact_sha256"]
 
+    inference_errors = 0
+
     def on_flow(features):
+        nonlocal inference_errors
         if args.predict:
             try:
                 prediction = predict(features, dataset=args.dataset)
             except FeatureValidationError as exc:
+                inference_errors += 1
                 print(f"Dropped invalid flow: {exc}", file=sys.stderr)
+                return
+            except Exception as exc:
+                inference_errors += 1
+                print(f"Dropped flow due to inference error ({type(exc).__name__}): {exc}", file=sys.stderr)
                 return
             if dispatcher is not None:
                 try:
@@ -173,15 +181,44 @@ def main(argv=None):
             features = {**features, **prediction}
         print(json.dumps(features), flush=True)
 
-    response_context = dispatcher if dispatcher is not None else nullcontext()
-    with response_context:
-        run(start_capture(args.iface, args.pcap, args.filter), on_flow, args.termination_grace)
-        if args.linger_seconds:
-            print(f"Replay complete; sensor stays available for {args.linger_seconds:g} seconds. Ctrl+C to stop.",
-                  file=sys.stderr, flush=True)
-            linger(dispatcher, args.linger_seconds)
-    if dispatcher is not None:
-        print("Response summary: " + json.dumps(dispatcher.stats()), file=sys.stderr)
+    is_main_thread = threading.current_thread() is threading.main_thread()
+    interrupted = False
+    previous_sigterm = signal.getsignal(signal.SIGTERM) if is_main_thread else None
+    previous_sigint = signal.getsignal(signal.SIGINT) if is_main_thread else None
+
+    def handle_stop(signum, frame):
+        nonlocal interrupted
+        interrupted = True
+        if signum == signal.SIGTERM and is_main_thread:
+            signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        if signum == signal.SIGINT and callable(previous_sigint):
+            previous_sigint(signum, frame)
+        raise KeyboardInterrupt()
+
+    if is_main_thread:
+        signal.signal(signal.SIGTERM, handle_stop)
+        if previous_sigint is not signal.SIG_IGN:
+            signal.signal(signal.SIGINT, handle_stop)
+    try:
+        response_context = dispatcher if dispatcher is not None else nullcontext()
+        with response_context:
+            with suppress(KeyboardInterrupt):
+                run(start_capture(args.iface, args.pcap, args.filter), on_flow, args.termination_grace)
+                if args.linger_seconds and not interrupted:
+                    print(f"Replay complete; sensor stays available for {args.linger_seconds:g} seconds. Ctrl+C to stop.",
+                          file=sys.stderr, flush=True)
+                    linger(dispatcher, args.linger_seconds)
+            if is_main_thread:
+                signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        if dispatcher is not None:
+            print("Response summary: " + json.dumps(dispatcher.stats()), file=sys.stderr)
+        if args.predict and inference_errors:
+            print(f"Inference summary: dropped_flows={inference_errors}", file=sys.stderr)
+    finally:
+        if is_main_thread:
+            signal.signal(signal.SIGTERM, previous_sigterm)
+            if previous_sigint is not signal.SIG_IGN:
+                signal.signal(signal.SIGINT, previous_sigint)
 
 
 if __name__ == "__main__":
