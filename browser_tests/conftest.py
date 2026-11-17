@@ -1,9 +1,11 @@
 """Opt-in browser fixtures: real loopback HTTP and a private temporary database."""
 
 from contextlib import suppress
+import os
 from pathlib import Path
 import shutil
 import socket
+import tempfile
 from threading import Thread
 import time
 from types import SimpleNamespace
@@ -67,6 +69,7 @@ def dashboard_server(tmp_path):
 
 @pytest.fixture(scope="session")
 def browser():
+    os.environ.setdefault("TMPDIR", tempfile.gettempdir())
     with sync_playwright() as playwright:
         executable = shutil.which("chromium") or shutil.which("google-chrome")
         instance = playwright.chromium.launch(executable_path=executable, headless=True,
