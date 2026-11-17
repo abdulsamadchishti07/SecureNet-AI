@@ -1,7 +1,8 @@
 """Security and persistence regressions using private app instances and databases."""
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import datetime, timedelta, timezone
+from threading import Event, Lock
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -358,3 +359,124 @@ def test_access_and_sliding_refresh_token_rotation_and_expiry(backend_runtime, a
 
     assert client.post("/api/auth/logout", json={"refresh_token": refresh_two}).status_code == 200
     assert client.post("/api/auth/refresh", json={"refresh_token": refresh_two}).status_code == 401
+
+
+def test_login_rate_limiter_blocks_brute_force_and_resets_after_window(backend_runtime, admin_headers, manual_clock):
+    from backend.auth import LoginRateLimiter
+
+    backend_runtime.app.state.login_limiter = LoginRateLimiter(max_attempts=5, window_seconds=60.0, clock=manual_clock)
+    client = backend_runtime.client
+    assert client.post("/api/auth/register", headers=admin_headers,
+                       json={"username": "other_op", "email": "op@example.com", "password": PASSWORD}).status_code == 201
+
+    for _ in range(5):
+        resp = client.post("/api/auth/login", data={"username": "review_admin", "password": "wrong-password"})
+        assert resp.status_code == 401
+
+    blocked = client.post("/api/auth/login", data={"username": "review_admin", "password": PASSWORD})
+    assert blocked.status_code == 429
+    assert int(blocked.headers["Retry-After"]) >= 1
+
+    # Different user still succeeds while review_admin is locked out.
+    assert client.post("/api/auth/login", data={"username": "other_op", "password": PASSWORD}).status_code == 200
+
+    # After the 60s window expires, valid login succeeds and resets the failure bucket.
+    manual_clock.advance(61.0)
+    assert client.post("/api/auth/login", data={"username": "review_admin", "password": PASSWORD}).status_code == 200
+    assert client.post("/api/auth/login", data={"username": "review_admin", "password": "wrong-password"}).status_code == 401
+
+
+@pytest.mark.parametrize("scope", ["account", "ip"])
+def test_parallel_logins_reserve_quota_before_password_verification(
+        backend_runtime, admin_headers, monkeypatch, scope):
+    from backend.auth import LoginRateLimiter
+
+    client = backend_runtime.client
+    backend_runtime.app.state.login_limiter = LoginRateLimiter(
+        max_attempts=5 if scope == "account" else 20, ip_max_attempts=20 if scope == "account" else 5)
+    usernames = ["review_admin"]
+    if scope == "ip":
+        with backend_runtime.sessions() as db:
+            for name in ("parallel_one", "parallel_two"):
+                db.add(User(username=name, email=f"{name}@example.com", hashed_password="unused", is_admin=False))
+            db.commit()
+        usernames += ["parallel_one", "parallel_two"]
+    entered, release = Event(), Event()
+    lock = Lock()
+    password_checks = 0
+
+    def blocked_password_check(*args):
+        nonlocal password_checks
+        with lock:
+            password_checks += 1
+            if password_checks == 5:
+                entered.set()
+        assert release.wait(timeout=15), "Test did not release password verification"
+        return False
+
+    def attempt(index):
+        return client.post("/api/auth/login", data={
+            "username": usernames[index % len(usernames)], "password": "wrong-password"}).status_code
+
+    monkeypatch.setattr("backend.main.verify_password", blocked_password_check)
+    with ThreadPoolExecutor(max_workers=12) as pool:
+        futures = [pool.submit(attempt, index) for index in range(12)]
+        try:
+            assert entered.wait(timeout=10)
+            done, _ = wait(futures, timeout=2)
+            assert len(done) == 7
+            assert all(future.result() == 429 for future in done)
+            assert password_checks == 5
+        finally:
+            release.set()
+        statuses = [future.result() for future in futures]
+    assert statuses.count(401) == 5 and statuses.count(429) == 7
+
+
+def test_login_exception_releases_reservation(backend_runtime, admin_headers, monkeypatch):
+    from backend.auth import LoginRateLimiter
+
+    backend_runtime.app.state.login_limiter = LoginRateLimiter(max_attempts=1)
+    original_verify = verify_password
+
+    def broken_verifier(*args):
+        raise RuntimeError("temporary password service failure")
+
+    monkeypatch.setattr("backend.main.verify_password", broken_verifier)
+    assert backend_runtime.client.post("/api/auth/login", data={
+        "username": "review_admin", "password": PASSWORD}).status_code == 500
+    monkeypatch.setattr("backend.main.verify_password", original_verify)
+    assert backend_runtime.client.post("/api/auth/login", data={
+        "username": "review_admin", "password": PASSWORD}).status_code == 200
+
+
+def test_pending_login_reservations_survive_clock_window_and_success(manual_clock):
+    from backend.auth import LoginRateLimiter
+
+    limiter = LoginRateLimiter(max_attempts=2, clock=manual_clock)
+    first, retry = limiter.reserve("127.0.0.1", "operator")
+    second, retry_two = limiter.reserve("127.0.0.1", "operator")
+    assert retry == retry_two == 0
+    manual_clock.advance(61)
+    assert limiter.reserve("127.0.0.1", "operator")[1] > 0
+    limiter.complete(first, success=True)
+    third, retry = limiter.reserve("127.0.0.1", "operator")
+    assert retry == 0
+    assert limiter.reserve("127.0.0.1", "operator")[1] > 0
+    limiter.complete(second, success=None)
+    limiter.complete(third, success=None)
+    assert limiter.reserve("127.0.0.1", "operator")[1] == 0
+
+
+def test_login_capacity_preserves_active_quotas_and_reclaims_expired_keys(manual_clock):
+    from backend.auth import LoginRateLimiter
+
+    limiter = LoginRateLimiter(max_attempts=1, max_keys=2, clock=manual_clock)
+    first, retry = limiter.reserve("127.0.0.1", "first")
+    assert retry == 0
+    assert limiter.reserve("127.0.0.2", "second")[1] > 0
+    limiter.complete(first, success=False)
+    assert limiter.reserve("127.0.0.1", "first")[1] > 0
+    assert limiter.reserve("127.0.0.2", "second")[1] > 0
+    manual_clock.advance(61)
+    assert limiter.reserve("127.0.0.2", "second")[1] == 0

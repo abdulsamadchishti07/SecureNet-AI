@@ -123,6 +123,33 @@ def test_cli_skips_invalid_flows_and_continues(dataset_name, train_dataset, data
     out, err = capsys.readouterr()
     assert json.loads(out)["label"] in run.config.classes
     assert "Dropped invalid flow" in err
+    assert "Inference summary: dropped_flows=1" in err
+
+
+def test_cli_isolates_unexpected_inference_errors_without_stopping_capture(
+        train_dataset, dataset_cases, monkeypatch, capsys):
+    run = train_dataset(next(c for c in dataset_cases if c.name == "unified"))
+    capsys.readouterr()
+    valid = run.raw.iloc[0][SELECTED_COLUMNS].to_dict()
+    calls = {"n": 0}
+    real_predict = predictor.predict
+
+    def flaky_predict(features, dataset="unified"):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("transient estimator failure")
+        return real_predict(features, dataset=dataset)
+
+    monkeypatch.setattr(predictor, "predict", flaky_predict)
+    monkeypatch.setattr(sniffer_main, "start_capture", lambda *a: iter(()))
+    monkeypatch.setattr(sniffer_main, "run", lambda p, cb, g: (cb(valid), cb(valid)))
+    sniffer_main.main(["-r", "synthetic.pcap", "--predict"])
+    out, err = capsys.readouterr()
+    lines = out.strip().splitlines()
+    assert len(lines) == 1
+    assert json.loads(lines[0])["label"] in run.config.classes
+    assert "Dropped flow due to inference error (RuntimeError): transient estimator failure" in err
+    assert "Inference summary: dropped_flows=1" in err
 
 
 def test_cli_response_connects_predictions_to_dry_run_audit(
