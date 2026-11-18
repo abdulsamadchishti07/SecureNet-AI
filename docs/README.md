@@ -9,6 +9,7 @@
 - [Completed Sprint 3 dashboard, PostgreSQL setup and browser verification](SPRINT_3.md)
 - [Sprint 4 parity harness, feature ablation and event-time calibration](SPRINT_4.md)
 - [Sprint 5 privilege-separated nftables enforcement and reconciliation](SPRINT_5.md)
+- [Sprint 6 runtime hardening, campaign-disjoint ablation and ground-truth calibration](SPRINT_6.md)
 - [Demonstration runbook (dry-run SOC demo and isolated netns lab)](DEMO_RUNBOOK.md)
 - [Unified pytest suite and commands](../tests/README.md)
 - [Test reports and historical experiment index](../reports/README.md)

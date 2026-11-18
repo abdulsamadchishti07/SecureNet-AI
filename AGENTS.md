@@ -2,6 +2,23 @@
 
 Last updated: 2026-11-13 (Asia/Karachi).
 
+## Sprint 6 landing and Sprint 7 start — 2026-11-18
+
+- Landing the existing campaign generator, campaign test, Sprint 6 guide and
+  saved ablation/calibration reports. Model integrity checks before deserialization,
+  per-flow inference isolation and bounded login admission are already committed.
+- Campaign endpoints are disjoint; all cohorts share one synthetic generator.
+  Lab-trained ablation classifiers score 100%, while the unchanged serving model
+  misses both synthetic DoS sources in held-out policy evaluation. Replay timing
+  is not live mitigation timing. Original-capture parity remains externally gated.
+- Sprint 7 will measure three live lab vectors, report misses without substituting
+  labels, add opt-in bounded SMTP/webhook notifications and prepare the FYP dossier.
+  Preserve dry-run defaults, installed models, private config and the main DB.
+- Landing baseline: `.venv/bin/python -m pytest tests/ -q` passed (432 passed,
+  1 opt-in installed-model check skipped, 5928 dependency warnings, 106.14s).
+  The initial sandbox run could not enumerate Scapy sockets; the passing run used
+  the required test access. No historical reports were regenerated.
+
 
 ## Sprint 5 hardening & bugfix verification — 2026-11-13
 

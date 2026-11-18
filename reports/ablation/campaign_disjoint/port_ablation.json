@@ -1,0 +1,894 @@
+{
+  "classes": [
+    "BENIGN",
+    "BRUTE_FORCE",
+    "DOS",
+    "PORTSCAN"
+  ],
+  "counts": {
+    "train": {
+      "BENIGN": 25,
+      "PORTSCAN": 25,
+      "DOS": 25,
+      "BRUTE_FORCE": 25
+    },
+    "calibration": {
+      "BENIGN": 25,
+      "PORTSCAN": 25,
+      "DOS": 25,
+      "BRUTE_FORCE": 25
+    },
+    "evaluation": {
+      "BENIGN": 25,
+      "PORTSCAN": 25,
+      "DOS": 25,
+      "BRUTE_FORCE": 25
+    }
+  },
+  "conditions": {
+    "full": {
+      "random_forest": {
+        "calibration": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        },
+        "evaluation": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        }
+      },
+      "xgboost": {
+        "calibration": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        },
+        "evaluation": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        }
+      }
+    },
+    "no_source_port": {
+      "random_forest": {
+        "calibration": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        },
+        "evaluation": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        }
+      },
+      "xgboost": {
+        "calibration": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        },
+        "evaluation": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        }
+      }
+    },
+    "no_ports": {
+      "random_forest": {
+        "calibration": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        },
+        "evaluation": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        }
+      },
+      "xgboost": {
+        "calibration": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        },
+        "evaluation": {
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "classification_report": {
+            "BENIGN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "BRUTE_FORCE": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "DOS": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "PORTSCAN": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 25.0
+            },
+            "accuracy": 1.0,
+            "macro avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            },
+            "weighted avg": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1-score": 1.0,
+              "support": 100.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              25,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              25
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "endpoint_pair_counts": {
+    "train": 14,
+    "calibration": 14,
+    "evaluation": 14
+  },
+  "endpoint_pair_overlap": 0
+}
