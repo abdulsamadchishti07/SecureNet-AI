@@ -1,6 +1,47 @@
 # SecureNet AI — Agent Handoff
 
-Last updated: 2026-11-13 (Asia/Karachi).
+Last updated: 2026-11-18 (Asia/Karachi).
+
+## Sprint 7 implementation and measured limits — 2026-11-18
+
+- Added `scripts/netns_multi_attack_lab.{sh,py}`: fresh sensor/attacker namespaces,
+  fixed private targets, bounded real TCP scan/FTP-style login/HTTP flood traffic,
+  ephemeral SQLite/API credentials, actual-model inference, kernel set and TCP/ICMP
+  loss checks, exact-ID manual unblock, watchdog rollback, restart reconciliation
+  and clean SIGTERM. External notifications are disabled in the lab.
+- Final live run: PORTSCAN mitigated with observed onset-to-confirmed TCP loss
+  1.710407s; BRUTE_FORCE (30 BENIGN flows) and DOS (21 emitted BENIGN flows) missed
+  in 8s windows. Strict acceptance exits 2, reporting
+  `completed_with_detection_gaps`. No scenario labels are injected into events.
+  Latency includes polling/timeout; it is an upper bound, not exact kernel time.
+  All recovery checks passed. Report: `reports/sprint7/multi_attack_lab.json`.
+- Added opt-in `backend/notifier.py`, validated settings, response-worker hooks
+  and `backend.manage test-alert-notification` (preview; `--send` explicit).
+  Separate bounded thread/queue, >=600s/IP cooldown, <=30 logical alert attempts
+  per sliding hour, block deduplication, sanitized errors, TLS/SSL SMTP and
+  generic/Slack/Discord webhook formatting. New confirmed blocks only; simulated
+  blocks require an extra opt-in. Failures consume quota and do not auto-retry.
+- Notifications default off. With enabled/no channels they log only. State and
+  queues are in memory, quotas reset on restart and are per sensor process.
+  Shutdown drains for up to 2s after rollback, then discards queued work; in-flight
+  daemon work may finish. Remote delivery was not configured or attempted.
+- Added `docs/{SPRINT_7,FYP_DEFENSE,FYP_SLIDES}.md`, report-backed figures in
+  `docs/assets/fyp/` (SVG/PDF/PNG) and `scripts/build_fyp_assets.py`. Saved unified
+  FPR is 0.027544%, not the proposed <0.02%; tiny web support, correlated source
+  data and live detection misses are stated explicitly. Corrected two obsolete
+  management commands in the demo runbook.
+- Verification: 471 default tests passed, one opt-in installed-model check skipped
+  (5928 existing dependency warnings, 106.50s); ten browser workflows passed
+  (42.84s). New tests cover transport delivery to local SMTP/webhook receivers,
+  quotas, failures, queue bounds, confirmed/failed helper actions, CLI error
+  handling, and lab/browser isolation. Test fixtures prevent use of configured
+  external notification channels. The installed-bundle manifest check also passed
+  separately; Python/shell syntax, report/figure hashes and `git diff --check`
+  passed. Full evidence: `reports/sprint7/verification.json`.
+- No configured DB writes, installed model changes, host firewall changes or push.
+  Sprint 6 is committed as `912aeee`; Sprint 7 is committed in separate logical
+  commits. Remaining gates: original-capture parity, independent real traffic,
+  live BRUTE_FORCE/DOS recall and repeated latency/false-block evaluation.
 
 ## Sprint 6 landing and Sprint 7 start — 2026-11-18
 
