@@ -13,7 +13,15 @@ import pytest
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 
+from backend.config import DISABLED_NOTIFICATION_ENV
 from ml_engine import datasets, evaluate, predictor, preprocess, train
+
+
+@pytest.fixture(autouse=True)
+def isolate_notification_environment(monkeypatch):
+    """Private fixtures must never use a developer's configured external channels."""
+    for name, value in DISABLED_NOTIFICATION_ENV.items():
+        monkeypatch.setenv(name, value)
 
 
 @dataclass(frozen=True)

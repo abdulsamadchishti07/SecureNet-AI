@@ -16,7 +16,7 @@ from playwright.sync_api import sync_playwright
 from sqlalchemy import create_engine
 import uvicorn
 
-from backend.config import Settings
+from backend.config import DISABLED_NOTIFICATION_ENV, Settings
 from backend.main import create_app
 from backend.manage import bootstrap_admin
 from backend.worker import ResponseDispatcher
@@ -26,6 +26,12 @@ from sniffer.events import DetectionEvent
 from sniffer.rules import ResponsePolicy
 
 PASSWORD = "BrowserTestPassword123!"
+
+
+@pytest.fixture(autouse=True)
+def disable_external_notifications(monkeypatch):
+    for name, value in DISABLED_NOTIFICATION_ENV.items():
+        monkeypatch.setenv(name, value)
 
 
 @pytest.fixture
