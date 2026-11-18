@@ -1,0 +1,19 @@
+{
+  "sources": {
+    "reports/unified/evaluation.json": "fa1b1c611b6220ab03948aa1f631a91a076bfe81499b00c7f6c3ff8219cd5c55",
+    "reports/sprint7/multi_attack_lab.json": "6d18554bc0600bf176db55051f7778d394e8a405d2534e1429325d2ba2b05468",
+    "scripts/build_fyp_assets.py": "d88e18f9b5b52d55a8b8a98828974b2d6b4b717dc5add3aebbd1898eca35b600"
+  },
+  "assets": {
+    "class_metrics.svg": "fa3a261da0ef7bab8e43c9c12e88ac9d5d1083689a9617599106fedf70513670",
+    "class_metrics.pdf": "ee573cf4870b8f2531c10fad8c273635545013920ff34b8f3d12fe1caf4d524d",
+    "class_metrics.png": "521935e5ae556e8b4c80aa70b7ff28f8f222518ef3c79730d88db215e121d85c",
+    "live_mitigation.svg": "19b5bdc17762e6d121659b111af6a48174c75e5ef3faf52178e75782312358c6",
+    "live_mitigation.pdf": "7ef964fed5ac6c9167d95b9f69f13d247467511991280335c8d07202eef6506d",
+    "live_mitigation.png": "ef478ab39977cd6aeb57ff4429161a3963e15ced1bf356c4241fe85203ee5b29",
+    "architecture.svg": "4a73c02301cb431d93305b2eea3ad151a394c956131c09df07972a6dc73bff7b",
+    "architecture.pdf": "6251f0318ea5d878f8da32d90271b9784b90de53311cb70e43f019029c72c70d",
+    "architecture.png": "b7e0906b0f1a5035ddc3cf2adff7abadc7c4c64444c78abe3720c6a87342264c"
+  },
+  "scope": "Figures from saved reports; no model training or metric recomputation"
+}

@@ -1,0 +1,103 @@
+{
+  "recorded_at": "2026-11-18T14:10:05.229879+00:00",
+  "status": "implementation_verified_detection_acceptance_open",
+  "sprint6_commit": "912aeee",
+  "checks": {
+    "baseline": {
+      "passed": 432,
+      "skipped": 1,
+      "warnings": 5928,
+      "duration_seconds": 106.14
+    },
+    "regression": {
+      "passed": 471,
+      "skipped": 1,
+      "warnings": 5928,
+      "duration_seconds": 106.5
+    },
+    "browser": {
+      "passed": 10,
+      "skipped": 0,
+      "warnings": 0,
+      "duration_seconds": 42.84
+    },
+    "installed_models": {
+      "passed": 1,
+      "skipped": 0,
+      "warnings": 1,
+      "duration_seconds": 0.2
+    },
+    "final_notification_and_lab_guards": {
+      "passed": 39,
+      "warnings": 1,
+      "note": "Added test_management_invalid_notification_config_exits_cleanly and full env isolation across tests/browser/lab"
+    }
+  },
+  "commands": [
+    ".venv/bin/python -m pytest tests/ -q",
+    ".venv/bin/python -m pytest browser_tests/ -q",
+    "SECURENET_VERIFY_INSTALLED_MODELS=1 .venv/bin/python -m pytest tests/test_inference.py::test_installed_inference_bundles_match_manifest -q",
+    "./scripts/netns_multi_attack_lab.sh --require-all-detected",
+    ".venv/bin/python -m backend.manage test-alert-notification",
+    "MPLCONFIGDIR=/tmp/securenet-fyp-mpl .venv/bin/python scripts/build_fyp_assets.py",
+    "git diff --check"
+  ],
+  "lab": {
+    "report": "reports/sprint7/multi_attack_lab.json",
+    "strict_exit_code": 2,
+    "status": "completed_with_detection_gaps",
+    "recovery": {
+      "sigkill_rollback_recovered": true,
+      "startup_db_reconciled": true,
+      "sigterm_exit_code": 0
+    },
+    "source_hashes_match": true
+  },
+  "notification_delivery": {
+    "loopback_smtp": "passed in private test receiver, plaintext loopback only",
+    "loopback_webhook": "passed generic, Slack and Discord payloads; redirects rejected",
+    "smtp_tls": "verified certificate contexts and ordering using injected SMTP transports",
+    "external_smtp_or_webhook": "not configured or attempted",
+    "default_enabled": false,
+    "durability": "best effort in-memory; quotas reset on restart; per sensor process",
+    "cli_log_only": "passed; logged=1, sent=0, no network channel configured"
+  },
+  "syntax": {
+    "python_compile": "passed",
+    "shell": "passed",
+    "git_diff_check": "passed"
+  },
+  "figures": {
+    "assets": 9,
+    "hashes_match": true,
+    "reviewed": [
+      "class_metrics.png",
+      "live_mitigation.png",
+      "architecture.png"
+    ]
+  },
+  "source_hashes": {
+    "backend/notifier.py": "6ee5e25c3e7d1d69f153ca6b59013eb7ba540b803f7563b51144433f42d94f76",
+    "backend/config.py": "ed24d6a892966d476bfbd58e6898fe63d4b57b8393e4b2328fbb5f96f6cf23c7",
+    "backend/manage.py": "1c8400c24e9e59e33af44325361881959a5757217b42d3855096dbd1b177cad2",
+    "backend/worker.py": "3e845de4daca018c44870080824c565cd159dfa3ba19730397623f91c0170851",
+    "scripts/netns_multi_attack_lab.py": "88fc64085b731bd06f47ea55d80e90218d18560ebfe30c309e1fe3478cd59222",
+    "scripts/netns_multi_attack_lab.sh": "809c52b681085487345f07803faefbc03dfc46283461194f6dfb7120322954e0",
+    "scripts/build_fyp_assets.py": "d88e18f9b5b52d55a8b8a98828974b2d6b4b717dc5add3aebbd1898eca35b600",
+    "tests/test_notifier.py": "db27937ce406b6291013cb3541d4673819285c9dd778f35d969a9867a18051ff",
+    "tests/test_multi_attack_lab.py": "07d52aedc080262406a4935f4f34f96b11e0d5ac70ba417bb67eea19e6f59640",
+    "tests/conftest.py": "999297fcf7df88ad2b08cb112e663e034268ec3b5d06089c046a7f576e9cacf1",
+    "browser_tests/conftest.py": "5dd05927805c10fc7fd85d0da3b0d0c7ff60f843b67ed6880438d4c84cb83725"
+  },
+  "limitations": [
+    "Portscan observed mitigation confirmation 1.710407s, not a sub-second SLA.",
+    "BRUTE_FORCE and DOS missed during 8-second live socket windows.",
+    "Incomplete long-lived flows may outlast observation windows.",
+    "Lab policy explicitly 0.5 confidence / 2 flows / 10s; runtime defaults preserved.",
+    "Synthetic shared-generator campaigns do not establish independent real-world validity.",
+    "Original-capture feature parity and population false-block rates remain open.",
+    "Existing dependency deprecation warnings remain visible.",
+    "No configured database writes, host firewall modifications, installed model replacement or push.",
+    "Sprint 7 committed cleanly in separate logical commits."
+  ]
+}

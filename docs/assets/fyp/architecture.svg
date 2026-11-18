@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="684pt" height="363.069938pt" viewBox="0 0 684 363.069938" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-18T19:07:23.570660</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 363.069938 
+L 684 363.069938 
+L 684 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 12.78 146.861138 
+L 160.65 146.861138 
+Q 162.324 146.861138 162.324 145.197938 
+L 162.324 84.213938 
+Q 162.324 82.550738 160.65 82.550738 
+L 12.78 82.550738 
+Q 11.106 82.550738 11.106 84.213938 
+L 11.106 145.197938 
+Q 11.106 146.861138 12.78 146.861138 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #f1f5f9; stroke: #94a3b8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 180.18 146.861138 
+L 328.05 146.861138 
+Q 329.724 146.861138 329.724 145.197938 
+L 329.724 84.213938 
+Q 329.724 82.550738 328.05 82.550738 
+L 180.18 82.550738 
+Q 178.506 82.550738 178.506 84.213938 
+L 178.506 145.197938 
+Q 178.506 146.861138 180.18 146.861138 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #f1f5f9; stroke: #94a3b8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 347.58 146.861138 
+L 495.45 146.861138 
+Q 497.124 146.861138 497.124 145.197938 
+L 497.124 84.213938 
+Q 497.124 82.550738 495.45 82.550738 
+L 347.58 82.550738 
+Q 345.906 82.550738 345.906 84.213938 
+L 345.906 145.197938 
+Q 345.906 146.861138 347.58 146.861138 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #f1f5f9; stroke: #94a3b8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 514.98 146.861138 
+L 662.85 146.861138 
+Q 664.524 146.861138 664.524 145.197938 
+L 664.524 84.213938 
+Q 664.524 82.550738 662.85 82.550738 
+L 514.98 82.550738 
+Q 513.306 82.550738 513.306 84.213938 
+L 513.306 145.197938 
+Q 513.306 146.861138 514.98 146.861138 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #ecfdf5; stroke: #047857; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 347.58 296.549138 
+L 495.45 296.549138 
+Q 497.124 296.549138 497.124 294.885938 
+L 497.124 233.901938 
+Q 497.124 232.238738 495.45 232.238738 
+L 347.58 232.238738 
+Q 345.906 232.238738 345.906 233.901938 
+L 345.906 294.885938 
+Q 345.906 296.549138 347.58 296.549138 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #f1f5f9; stroke: #94a3b8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 514.98 296.549138 
+L 662.85 296.549138 
+Q 664.524 296.549138 664.524 294.885938 
+L 664.524 233.901938 
+Q 664.524 232.238738 662.85 232.238738 
+L 514.98 232.238738 
+Q 513.306 232.238738 513.306 233.901938 
+L 513.306 294.885938 
+Q 513.306 296.549138 514.98 296.549138 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #f1f5f9; stroke: #94a3b8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 165.439182 114.705938 
+Q 170.415286 114.705938 174.273355 114.705938 
+" clip-path="url(#p88b205b8bf)" style="fill: none; stroke: #334155; stroke-linecap: round"/>
+    <path d="M 168.273355 111.705938 
+L 174.273355 114.705938 
+L 168.273355 117.705938 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #334155; stroke: #334155; stroke-linecap: round"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 332.839182 114.705938 
+Q 337.815286 114.705938 341.673355 114.705938 
+" clip-path="url(#p88b205b8bf)" style="fill: none; stroke: #334155; stroke-linecap: round"/>
+    <path d="M 335.673355 111.705938 
+L 341.673355 114.705938 
+L 335.673355 117.705938 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #334155; stroke: #334155; stroke-linecap: round"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 500.239182 114.705938 
+Q 505.215286 114.705938 509.073355 114.705938 
+" clip-path="url(#p88b205b8bf)" style="fill: none; stroke: #334155; stroke-linecap: round"/>
+    <path d="M 503.073355 111.705938 
+L 509.073355 114.705938 
+L 503.073355 117.705938 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #334155; stroke: #334155; stroke-linecap: round"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 420.12 149.966881 
+Q 420.12 188.160033 420.12 225.235152 
+" clip-path="url(#p88b205b8bf)" style="fill: none; stroke: #334155; stroke-linecap: round"/>
+    <path d="M 423.12 219.235152 
+L 420.12 225.235152 
+L 417.12 219.235152 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #334155; stroke: #334155; stroke-linecap: round"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 587.52 149.966881 
+Q 587.52 188.160033 587.52 225.235152 
+" clip-path="url(#p88b205b8bf)" style="fill: none; stroke: #334155; stroke-linecap: round"/>
+    <path d="M 590.52 219.235152 
+L 587.52 225.235152 
+L 584.52 219.235152 
+z
+" clip-path="url(#p88b205b8bf)" style="fill: #334155; stroke: #334155; stroke-linecap: round"/>
+   </g>
+   <g id="text_1">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(52.221406 110.961855)">IPv4 capture</text>
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(42.171016 124.164863)">20 flow features</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(212.512656 110.962285)">SHA-256 check</text>
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(198.503125 124.165293)">Unified RF inference</text>
+   </g>
+   <g id="text_3">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(364.025391 110.962285)">Repeated-flow policy</text>
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(377.060391 124.165293)">Protected CIDRs</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(537.569922 110.962285)">Unix-socket helper</text>
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(544.157031 124.165293)">nftables + lease</text>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(368.611875 260.650715)">Durable API outbox</text>
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(366.491797 273.852863)">PostgreSQL + React</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(540.816641 260.650285)">Best-effort queue</text>
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(543.878594 273.853293)">SMTP / webhook</text>
+   </g>
+   <g id="text_7">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="425.7" y="189.549937" transform="rotate(-0 425.7 189.549937)">audit / events</text>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start" x="593.1" y="189.549937" transform="rotate(-0 593.1 189.549937)">confirmed block</text>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(12.78 320.49093)">Default: dry_run. Enforcement needs explicit --enforce. Only the helper changes rules.</text>
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'" transform="translate(12.78 333.693938)">Notifications default off; separate thread, 600s/IP cooldown, at most 30 logical alert attempts/hour.</text>
+   </g>
+   <g id="text_10">
+    <text style="font-weight: 700; font-size: 13.2px; font-family: 'DejaVu Sans'; text-anchor: start" x="7.2" y="17.229938" transform="rotate(-0 7.2 17.229938)">SecureNet AI • runtime boundaries</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p88b205b8bf">
+   <rect x="7.2" y="23.229938" width="669.6" height="332.64"/>
+  </clipPath>
+ </defs>
+</svg>

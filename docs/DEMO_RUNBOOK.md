@@ -24,9 +24,10 @@ Ensure the Python virtual environment, compiled React frontend, and private conf
 npm --prefix frontend ci
 npm --prefix frontend run build
 
-# 2. Initialize private backend/.env and sensor credentials (non-overwriting)
-.venv/bin/python -m backend.manage init-config
-.venv/bin/python -m backend.manage export-sensor-env runtime/sensor.env
+# 2. Fresh installation only: choose an explicit DB URL; preserve existing config.
+# Back up an existing DB before migration. PostgreSQL remains the main application DB.
+.venv/bin/python -m backend.manage init-config --database-url '<your explicit PostgreSQL URL>'
+.venv/bin/python -m backend.manage export-sensor-config --output runtime/sensor.env
 .venv/bin/python -m backend.manage migrate
 ```
 
@@ -83,6 +84,9 @@ What [`scripts/netns_lab_demo.sh`](../scripts/netns_lab_demo.sh) does:
 ---
 
 ## 5. Troubleshooting & Operational Recovery
+
+For the three-vector live diagnostic, notification settings and defense slides,
+see [Sprint 7](SPRINT_7.md) and the [FYP defense dossier](FYP_DEFENSE.md).
 
 - **Inspect or retry durable outbox messages (while sensor is stopped):**
   ```bash

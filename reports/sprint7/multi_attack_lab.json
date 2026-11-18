@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "status": "completed_with_detection_gaps",
+  "scenarios": [
+    {
+      "vector": "PORTSCAN",
+      "source_ip": "10.210.0.2",
+      "baseline_reachable": true,
+      "predicted_labels": {
+        "PORTSCAN": 5
+      },
+      "emitted_flows": 5,
+      "observation_seconds": 8,
+      "mitigation_latency_seconds": 1.710407,
+      "packet_drop_verified": true,
+      "manual_unblock_recovered": true,
+      "classification_match": true,
+      "status": "mitigated",
+      "enforced_label": "PORTSCAN"
+    },
+    {
+      "vector": "BRUTE_FORCE",
+      "source_ip": "10.210.0.3",
+      "baseline_reachable": true,
+      "predicted_labels": {
+        "BENIGN": 30
+      },
+      "emitted_flows": 30,
+      "observation_seconds": 8,
+      "mitigation_latency_seconds": null,
+      "packet_drop_verified": false,
+      "manual_unblock_recovered": null,
+      "classification_match": false,
+      "status": "missed"
+    },
+    {
+      "vector": "DOS",
+      "source_ip": "10.210.0.4",
+      "baseline_reachable": true,
+      "predicted_labels": {
+        "BENIGN": 21
+      },
+      "emitted_flows": 21,
+      "observation_seconds": 8,
+      "mitigation_latency_seconds": null,
+      "packet_drop_verified": false,
+      "manual_unblock_recovered": null,
+      "classification_match": false,
+      "status": "missed"
+    }
+  ],
+  "recorded_at": "2026-11-18T14:06:30.402823+00:00",
+  "source_hashes": {
+    "scripts/netns_multi_attack_lab.py": "88fc64085b731bd06f47ea55d80e90218d18560ebfe30c309e1fe3478cd59222",
+    "scripts/netns_multi_attack_lab.sh": "809c52b681085487345f07803faefbc03dfc46283461194f6dfb7120322954e0",
+    "ml_engine/models/unified_v1/inference_bundle.pkl": "5e8fcee635593d6917cf573284ac137797768f37db33bc3ae6501d7f9fe1f3d6"
+  },
+  "scope": "live synthetic socket traffic; isolated netns; unchanged unified model",
+  "policy": {
+    "confidence": 0.5,
+    "min_flows": 2,
+    "window_seconds": 10,
+    "termination_grace": 0.1
+  },
+  "latency_basis": "attacker monotonic timestamp immediately before socket traffic to first confirmed failed TCP probe; includes flow finalization, queueing and probe timeout; upper bound, not exact kernel drop time",
+  "recovery": {
+    "sigkill_rollback_recovered": true,
+    "startup_db_reconciled": true,
+    "sigterm_exit_code": 0
+  }
+}
