@@ -18,7 +18,7 @@ from sniffer.rules import ResponsePolicy
 
 class ResponseDispatcher:
     def __init__(self, log_path, capacity=1024, policy=None, firewall=None, api_url=None,
-                 api_token=None, sensor_id=None, outbox_path=None, transport=None):
+                 api_token=None, sensor_id=None, outbox_path=None, transport=None, notifier=None):
         self.publisher = EventQueue(capacity)
         self.policy = policy if policy is not None else ResponsePolicy()
         self.firewall = firewall if firewall is not None else FirewallController()
@@ -36,6 +36,8 @@ class ResponseDispatcher:
         self._next_heartbeat = 0.0
         self._error = self._thread = self._log = self._sender = self._outbox = None
         self._commands, self._seen_commands = Queue(maxsize=128), OrderedDict()
+        from backend.notifier import NotificationManager
+        self.notifier = notifier if notifier is not None else NotificationManager()
 
     def __enter__(self):
         if self._thread is not None or self.publisher.closed:
@@ -58,6 +60,7 @@ class ResponseDispatcher:
             if self.api_url:
                 self._sender = ApiSender(self._outbox, self._transport, self._receive_commands)
                 self._sender.start()
+            self.notifier.start()
             self._thread = Thread(target=self._run, name="securenet-response", daemon=True)
             self._thread.start()
         except Exception:
@@ -70,6 +73,7 @@ class ResponseDispatcher:
                 self._sender.close()
             if self._outbox:
                 self._outbox.close()
+            self.notifier.close()
             self._log.close()
             raise
         return self
@@ -151,6 +155,8 @@ class ResponseDispatcher:
                 payload = {"event": event.to_dict(), "decision": decision.to_dict(), "firewall": action}
                 self._write({"record_type": "detection", **payload})
                 self._enqueue_api("event:" + event.event_id, "/api/alerts/ingest", payload)
+                from backend.notifier import BlockNotification
+                self.notifier.dispatch_alert(BlockNotification.from_response(event, action, self.sensor_id))
                 self.processed += 1
                 self.would_block += int(action is not None and action["status"] == "would_block")
                 self.enforced_blocks += int(action is not None and action["status"] == "blocked")
@@ -211,6 +217,7 @@ class ResponseDispatcher:
             if self._sender:
                 self._sender.close()
         finally:
+            self.notifier.close()
             if self._outbox:
                 self._outbox.close()
             if self._log:
@@ -231,6 +238,7 @@ class ResponseDispatcher:
                 "api_forwarded": self._sender.forwarded if self._sender else 0,
                 "api_failed": self._sender.failed if self._sender else 0,
                 "api_pending": delivery["pending"], "api_dead_letters": delivery["failed"],
+                "notifications": self.notifier.stats(),
                 "active_simulated_blocks": active_count if self.firewall.mode == "dry_run" else 0,
                 "active_enforced_blocks": active_count if self.firewall.mode == "enforced" else 0,
                 "worker_failed": self._error is not None, "log_path": str(self.log_path)}

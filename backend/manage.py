@@ -83,6 +83,8 @@ def main():
     sensor_config = sub.add_parser("export-sensor-config", help="Write only sensor credentials to a private new file")
     sensor_config.add_argument("--output", type=Path, default=Path("runtime/sensor.env"))
     sub.add_parser("migrate", help="Back up the configured database before applying additive migration")
+    notification = sub.add_parser("test-alert-notification", help="Preview a synthetic alert; --send explicitly enables configured delivery")
+    notification.add_argument("--send", action="store_true")
     admin = sub.add_parser("create-admin")
     admin.add_argument("--username", required=True)
     admin.add_argument("--email", required=True)
@@ -90,6 +92,30 @@ def main():
     if args.command == "init-config":
         write_config(args.output, args.database_url)
         print(f"Private configuration written to {args.output}; no secrets printed")
+        return
+    if args.command == "test-alert-notification":
+        import json
+        import logging
+        from backend.config import NotificationSettings
+        from backend.notifier import NotificationManager, test_notification
+        try:
+            config = NotificationSettings().validate_notifications()
+        except ValueError as exc:
+            parser.error(str(exc))
+        alert = test_notification(settings.SENSOR_ID)
+        if not args.send:
+            print(json.dumps({"preview": True, "alert": alert.payload()}))
+            return
+        if not config.ALERT_NOTIFICATIONS_ENABLED:
+            parser.error("Set ALERT_NOTIFICATIONS_ENABLED=true before using --send")
+        logging.basicConfig(level=logging.INFO)
+        manager = NotificationManager(config).start()
+        manager.dispatch_alert(alert)
+        manager.close(timeout=10)
+        result = manager.stats()
+        print(json.dumps(result))
+        if result["failed"] or result["pending"] or result["in_flight"] or result["abandoned"] or not (result["sent"] or result["logged"]):
+            raise SystemExit(1)
         return
     settings.validate()
     if args.command == "export-sensor-config":
