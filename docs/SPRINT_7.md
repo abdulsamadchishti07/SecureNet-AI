@@ -1,10 +1,13 @@
 # Sprint 7 — live lab, notifications and defense package
 
-Sprint 6 was landed in commit `912aeee`. Its baseline passed 432 tests with one
-opt-in installed-model check skipped. The Sprint 7 implementation adds a bounded
-live socket lab, optional notifications in the response worker and a defense
-package. Live multi-vector detection acceptance remains open: see the recorded
-misses rather than interpreting harness completion as full detection success.
+Sprint 6 was landed in commit `912aeee`. Sprint 7 added the bounded live socket
+lab, optional notifications in the response worker and the FYP defense package.
+Sprint 8 subsequently resolved the live capture buffer loss (`conf.bufsize` 64 KB
+-> 4 MB), single-pass `n_jobs=1` RF inference + `0.2s` live sweep, outbox
+inter-message throttle, stale pre-unblock flow re-blocking, and bounded cross-flow
+burst rules (`rule:auth_burst`, `rule:service_flood`), bringing strict 3-vector
+isolated lab acceptance (`--require-all-detected`) to `status: ok` (exit `0`)
+while keeping raw ML `event.label` predictions unaltered.
 
 ## Three-vector lab
 

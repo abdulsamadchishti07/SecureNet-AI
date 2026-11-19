@@ -1,10 +1,12 @@
 # SecureNet AI — FYP defense dossier
 
-SecureNet AI connects a seven-class flow classifier to authenticated monitoring
-and a privilege-separated response system. Kernel enforcement and recovery are
-demonstrated in isolated namespaces. Live detection coverage is incomplete:
-the current socket lab blocks portscan but misses the simulated brute-force and
-DoS vectors. Present those findings alongside the saved dataset scores.
+SecureNet AI connects a seven-class flow classifier and cross-flow burst rules to
+authenticated monitoring and a privilege-separated response system. Kernel
+enforcement, recovery, and all three isolated live vectors (`PORTSCAN` via ML,
+`BRUTE_FORCE` and `DOS` via cross-flow burst rules) pass strict acceptance (`exit 0`).
+Single-flow ML recall on short synthetic auth/HTTP bursts remains limited by
+CIC-IDS2017 LRO super-packets (`5,792 B`) and multi-attempt training patterns;
+present both the hybrid live results and the ML domain-shift findings honestly.
 
 ## Evidence to open before presenting
 
@@ -75,23 +77,26 @@ test examples share one pair. These are within-capture results.
 
 ## Live benchmark and interpretation
 
-The recorded November 18 socket lab uses the unchanged model with an explicit
-exploratory policy (0.5 confidence, two flows, 10s window, 0.1s grace).
+The recorded socket lab uses the unchanged `unified_v1` model with the explicit
+exploratory policy (0.5 confidence, two flows, 10s window, 0.1s grace) plus
+cross-flow burst rules (`rule:auth_burst` >= 10 short auth TCP flows/10s;
+`rule:service_flood` >= 30 same-`(dst_ip, dst_port)` TCP flows/10s, verified at
+0 false triggers across 371,621 real Monday CIC-IDS2017 benign flows).
 
-| Vector | Observed predictions | Confirmed mitigation | Onset to confirmed loss |
+| Vector | Observed ML predictions | Detection source & mitigation | Onset to confirmed loss |
 | --- | --- | --- | --- |
-| PORTSCAN | 5 PORTSCAN flows | TCP + ICMP drop, exact-ID unblock recovery | 1.710407s |
-| BRUTE_FORCE | 30 BENIGN flows | Missed during 8s observation | No measured block |
-| DOS | 21 BENIGN flows emitted | Missed during 8s observation | No measured block |
+| PORTSCAN | 7 PORTSCAN flows | Model (`repeated_high_score_flows`); TCP + ICMP drop, exact-ID unblock | 0.605420s |
+| BRUTE_FORCE | 23 BENIGN flows | Rule (`rule:auth_burst`); TCP + ICMP drop, exact-ID unblock | 1.015394s |
+| DOS | 34 BENIGN flows | Rule (`rule:service_flood`); TCP + ICMP drop, exact-ID unblock | 3.480821s |
 
-![Live results including misses](assets/fyp/live_mitigation.svg)
+![Live results including model and rule sources](assets/fyp/live_mitigation.svg)
 
 The latency includes probe timeout and polling, so it is an observed upper bound,
-not a precise nftables installation timestamp. Exploratory runs observed
-roughly 1.71s–1.84s for scan; the checked-in report records the final run. Neither
-`<0.5s` scan blocking nor `<0.8s` brute-force blocking was established. The flood
-has 200 bounded attempts; only completed/emitted flows are scored in the window.
-This is not a throughput or service-saturation benchmark.
+not a precise nftables installation timestamp. Strict acceptance (`--require-all-detected`)
+exits `0` (`status: ok`). Raw ML predictions remain preserved honestly (`event.label = BENIGN`
+when promoted by a cross-flow rule): single-flow CIC-IDS2017 `DoS Hulk` relies on NIC LRO
+`5,792 B` super-packets (`> 1500` MTU), and `FTP-Patator` reflects 4–10s multi-attempt sessions.
+This bounded run is not a throughput or service-saturation SLA benchmark.
 
 SIGKILL watchdog rollback restored traffic, restarting the sensor reconciled its
 DB block to `ROLLED_BACK`, and SIGTERM exited 0 with the table removed. These
@@ -113,11 +118,11 @@ cd '/home/abdulsamad/Projects/SecureNet AI'
 ./scripts/netns_multi_attack_lab.sh --output runtime/defense-rehearsal.json
 ```
 
-Read the result before presenting. Expected with the current model:
-`completed_with_detection_gaps`, scan `mitigated`, brute-force and DoS `missed`,
-and all recovery flags true. A failed prerequisite or recovery check exits 1;
-do not present it as successful enforcement. Strict acceptance adds
-`--require-all-detected` and currently exits 2 for the detection gaps.
+Read the result before presenting. Expected with the current hybrid pipeline:
+`status: ok`, all three vectors `mitigated` (`PORTSCAN` via `model`, `BRUTE_FORCE`
+and `DOS` via `rule`), and all recovery flags true. A failed prerequisite or recovery
+check exits 1; strict acceptance (`--require-all-detected`) exits 0 on full pass
+or 2 if any vector is missed or misclassified.
 
 ### 2. Show actual packet enforcement in the terminal
 

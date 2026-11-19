@@ -10,7 +10,7 @@ Flow-based threat classification, authenticated monitoring and controlled respon
 
 Final Year Project • November 2026
 
-**Evidence boundary:** isolated enforcement works; live multi-vector recall remains incomplete.
+**Evidence boundary:** isolated 3-vector enforcement passes (`model` + cross-flow `rule`); independent real-world & PCAP parity gates remain open.
 
 ---
 
@@ -73,11 +73,11 @@ WEB_ATTACK has only **19** test flows from one endpoint pair. These scores do no
 
 ---
 
-# Live results include misses
+# Live results (hybrid ML + cross-flow rules)
 
 ![Live evidence](assets/fyp/live_mitigation.svg)
 
-Current acceptance: `completed_with_detection_gaps`. No sub-second mitigation guarantee.
+Strict acceptance passes (`status: ok`, exit 0): `PORTSCAN` via ML (`0.61s`), `BRUTE_FORCE` (`1.02s`) and `DOS` (`3.48s`) via bounded cross-flow rules. Raw ML labels stay unedited. No latency SLA.
 
 ---
 

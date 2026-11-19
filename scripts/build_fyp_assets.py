@@ -56,7 +56,8 @@ def main(argv=None):
         latency = scenario["mitigation_latency_seconds"]
         if latency is not None:
             ax.barh(i, latency, color="#059669", height=0.42)
-            ax.text(latency + 0.1, i, f"{latency:.2f}s • {scenario['enforced_label']}", va="center")
+            src = f" ({scenario['detection_source']})" if scenario.get("detection_source") else ""
+            ax.text(latency + 0.1, i, f"{latency:.2f}s • {scenario['enforced_label']}{src}", va="center")
         else:
             ax.plot(scenario["observation_seconds"], i, "x", color="#b91c1c", markersize=10, markeredgewidth=2)
             ax.text(0.2, i, f"No confirmed block in {scenario['observation_seconds']:g}s; predictions: {scenario['predicted_labels']}", va="center", color="#991b1b")

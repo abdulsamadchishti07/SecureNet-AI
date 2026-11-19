@@ -1,14 +1,15 @@
-# Sprint 7 evidence — November 18, 2026
+# Sprint 7/8 live verification evidence
 
-Implementation verification passed; live multi-vector detection acceptance remains open.
+Implementation and isolated 3-vector strict acceptance (`exit 0`, `status: ok`) passed.
 
-- [Verification record](verification.json): 471 default tests passed (one opt-in
+- [Verification record](verification.json): 474 default tests passed (one opt-in
   skip), ten browser workflows passed, installed model hashes verified separately.
-- [Live lab report](multi_attack_lab.json): PORTSCAN blocked, TCP/ICMP drops and
-  exact-ID unblock verified; observed mitigation confirmation **1.710407s**.
-  BRUTE_FORCE and DOS were missed within their eight-second windows. Strict mode
-  exited **2**, as intended for detection gaps. Watchdog, DB reconciliation and
-  SIGTERM recovery passed.
+- [Live lab report](multi_attack_lab.json): all three vectors mitigated with
+  real kernel TCP/ICMP drops and exact-ID unblock recovery: `PORTSCAN` (**0.605420s**,
+  ML model), `BRUTE_FORCE` (**1.015394s**, `rule:auth_burst`), and `DOS`
+  (**3.480821s**, `rule:service_flood`). Raw ML `event.label` predictions are
+  preserved without label substitution. Watchdog, DB reconciliation and SIGTERM
+  recovery passed.
 - Notifications: actual SMTP and webhook exchanges used disposable loopback
   receivers. External delivery remains unconfigured and unverified. Flood limits,
   failures, queue bounds and action eligibility have regression coverage.
