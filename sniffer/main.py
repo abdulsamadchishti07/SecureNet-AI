@@ -22,6 +22,7 @@ from ml_engine.datasets import DATASETS, DEFAULT_INFERENCE_DATASET
 def run(packets, on_flow, termination_grace=5.0, diagnostics=None):
     """Feed packets (None = idle tick) through a FlowTable, calling on_flow per completed flow."""
     table, last_sweep, watermark = FlowTable(termination_grace), 0, 0
+    sweep_interval = min(1_000_000, max(100_000, table.grace))
     counters = {"packets_read": 0, "packets_parsed": 0, "non_ipv4_or_fragmented_packets_excluded": 0,
                 "out_of_order_packets": 0}
     with suppress(KeyboardInterrupt):
@@ -39,7 +40,7 @@ def run(packets, on_flow, termination_grace=5.0, diagnostics=None):
                     now, done = p.ts, table.add(p)
                 counters["out_of_order_packets"] += now < watermark
             watermark = max(watermark, now)
-            if now - last_sweep >= 1_000_000:
+            if now - last_sweep >= sweep_interval:
                 done += table.expire(now)
                 last_sweep = now
             for features in done:

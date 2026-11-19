@@ -98,6 +98,9 @@ def _load_model(dataset=DEFAULT_INFERENCE_DATASET, *, expected_sha256=None):
             raise ValueError("Label encoder does not match bundle metadata")
         if set(metadata["classes"]) != set(config.classes):
             raise ValueError("Bundle classes do not match requested dataset")
+        # ponytail: training n_jobs>1 adds joblib dispatch overhead on single-flow inference.
+        if hasattr(bundle["model"], "n_jobs"):
+            bundle["model"].n_jobs = 1
         bundle["_artifact_sha256"] = actual_sha256
         if dataset == "friday":
             _bundle = bundle
@@ -139,10 +142,9 @@ def predict_batch(features_list, dataset=DEFAULT_INFERENCE_DATASET):
     bundle = _load_model(dataset)
     model, scaler, encoder = bundle["model"], bundle["scaler"], bundle["label_encoder"]
     scaled = scaler.transform(matrix)
-    predictions = model.predict(scaled)
     probabilities = model.predict_proba(scaled)
     class_names = encoder.inverse_transform(model.classes_.astype(int))
-    labels = encoder.inverse_transform(predictions.astype(int))
+    labels = class_names[np.argmax(probabilities, axis=1)]
     results = []
     for label, row in zip(labels, probabilities):
         label = str(label)

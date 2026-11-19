@@ -169,7 +169,8 @@ class ApiSender:
                     except (DeliveryError, ValueError, TypeError):
                         self.poll_failed += 1
                     next_poll = time.monotonic() + 1
-                self.stop.wait(0.05)
+                if not message:
+                    self.stop.wait(0.05)
         except Exception as exc:
             self._error = exc
 
