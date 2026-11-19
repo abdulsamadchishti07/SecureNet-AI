@@ -1,6 +1,42 @@
 # SecureNet AI — Agent Handoff
 
-Last updated: 2026-11-18 (Asia/Karachi).
+Last updated: 2026-11-19 (Asia/Karachi).
+
+## Sprint 8 live capture, inference speed & hybrid burst mitigation — 2026-11-19
+
+- Diagnosed live `BRUTE_FORCE` / `DOS` misses and burst bottlenecks empirically:
+  1. `sniffer/capture.py`: Scapy defaulted `conf.bufsize` to 64 KB, dropping ~90%
+     of burst packets (`21` vs `200` wire flows) and inverting `Src IP` on dropped
+     SYNs. Raised `LIVE_CAPTURE_BUFSIZE = 4 MiB`, reloaded unknown interfaces, and
+     lowered idle tick from `1s` to `0.2s` (`sniffer/main.py` sweeps at `min(1s, max(0.1s, grace))`).
+  2. `ml_engine/predictor.py`: removed redundant double tree traversal (`predict()`
+     + `predict_proba()` -> single `predict_proba` + `argmax`) and set in-memory
+     `model.n_jobs = 1` on load (cuts single-flow RF latency ~4.5x without changing
+     saved bundle bytes or SHA-256).
+  3. `backend/outbox.py`: `ApiSender._run()` slept `50ms` after every delivered
+     message, capping drain at 20 msg/s under floods; now sleeps only when idle.
+  4. `sniffer/rules.py`, `backend/schemas.py`, `backend/worker.py`, `backend/notifier.py`:
+     added bounded cross-flow burst rules (`rule:auth_burst` >= 10 short auth TCP
+     flows/10s -> `BRUTE_FORCE`; `rule:service_flood` >= 30 same-`(dst_ip, dst_port)`
+     TCP flows/10s -> `DOS`), verified at 0 false triggers across all 371,621 real
+     Monday CIC-IDS2017 benign flows. Raw ML `event.label` stays unaltered (never
+     forged); `WEB_ATTACK` and historical scopes remain strictly alert-only. Added
+     `ResponsePolicy.clear_source()` to drop accumulated evidence and ignore stale
+     pre-unblock live flows so manual unblock cannot be undone by queued backlog.
+- Empirical ML finding preserved honestly: CIC-IDS2017 `DoS Hulk` is 99.98%
+  LRO-coalesced (`Packet Length Max = 5,792 B > 1500` MTU), causing `unified_v1`
+  to classify identical 1500-MTU HTTP DoS flows as `BENIGN` (85.9% vs 52.4% `DOS`
+  when coalesced), and `FTP-Patator` reflects 4-10s multi-attempt sessions (0.819
+  `BRUTE_FORCE` confidence on multi-attempt sessions vs `BENIGN` on single-attempt).
+- Live strict acceptance `./scripts/netns_multi_attack_lab.sh --require-all-detected`
+  now exits `0` (`status: ok`): `PORTSCAN` mitigated in `0.605420s` (`model`),
+  `BRUTE_FORCE` in `1.015394s` (`rule:auth_burst`), `DOS` in `3.480821s`
+  (`rule:service_flood`), plus exact-ID manual unblock, `SIGKILL` watchdog rollback,
+  startup DB reconciliation and `SIGTERM` exit `0`. Regenerated 9 FYP assets.
+- Verification: `474 passed, 1 skipped` (`91.50s`), `10 browser passed` (`42.67s`),
+  installed-bundle SHA-256 check passed (`0.19s`), all report/figure hashes match.
+  Remaining gates: original CIC-IDS2017 PCAP parity, independent real-tool/host
+  validation, and non-LRO ML DoS generalization.
 
 ## Sprint 7 implementation and measured limits — 2026-11-18
 
