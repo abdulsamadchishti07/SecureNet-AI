@@ -71,6 +71,10 @@ def test_response_payload_only_new_confirmed_or_simulated_blocks(response_event_
     assert BlockNotification.from_response(event, None, "lab") is None
     enforced = BlockNotification.from_response(event, {**action, "mode": "enforced", "status": "blocked"}, "lab")
     assert enforced.payload()["enforced"] and "ENFORCED BLOCK" in enforced.summary()
+    rule_benign = response_event_factory(label="BENIGN")
+    rule_action = firewall.block_ip(rule_benign.src_ip, "BRUTE_FORCE")
+    rule_msg = BlockNotification.from_response(rule_benign, {**rule_action, "mode": "enforced", "status": "blocked"}, "lab")
+    assert rule_msg.threat == "BRUTE_FORCE"
     with pytest.raises(ValueError, match="target"):
         BlockNotification.from_response(event, {**action, "ip": "192.0.2.99"}, "lab")
 

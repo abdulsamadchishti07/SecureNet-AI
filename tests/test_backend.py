@@ -480,3 +480,28 @@ def test_login_capacity_preserves_active_quotas_and_reclaims_expired_keys(manual
     assert limiter.reserve("127.0.0.2", "second")[1] > 0
     manual_clock.advance(61)
     assert limiter.reserve("127.0.0.2", "second")[1] == 0
+
+
+def test_rule_promoted_benign_ingest_contract(response_event_factory):
+    from pydantic import ValidationError
+    from backend.firewall import FirewallController
+    from backend.schemas import AlertIngest
+
+    event = response_event_factory(label="BENIGN")
+    proposal = FirewallController().block_ip(event.src_ip, "BRUTE_FORCE")
+    valid = AlertIngest.model_validate({
+        "event": event.to_dict(),
+        "decision": {"action": "candidate", "reason": "rule:auth_burst", "evidence_count": 10, "threat": "BRUTE_FORCE"},
+        "firewall": proposal,
+    })
+    assert valid.firewall.threat == "BRUTE_FORCE" and valid.event.label == "BENIGN"
+
+    # Rule override must never promote WEB_ATTACK, mismatched threats, or non-rule reasons.
+    for bad_decision in (
+        {"action": "candidate", "reason": "repeated_high_score_flows", "evidence_count": 3, "threat": "BRUTE_FORCE"},
+        {"action": "candidate", "reason": "rule:auth_burst", "evidence_count": 10, "threat": "WEB_ATTACK"},
+        {"action": "candidate", "reason": "rule:service_flood", "evidence_count": 30, "threat": "DOS"},
+        {"action": "ignore", "reason": "benign", "evidence_count": 0, "threat": "BRUTE_FORCE"},
+    ):
+        with pytest.raises(ValidationError):
+            AlertIngest.model_validate({"event": event.to_dict(), "decision": bad_decision, "firewall": proposal})

@@ -217,3 +217,42 @@ def test_idle_worker_expires_simulated_blocks(response_event_factory, manual_clo
     assert records[1]["action"]["status"] == "would_unblock"
     assert records[1]["action"]["reason"] == "expired"
     assert worker.stats()["active_simulated_blocks"] == 0
+
+
+def test_burst_rules_detect_auth_and_service_floods_without_false_triggers(response_event_factory, manual_clock):
+    from datetime import timezone, timedelta
+
+    policy = ResponsePolicy(clock=manual_clock, auth_burst_flows=3, flood_burst_flows=4, burst_window_seconds=10)
+    def flow_event(dport, plen=64, src_ip="10.10.0.9", label="BENIGN", source="live", capture_time=None):
+        base = response_event_factory(label=label, src_ip=src_ip)
+        features = {**base.features, "Protocol": 6.0, "Dst Port": float(dport), "Packet Length Max": float(plen)}
+        return replace(base, features=features, source=source, capture_time=capture_time)
+
+    # Large payload SSH/SCP flows do not trigger auth_burst; short ones do at threshold.
+    for _ in range(3):
+        assert policy.evaluate(flow_event(22, plen=1400)).action == "ignore"
+    assert policy.evaluate(flow_event(21, plen=64)).action == "ignore"
+    assert policy.evaluate(flow_event(21, plen=64)).action == "ignore"
+    hit = policy.evaluate(flow_event(21, plen=64))
+    assert hit.action == "candidate" and hit.reason == "rule:auth_burst" and hit.threat == "BRUTE_FORCE"
+
+    # Multi-port scan does not trigger service_flood; same (dst_ip, dst_port) flood does.
+    for port in (8080, 8081, 8082, 8083):
+        assert policy.evaluate(flow_event(port, src_ip="10.10.0.10")).action == "ignore"
+    for _ in range(3):
+        assert policy.evaluate(flow_event(80, src_ip="10.10.0.11")).action == "ignore"
+    flood = policy.evaluate(flow_event(80, src_ip="10.10.0.11"))
+    assert flood.action == "candidate" and flood.reason == "rule:service_flood" and flood.threat == "DOS"
+
+    # clear_source drops accumulated burst history and ignores stale pre-unblock live flows.
+    unblocked_at = datetime(2026, 11, 19, 12, 0, 10, tzinfo=timezone.utc)
+    policy.clear_source("10.10.0.11", unblocked_at)
+    stale = flow_event(80, src_ip="10.10.0.11", capture_time=unblocked_at - timedelta(seconds=1))
+    assert policy.evaluate(stale).reason == "pre_unblock_stale_flow"
+    fresh = flow_event(80, src_ip="10.10.0.11", capture_time=unblocked_at + timedelta(seconds=1))
+    assert policy.evaluate(fresh).reason == "benign"
+
+    # Disabled burst rules stay strictly ML-only.
+    ml_only = ResponsePolicy(clock=manual_clock, burst_rules=False, auth_burst_flows=2)
+    assert ml_only.evaluate(flow_event(21)).action == "ignore"
+    assert ml_only.evaluate(flow_event(21)).action == "ignore"

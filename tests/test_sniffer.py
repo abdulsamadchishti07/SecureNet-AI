@@ -216,3 +216,30 @@ def test_linger_surfaces_worker_failure():
             raise RuntimeError("sender stopped")
     with pytest.raises(RuntimeError, match="sender stopped"):
         sniffer_main.linger(FailedWorker(), 1)
+
+
+def test_live_capture_raises_scapy_bufsize_and_reloads_unknown_iface(monkeypatch):
+    from sniffer import capture
+
+    class FakeIfaces(dict):
+        reloaded = False
+        def reload(self):
+            self.reloaded = True
+
+    class FakeSniffer:
+        running = True
+        def __init__(self, iface, filter, prn, store):
+            self.thread = type("T", (), {"is_alive": lambda self: True})()
+        def start(self):
+            pass
+        def stop(self):
+            self.running = False
+
+    fake_conf = type("Conf", (), {"bufsize": 65536, "ifaces": FakeIfaces()})()
+    monkeypatch.setattr(capture, "conf", fake_conf)
+    monkeypatch.setattr(capture, "AsyncSniffer", FakeSniffer)
+    gen = capture.start_capture(iface="veth-new")
+    assert next(gen) is None
+    gen.close()
+    assert fake_conf.bufsize >= capture.LIVE_CAPTURE_BUFSIZE
+    assert fake_conf.ifaces.reloaded is True
