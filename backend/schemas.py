@@ -85,10 +85,14 @@ class EventIn(WireModel):
         return self
 
 
+RULE_THREATS = frozenset({"PORTSCAN", "BRUTE_FORCE", "DOS"})
+
+
 class DecisionIn(WireModel):
     action: Literal["ignore", "alert", "candidate"]
     reason: str = Field(min_length=1, max_length=128)
     evidence_count: Annotated[StrictInt, Field(ge=0, le=10000)] = 0
+    threat: str | None = Field(default=None, min_length=1, max_length=32)
 
 
 class BlockIn(WireModel):
@@ -154,15 +158,26 @@ class AlertIngest(WireModel):
 
     @model_validator(mode="after")
     def supported_response(self):
-        if self.decision.action == "candidate" and (
-                self.event.label in ("BENIGN", "WEB_ATTACK") or self.event.model_scope != "unified"):
-            raise ValueError("This coverage is alert-only")
+        rule_promoted = (
+            self.decision.action == "candidate"
+            and self.decision.reason.startswith("rule:")
+            and self.decision.threat in RULE_THREATS
+        )
+        if self.decision.action == "candidate":
+            if self.event.model_scope != "unified" or self.event.label == "WEB_ATTACK":
+                raise ValueError("This coverage is alert-only")
+            if not rule_promoted and (
+                    self.event.label == "BENIGN" or self.decision.threat not in (None, self.event.label)):
+                raise ValueError("This coverage is alert-only")
+        elif self.decision.threat is not None:
+            raise ValueError("Only rule candidate decisions carry a separate threat override")
+        expected_threat = self.decision.threat if rule_promoted else self.event.label
         if self.firewall:
             if self.decision.action != "candidate" or self.firewall.ip != self.event.src_ip:
                 raise ValueError("Firewall proposals must match a candidate event")
-            if self.firewall.threat != self.event.label:
+            if self.firewall.threat != expected_threat:
                 raise ValueError("Firewall threat differs from the event")
-            if self.firewall.block and self.firewall.block.threat != self.event.label:
+            if self.firewall.block and self.firewall.block.threat != expected_threat:
                 raise ValueError("Block metadata differs from the event")
         return self
 

@@ -40,8 +40,8 @@ class BlockNotification:
         if action.get("ip") != event.src_ip or block.get("ip") != event.src_ip:
             raise ValueError("Notification block target does not match the event")
         return cls(str(UUID(event.event_id)), str(UUID(block["block_id"])),
-                   str(IPv4Address(event.src_ip)), event.label, action["mode"],
-                   event.observed_at.isoformat(), sensor_id)
+                   str(IPv4Address(event.src_ip)), action.get("threat") or event.label,
+                   action["mode"], event.observed_at.isoformat(), sensor_id)
 
     def payload(self):
         return {"schema_version": 1, "type": "threat_block", **asdict(self),

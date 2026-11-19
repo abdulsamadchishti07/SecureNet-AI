@@ -124,6 +124,8 @@ class ResponseDispatcher:
             except Empty:
                 break
             action = self.firewall.unblock_ip(command["ip"], block_id=command["block_id"])
+            if action["status"] in ("unblocked", "would_unblock"):
+                self.policy.clear_source(command["ip"], datetime.now(timezone.utc))
             action["action_id"] = str(uuid4())
             self._write({"record_type": "firewall", "command_id": command["command_id"], "action": action})
             self._enqueue_api("ack:" + command["command_id"],
@@ -151,7 +153,8 @@ class ResponseDispatcher:
                         break
                     continue
                 decision = self.policy.evaluate(event)
-                action = self.firewall.block_ip(event.src_ip, event.label) if decision.action == "candidate" else None
+                threat = decision.threat or event.label
+                action = self.firewall.block_ip(event.src_ip, threat) if decision.action == "candidate" else None
                 payload = {"event": event.to_dict(), "decision": decision.to_dict(), "firewall": action}
                 self._write({"record_type": "detection", **payload})
                 self._enqueue_api("event:" + event.event_id, "/api/alerts/ingest", payload)
