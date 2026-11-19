@@ -146,28 +146,32 @@ class Lab:
         listener.settimeout(0.1)
         self.servers.append(listener)
 
-        def loop():
-            while not self.stop.is_set():
+        def handle(connection):
+            with connection:
+                connection.settimeout(0.2)
                 try:
-                    connection, _ = listener.accept()
-                except TimeoutError:
-                    continue
+                    if port == 21:
+                        connection.sendall(b"220 SecureNet isolated lab FTP simulation\r\n")
+                        connection.recv(1024)
+                        connection.sendall(b"530 Login incorrect\r\n")
+                    elif port == 80:
+                        connection.recv(4096)
+                        connection.sendall(b"HTTP/1.0 503 Lab\r\nContent-Length: 0\r\n\r\n")
+                    else:
+                        connection.sendall(b"OK\n")
                 except OSError:
-                    return
-                with connection:
-                    connection.settimeout(0.2)
+                    pass
+
+        def loop():
+            with ThreadPoolExecutor(max_workers=16) as pool:
+                while not self.stop.is_set():
                     try:
-                        if port == 21:
-                            connection.sendall(b"220 SecureNet isolated lab FTP simulation\r\n")
-                            connection.recv(1024)
-                            connection.sendall(b"530 Login incorrect\r\n")
-                        elif port == 80:
-                            connection.recv(4096)
-                            connection.sendall(b"HTTP/1.0 503 Lab\r\nContent-Length: 0\r\n\r\n")
-                        else:
-                            connection.sendall(b"OK\n")
+                        connection, _ = listener.accept()
+                    except TimeoutError:
+                        continue
                     except OSError:
-                        pass
+                        return
+                    pool.submit(handle, connection)
         Thread(target=loop, daemon=True).start()
 
     def sensor_start(self, name="sensor"):
@@ -259,9 +263,13 @@ class Lab:
         wait_until(lambda: any(b["block_id"] == block_id for b in self.api("/api/firewall/blocked?status=UNBLOCKED")))
         if not self.reachable(ip) or not self.ping(ip):
             raise RuntimeError("Manual unblock did not restore traffic")
-        result.update(status="mitigated" if record["event"]["label"] == vector else "misclassified_block",
-                      classification_match=record["event"]["label"] == vector,
-                      enforced_label=record["event"]["label"], packet_drop_verified=True,
+        decision = record.get("decision") or {}
+        enforced_threat = action.get("threat") or decision.get("threat") or record["event"]["label"]
+        detection_source = "rule" if decision.get("reason", "").startswith("rule:") else "model"
+        result.update(status="mitigated" if enforced_threat == vector else "misclassified_block",
+                      classification_match=enforced_threat == vector,
+                      enforced_label=enforced_threat, detection_source=detection_source,
+                      decision_reason=decision.get("reason"), packet_drop_verified=True,
                       mitigation_latency_seconds=round(first_drop - onset, 6), manual_unblock_recovered=True)
         return result
 
